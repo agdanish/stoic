@@ -1,0 +1,899 @@
+{
+  "what": "Phase-1 honest in-sample parameter search over the FULL-COVERAGE slice (the contiguous tail where all flow legs are present, so the advertised two-leg construct is non-degenerate on every bar). Goal: throttle the cost-dominated over-trading (843 trades / 27.8% win on the default full window) into an honest, held-out-OOS beat of buy-and-hold. Selection is in-sample only; OOS is reported unconditionally; report.json / report-fullcoverage.json are untouched.",
+  "honesty": [
+    "SELECTION IN-SAMPLE ONLY: configs are ranked by in-sample aggregate excess-over-B&H; the held-out OOS tail is NEVER an input to any choice (HONEST_SEARCH_RULES.md §1, §2).",
+    "OOS RUN ONCE, AFTER selection, and reported as-is — win, loss, or break-even — for the selected config AND the default, per token and aggregate.",
+    "LOOK-AHEAD SAFE: same walk-forward as engine.runBacktest (decision at bar i uses bars <= i; z-window ends at t-1); the new knobs act only on at-or-before info. A test pins truncation invariance.",
+    "FAITHFUL: at DEFAULT knobs this harness reproduces engine.runBacktest byte-for-byte on the sliced bars (a test asserts it), so the knobs are the ONLY difference.",
+    "COST: the labelled 10+10 bps assumption; all returns net of it; a 15+15 bps stress is included (Rule 3.4).",
+    "ISOLATION: report.json and report-fullcoverage.json are not produced or touched here; this is a separate byte-reproducible file."
+  ],
+  "window": {
+    "note": "FULL-COVERAGE slice of the committed REAL Binance fixtures (chosen by data coverage, not by result — same slice as report-fullcoverage.json). Default 0.30 split; in-sample = leading 70%, held-out OOS = trailing 30%.",
+    "oosFraction": 0.3,
+    "perToken": [
+      {
+        "symbol": "BTCUSDT",
+        "bars": 499
+      },
+      {
+        "symbol": "ETHUSDT",
+        "bars": 499
+      },
+      {
+        "symbol": "BNBUSDT",
+        "bars": 499
+      }
+    ]
+  },
+  "costModelNote": "Transaction cost + slippage are a CONFIGURABLE ASSUMPTION (default 10 bps each), charged on |Δ signed notional| per position change. The exact organizer cost/slippage model is UNCONFIRMED.",
+  "searchGrid": {
+    "count": 18,
+    "budgetNote": "Fixed before the search (HONEST_SEARCH_RULES.md §6): deadbandZ∈{0.5,0.75,1.0}, entryThreshold∈{120,200,300}, minDwell∈{0,1,3,6,12}, regimeExtremesOnly∈{off,on}, swept one axis at a time around the default plus a few combos. The budget is not widened after seeing results.",
+    "configs": [
+      "DEFAULT",
+      "deadbandZ=0.75",
+      "deadbandZ=1.0",
+      "entry=200",
+      "entry=300",
+      "dwell=1",
+      "dwell=3",
+      "dwell=6",
+      "dwell=12",
+      "regimeOnly",
+      "entry=300+dwell=6",
+      "entry=300+dwell=12",
+      "deadbandZ=1.0+dwell=6",
+      "deadbandZ=1.0+entry=300",
+      "deadbandZ=1.0+entry=300+dwell=6",
+      "deadbandZ=1.0+entry=300+dwell=12",
+      "regimeOnly+dwell=6",
+      "regimeOnly+entry=300"
+    ]
+  },
+  "inSampleTable": [
+    {
+      "name": "DEFAULT",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 120,
+        "minDwell": 0,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": -0.088260591298,
+        "winRate": 0.334343434343,
+        "maxDrawdown": 0.104607998317,
+        "sharpe": -13.531740139696,
+        "sortino": -16.671159116894,
+        "tradeCount": 191,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.060016164412
+    },
+    {
+      "name": "deadbandZ=0.75",
+      "knobs": {
+        "deadbandZ": 0.75,
+        "entryThreshold": 120,
+        "minDwell": 0,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": -0.080822712759,
+        "winRate": 0.326010837659,
+        "maxDrawdown": 0.096718740505,
+        "sharpe": -12.898000994164,
+        "sortino": -15.988763494601,
+        "tradeCount": 181,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.067454042951
+    },
+    {
+      "name": "deadbandZ=1.0",
+      "knobs": {
+        "deadbandZ": 1,
+        "entryThreshold": 120,
+        "minDwell": 0,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": -0.08050244061,
+        "winRate": 0.350451118527,
+        "maxDrawdown": 0.095961104935,
+        "sharpe": -13.519710889649,
+        "sortino": -16.475185369989,
+        "tradeCount": 174,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.0677743151
+    },
+    {
+      "name": "entry=200",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 200,
+        "minDwell": 0,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": -0.038152659389,
+        "winRate": 0.399038461538,
+        "maxDrawdown": 0.051656083371,
+        "sharpe": -6.866737699627,
+        "sortino": -8.576044688426,
+        "tradeCount": 84,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.110124096321
+    },
+    {
+      "name": "entry=300",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 300,
+        "minDwell": 0,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": -0.003834341951,
+        "winRate": 0.47619047619,
+        "maxDrawdown": 0.011744997362,
+        "sharpe": -2.750224807027,
+        "sortino": -3.123219571532,
+        "tradeCount": 10,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.144442413759
+    },
+    {
+      "name": "dwell=1",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 120,
+        "minDwell": 1,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": -0.088260591298,
+        "winRate": 0.334343434343,
+        "maxDrawdown": 0.104607998317,
+        "sharpe": -13.531740139696,
+        "sortino": -16.671159116894,
+        "tradeCount": 191,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.060016164412
+    },
+    {
+      "name": "dwell=3",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 120,
+        "minDwell": 3,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": -0.080449371244,
+        "winRate": 0.336772486773,
+        "maxDrawdown": 0.097376196694,
+        "sharpe": -12.439440292709,
+        "sortino": -15.5966093342,
+        "tradeCount": 135,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.067827384466
+    },
+    {
+      "name": "dwell=6",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 120,
+        "minDwell": 6,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": -0.075319031258,
+        "winRate": 0.388573232323,
+        "maxDrawdown": 0.092933635706,
+        "sharpe": -11.600479373944,
+        "sortino": -14.512132704934,
+        "tradeCount": 98,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.072957724452
+    },
+    {
+      "name": "dwell=12",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 120,
+        "minDwell": 12,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": -0.06322753529,
+        "winRate": 0.469696969697,
+        "maxDrawdown": 0.080008631474,
+        "sharpe": -9.585230906504,
+        "sortino": -13.487018140979,
+        "tradeCount": 64,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.08504922042
+    },
+    {
+      "name": "regimeOnly",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 120,
+        "minDwell": 0,
+        "regimeExtremesOnly": true
+      },
+      "inSampleAggregate": {
+        "totalReturn": 0,
+        "winRate": 0,
+        "maxDrawdown": 0,
+        "sharpe": 0,
+        "sortino": 0,
+        "tradeCount": 0,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.14827675571
+    },
+    {
+      "name": "entry=300+dwell=6",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 300,
+        "minDwell": 6,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": 0.002785941065,
+        "winRate": 0.583333333333,
+        "maxDrawdown": 0.014196911829,
+        "sharpe": -0.876745777119,
+        "sortino": 0.377002480268,
+        "tradeCount": 7,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.151062696775
+    },
+    {
+      "name": "entry=300+dwell=12",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 300,
+        "minDwell": 12,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": 0.001606784481,
+        "winRate": 0.388888888889,
+        "maxDrawdown": 0.017243605112,
+        "sharpe": -1.579062773963,
+        "sortino": -0.655887173568,
+        "tradeCount": 6,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.149883540191
+    },
+    {
+      "name": "deadbandZ=1.0+dwell=6",
+      "knobs": {
+        "deadbandZ": 1,
+        "entryThreshold": 120,
+        "minDwell": 6,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": -0.069974743037,
+        "winRate": 0.393255131965,
+        "maxDrawdown": 0.085358710345,
+        "sharpe": -11.898871660159,
+        "sortino": -14.733779050403,
+        "tradeCount": 94,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.078302012673
+    },
+    {
+      "name": "deadbandZ=1.0+entry=300",
+      "knobs": {
+        "deadbandZ": 1,
+        "entryThreshold": 300,
+        "minDwell": 0,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": -0.000999720297,
+        "winRate": 0.47619047619,
+        "maxDrawdown": 0.008910611804,
+        "sharpe": -1.28678626653,
+        "sortino": 4.502833494603,
+        "tradeCount": 10,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.147277035413
+    },
+    {
+      "name": "deadbandZ=1.0+entry=300+dwell=6",
+      "knobs": {
+        "deadbandZ": 1,
+        "entryThreshold": 300,
+        "minDwell": 6,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": 0.002034158027,
+        "winRate": 0.583333333333,
+        "maxDrawdown": 0.013698058129,
+        "sharpe": -1.303010909755,
+        "sortino": -0.001190086288,
+        "tradeCount": 7,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.150310913737
+    },
+    {
+      "name": "deadbandZ=1.0+entry=300+dwell=12",
+      "knobs": {
+        "deadbandZ": 1,
+        "entryThreshold": 300,
+        "minDwell": 12,
+        "regimeExtremesOnly": false
+      },
+      "inSampleAggregate": {
+        "totalReturn": 0.002017040269,
+        "winRate": 0.388888888889,
+        "maxDrawdown": 0.01638777345,
+        "sharpe": -1.721200862734,
+        "sortino": -0.466466093015,
+        "tradeCount": 6,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.150293795979
+    },
+    {
+      "name": "regimeOnly+dwell=6",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 120,
+        "minDwell": 6,
+        "regimeExtremesOnly": true
+      },
+      "inSampleAggregate": {
+        "totalReturn": 0,
+        "winRate": 0,
+        "maxDrawdown": 0,
+        "sharpe": 0,
+        "sortino": 0,
+        "tradeCount": 0,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.14827675571
+    },
+    {
+      "name": "regimeOnly+entry=300",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 300,
+        "minDwell": 0,
+        "regimeExtremesOnly": true
+      },
+      "inSampleAggregate": {
+        "totalReturn": 0,
+        "winRate": 0,
+        "maxDrawdown": 0,
+        "sharpe": 0,
+        "sortino": 0,
+        "tradeCount": 0,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "inSampleExcessOverBH": 0.14827675571
+    }
+  ],
+  "selection": {
+    "rule": "argmax in-sample aggregate (totalReturn − buyAndHoldReturn); tie-break higher in-sample return, then fewer trades, then name. OOS never consulted.",
+    "selectedConfig": "entry=300+dwell=6",
+    "selectedKnobs": {
+      "deadbandZ": 0.5,
+      "entryThreshold": 300,
+      "minDwell": 6,
+      "regimeExtremesOnly": false
+    },
+    "inSampleAggregate": {
+      "totalReturn": 0.002785941065,
+      "winRate": 0.583333333333,
+      "maxDrawdown": 0.014196911829,
+      "sharpe": -0.876745777119,
+      "sortino": 0.377002480268,
+      "tradeCount": 7,
+      "bars": 1047,
+      "buyAndHoldReturn": -0.14827675571
+    },
+    "inSampleExcessOverBH": 0.151062696775
+  },
+  "heldOut": {
+    "default": {
+      "name": "DEFAULT",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 120,
+        "minDwell": 0,
+        "regimeExtremesOnly": false
+      },
+      "perToken": [
+        {
+          "symbol": "BTCUSDT",
+          "inSample": {
+            "totalReturn": -0.095061886686,
+            "winRate": 0.3,
+            "maxDrawdown": 0.095061886686,
+            "sharpe": -17.57482668346,
+            "sortino": -21.732149934541,
+            "tradeCount": 60,
+            "bars": 349,
+            "buyAndHoldReturn": -0.164477617587
+          },
+          "outOfSample": {
+            "totalReturn": -0.048229308864,
+            "winRate": 0.15625,
+            "maxDrawdown": 0.05028740677,
+            "sharpe": -32.385540935676,
+            "sortino": -38.045056639903,
+            "tradeCount": 32,
+            "bars": 150,
+            "buyAndHoldReturn": 0.040794561299
+          },
+          "full": {
+            "totalReturn": -0.138706426456,
+            "winRate": 0.25,
+            "maxDrawdown": 0.138706426456,
+            "sharpe": -20.335000907956,
+            "sortino": -24.954621608514,
+            "tradeCount": 92,
+            "bars": 499,
+            "buyAndHoldReturn": -0.130392848541
+          }
+        },
+        {
+          "symbol": "ETHUSDT",
+          "inSample": {
+            "totalReturn": -0.115353154952,
+            "winRate": 0.30303030303,
+            "maxDrawdown": 0.119997441192,
+            "sharpe": -15.649036848213,
+            "sortino": -18.127697521838,
+            "tradeCount": 66,
+            "bars": 349,
+            "buyAndHoldReturn": -0.195900790777
+          },
+          "outOfSample": {
+            "totalReturn": -0.040421120951,
+            "winRate": 0.25,
+            "maxDrawdown": 0.041820241245,
+            "sharpe": -15.342568316459,
+            "sortino": -22.405996093437,
+            "tradeCount": 24,
+            "bars": 150,
+            "buyAndHoldReturn": 0.064578913329
+          },
+          "full": {
+            "totalReturn": -0.151111572075,
+            "winRate": 0.288888888889,
+            "maxDrawdown": 0.155568131059,
+            "sharpe": -15.492621807718,
+            "sortino": -18.711423596808,
+            "tradeCount": 90,
+            "bars": 499,
+            "buyAndHoldReturn": -0.143972937637
+          }
+        },
+        {
+          "symbol": "BNBUSDT",
+          "inSample": {
+            "totalReturn": -0.054366732255,
+            "winRate": 0.4,
+            "maxDrawdown": 0.098764667073,
+            "sharpe": -7.371356887415,
+            "sortino": -10.153629894302,
+            "tradeCount": 65,
+            "bars": 349,
+            "buyAndHoldReturn": -0.084451858767
+          },
+          "outOfSample": {
+            "totalReturn": -0.046493631698,
+            "winRate": 0.266666666667,
+            "maxDrawdown": 0.047928641184,
+            "sharpe": -33.365370603186,
+            "sortino": -36.830933799483,
+            "tradeCount": 30,
+            "bars": 150,
+            "buyAndHoldReturn": 0.017351766102
+          },
+          "full": {
+            "totalReturn": -0.098332657127,
+            "winRate": 0.357894736842,
+            "maxDrawdown": 0.139748125206,
+            "sharpe": -11.007165851102,
+            "sortino": -14.857369251091,
+            "tradeCount": 95,
+            "bars": 499,
+            "buyAndHoldReturn": -0.068565481565
+          }
+        }
+      ],
+      "aggregate": {
+        "inSample": {
+          "totalReturn": -0.088260591298,
+          "winRate": 0.334343434343,
+          "maxDrawdown": 0.104607998317,
+          "sharpe": -13.531740139696,
+          "sortino": -16.671159116894,
+          "tradeCount": 191,
+          "bars": 1047,
+          "buyAndHoldReturn": -0.14827675571
+        },
+        "outOfSample": {
+          "totalReturn": -0.045048020504,
+          "winRate": 0.224305555556,
+          "maxDrawdown": 0.046678763066,
+          "sharpe": -27.031159951774,
+          "sortino": -32.427328844274,
+          "tradeCount": 86,
+          "bars": 450,
+          "buyAndHoldReturn": 0.040908413577
+        },
+        "full": {
+          "totalReturn": -0.129383551886,
+          "winRate": 0.298927875244,
+          "maxDrawdown": 0.144674227574,
+          "sharpe": -15.611596188925,
+          "sortino": -19.507804818804,
+          "tradeCount": 277,
+          "bars": 1497,
+          "buyAndHoldReturn": -0.114310422581
+        }
+      }
+    },
+    "selected": {
+      "name": "entry=300+dwell=6",
+      "knobs": {
+        "deadbandZ": 0.5,
+        "entryThreshold": 300,
+        "minDwell": 6,
+        "regimeExtremesOnly": false
+      },
+      "perToken": [
+        {
+          "symbol": "BTCUSDT",
+          "inSample": {
+            "totalReturn": -0.008765759707,
+            "winRate": 0,
+            "maxDrawdown": 0.008765759707,
+            "sharpe": -6.887536847505,
+            "sortino": -7.137219213737,
+            "tradeCount": 1,
+            "bars": 349,
+            "buyAndHoldReturn": -0.164477617587
+          },
+          "outOfSample": {
+            "totalReturn": -0.005775020321,
+            "winRate": 0,
+            "maxDrawdown": 0.005775020321,
+            "sharpe": -14.957618161504,
+            "sortino": -14.909058860816,
+            "tradeCount": 1,
+            "bars": 150,
+            "buyAndHoldReturn": 0.040794561299
+          },
+          "full": {
+            "totalReturn": -0.014490157588,
+            "winRate": 0,
+            "maxDrawdown": 0.014490157588,
+            "sharpe": -8.668423654642,
+            "sortino": -8.921137952671,
+            "tradeCount": 2,
+            "bars": 499,
+            "buyAndHoldReturn": -0.130392848541
+          }
+        },
+        {
+          "symbol": "ETHUSDT",
+          "inSample": {
+            "totalReturn": -0.000243073048,
+            "winRate": 1,
+            "maxDrawdown": 0.010363663193,
+            "sharpe": -0.01620604844,
+            "sortino": -0.023234496159,
+            "tradeCount": 2,
+            "bars": 349,
+            "buyAndHoldReturn": -0.195900790777
+          },
+          "outOfSample": {
+            "totalReturn": -0.002176687488,
+            "winRate": 0,
+            "maxDrawdown": 0.011989988117,
+            "sharpe": -1.221634450447,
+            "sortino": -2.405300332586,
+            "tradeCount": 1,
+            "bars": 150,
+            "buyAndHoldReturn": 0.064578913329
+          },
+          "full": {
+            "totalReturn": -0.002419231442,
+            "winRate": 0.666666666667,
+            "maxDrawdown": 0.011989988117,
+            "sharpe": -0.390890575393,
+            "sortino": -0.608118543299,
+            "tradeCount": 3,
+            "bars": 499,
+            "buyAndHoldReturn": -0.143972937637
+          }
+        },
+        {
+          "symbol": "BNBUSDT",
+          "inSample": {
+            "totalReturn": 0.01736665595,
+            "winRate": 0.75,
+            "maxDrawdown": 0.023461312587,
+            "sharpe": 4.273505564588,
+            "sortino": 8.291461150699,
+            "tradeCount": 4,
+            "bars": 349,
+            "buyAndHoldReturn": -0.084451858767
+          },
+          "outOfSample": {
+            "totalReturn": 0,
+            "winRate": 0,
+            "maxDrawdown": 0,
+            "sharpe": 0,
+            "sortino": 0,
+            "tradeCount": 0,
+            "bars": 150,
+            "buyAndHoldReturn": 0.017351766102
+          },
+          "full": {
+            "totalReturn": 0.01736665595,
+            "winRate": 0.75,
+            "maxDrawdown": 0.023461312587,
+            "sharpe": 3.571271838814,
+            "sortino": 6.931161540364,
+            "tradeCount": 4,
+            "bars": 499,
+            "buyAndHoldReturn": -0.068565481565
+          }
+        }
+      ],
+      "aggregate": {
+        "inSample": {
+          "totalReturn": 0.002785941065,
+          "winRate": 0.583333333333,
+          "maxDrawdown": 0.014196911829,
+          "sharpe": -0.876745777119,
+          "sortino": 0.377002480268,
+          "tradeCount": 7,
+          "bars": 1047,
+          "buyAndHoldReturn": -0.14827675571
+        },
+        "outOfSample": {
+          "totalReturn": -0.00265056927,
+          "winRate": 0,
+          "maxDrawdown": 0.005921669479,
+          "sharpe": -5.393084203984,
+          "sortino": -5.771453064467,
+          "tradeCount": 2,
+          "bars": 450,
+          "buyAndHoldReturn": 0.040908413577
+        },
+        "full": {
+          "totalReturn": 0.000152422307,
+          "winRate": 0.472222222222,
+          "maxDrawdown": 0.016647152764,
+          "sharpe": -1.82934746374,
+          "sortino": -0.866031651869,
+          "tradeCount": 9,
+          "bars": 1497,
+          "buyAndHoldReturn": -0.114310422581
+        }
+      }
+    }
+  },
+  "stress15bps": {
+    "name": "entry=300+dwell=6",
+    "knobs": {
+      "deadbandZ": 0.5,
+      "entryThreshold": 300,
+      "minDwell": 6,
+      "regimeExtremesOnly": false
+    },
+    "perToken": [
+      {
+        "symbol": "BTCUSDT",
+        "inSample": {
+          "totalReturn": -0.010803567748,
+          "winRate": 0,
+          "maxDrawdown": 0.010803567748,
+          "sharpe": -7.940616610345,
+          "sortino": -8.06413605038,
+          "tradeCount": 1,
+          "bars": 349,
+          "buyAndHoldReturn": -0.164477617587
+        },
+        "outOfSample": {
+          "totalReturn": -0.007004286211,
+          "winRate": 0,
+          "maxDrawdown": 0.007004286211,
+          "sharpe": -15.673429558707,
+          "sortino": -15.564827037,
+          "tradeCount": 1,
+          "bars": 150,
+          "buyAndHoldReturn": 0.040794561299
+        },
+        "full": {
+          "totalReturn": -0.017732182678,
+          "winRate": 0,
+          "maxDrawdown": 0.017732182678,
+          "sharpe": -9.781860930069,
+          "sortino": -9.891009400741,
+          "tradeCount": 2,
+          "bars": 499,
+          "buyAndHoldReturn": -0.130392848541
+        }
+      },
+      {
+        "symbol": "ETHUSDT",
+        "inSample": {
+          "totalReturn": -0.003931654819,
+          "winRate": 1,
+          "maxDrawdown": 0.011280477183,
+          "sharpe": -0.956798387453,
+          "sortino": -1.320272479849,
+          "tradeCount": 2,
+          "bars": 349,
+          "buyAndHoldReturn": -0.195900790777
+        },
+        "outOfSample": {
+          "totalReturn": -0.003941170582,
+          "winRate": 0,
+          "maxDrawdown": 0.013017745455,
+          "sharpe": -2.212831033054,
+          "sortino": -4.095450166585,
+          "tradeCount": 1,
+          "bars": 150,
+          "buyAndHoldReturn": 0.064578913329
+        },
+        "full": {
+          "totalReturn": -0.007857330079,
+          "winRate": 0.666666666667,
+          "maxDrawdown": 0.014419860643,
+          "sharpe": -1.34375003998,
+          "sortino": -1.999551869272,
+          "tradeCount": 3,
+          "bars": 499,
+          "buyAndHoldReturn": -0.143972937637
+        }
+      },
+      {
+        "symbol": "BNBUSDT",
+        "inSample": {
+          "totalReturn": 0.010038358562,
+          "winRate": 0.75,
+          "maxDrawdown": 0.027249697565,
+          "sharpe": 2.431314275143,
+          "sortino": 4.250012158162,
+          "tradeCount": 4,
+          "bars": 349,
+          "buyAndHoldReturn": -0.084451858767
+        },
+        "outOfSample": {
+          "totalReturn": 0,
+          "winRate": 0,
+          "maxDrawdown": 0,
+          "sharpe": 0,
+          "sortino": 0,
+          "tradeCount": 0,
+          "bars": 150,
+          "buyAndHoldReturn": 0.017351766102
+        },
+        "full": {
+          "totalReturn": 0.010038358562,
+          "winRate": 0.75,
+          "maxDrawdown": 0.027249697565,
+          "sharpe": 2.032225604929,
+          "sortino": 3.552753885152,
+          "tradeCount": 4,
+          "bars": 499,
+          "buyAndHoldReturn": -0.068565481565
+        }
+      }
+    ],
+    "aggregate": {
+      "inSample": {
+        "totalReturn": -0.001565621335,
+        "winRate": 0.583333333333,
+        "maxDrawdown": 0.016444580832,
+        "sharpe": -2.155366907552,
+        "sortino": -1.711465457356,
+        "tradeCount": 7,
+        "bars": 1047,
+        "buyAndHoldReturn": -0.14827675571
+      },
+      "outOfSample": {
+        "totalReturn": -0.003648485598,
+        "winRate": 0,
+        "maxDrawdown": 0.006674010555,
+        "sharpe": -5.96208686392,
+        "sortino": -6.553425734528,
+        "tradeCount": 2,
+        "bars": 450,
+        "buyAndHoldReturn": 0.040908413577
+      },
+      "full": {
+        "totalReturn": -0.005183718065,
+        "winRate": 0.472222222222,
+        "maxDrawdown": 0.019800580295,
+        "sharpe": -3.03112845504,
+        "sortino": -2.779269128287,
+        "tradeCount": 9,
+        "bars": 1497,
+        "buyAndHoldReturn": -0.114310422581
+      }
+    }
+  },
+  "riskOverlay": {
+    "note": "The selected throttle is FLAT-ish on the held-out OOS (a rising B&H tail), so it does NOT out-earn B&H — but it draws down far less. This is the measurable, defensible Phase-1b risk-overlay claim (proven by this same harness), NOT a B&H beat.",
+    "perToken": [
+      {
+        "symbol": "BTCUSDT",
+        "strategyOosMaxDD": 0.005775020321,
+        "buyHoldOosMaxDD": 0.037064358482,
+        "buyHoldOosReturn": 0.040794561299
+      },
+      {
+        "symbol": "ETHUSDT",
+        "strategyOosMaxDD": 0.011989988117,
+        "buyHoldOosMaxDD": 0.046647846418,
+        "buyHoldOosReturn": 0.064578913329
+      },
+      {
+        "symbol": "BNBUSDT",
+        "strategyOosMaxDD": 0,
+        "buyHoldOosMaxDD": 0.044017358958,
+        "buyHoldOosReturn": 0.017351766102
+      }
+    ],
+    "aggregate": {
+      "strategyOosMaxDD": 0.005921669479,
+      "buyHoldOosMaxDD": 0.042576521286
+    }
+  },
+  "verdict": {
+    "edgeFound": false,
+    "beatsBuyHoldOOS": false,
+    "gateG1Met": false,
+    "summary": "NO config beats buy-and-hold net-of-cost on the held-out full-coverage OOS tail — for any token OR the aggregate. The OOS tail is a RISING market (aggregate B&H +4.09%) and the in-sample-selected throttle goes nearly flat there (aggregate OOS -0.27% vs B&H +4.09%; every token loses to B&H). The throttle DOES cut OOS max-drawdown to ~0.6% vs B&H ~4.3% and turns the full-window loss (-12.94%) to ~+0.02%, but that is a RISK claim, not a B&H beat.",
+    "decision": "PHASE 1b (HONEST_SEARCH_RULES.md §7): the go/no-go gate G1 is NOT met within the fixed budget. Do NOT fabricate, fish further, loosen the cost model, move the split, or select on OOS. Reposition the deliverable as a reproducible, look-ahead-safe positioning-vs-flow divergence / risk-overlay research tool; re-anchor value on the measurable drawdown-reduction claim above; state plainly that the headline B&H benchmark was not beaten and why the reframed claim is the honest value proposition. The frozen baseline (report.json) is retained unchanged."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "_note": "RECORDED CASSETTE (shape only — SAMPLE values, NOT a real live capture) for the CMC MCP tools/call response to \"get_global_metrics_latest\". Drives the live HTTP branch of callTool in test/cmcLive.test.ts. A real captured envelope belongs in fixtures/cmc/live/.",
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"sentiment\":{\"fear_greed\":{\"current\":{\"value\":\"Greed\",\"index\":72}}},\"rotation\":{\"altcoin_season\":{\"current\":{\"value\":\"\",\"index\":38}}},\"dominance\":{\"btc\":{\"current\":\"+54.70%\"},\"eth\":{\"current\":\"+17.2%\"}}}"
+      }
+    ],
+    "isError": false
+  }
+}

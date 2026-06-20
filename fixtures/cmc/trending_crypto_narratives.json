@@ -1,0 +1,14 @@
+{
+  "_note": "SAMPLE — NOT a real live response (real keyed captures live under fixtures/cmc/live/). Tool: trending_crypto_narratives ({} args). Mirrors the REAL CMC MCP envelope: result.content[0].text is a DOUBLE-ENCODED JSON OBJECT { categoryList:{ headers:[...], rows:[[...]] } }. Each row is an array aligned to headers; cmc.ts maps categoryName -> name and marketCapChangePercentage24h (\"+6.8%\" percent string) -> avgPriceChange24h.",
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"categoryList\":{\"headers\":[\"trendingRank\",\"slug\",\"categoryCmcUrl\",\"categoryName\",\"marketCapUsd\",\"marketCapChangePercentage24h\",\"marketCapChangePercentage7d\",\"volume24h\",\"socialKeywords\",\"topCoinList\"],\"rows\":[[1,\"ai-agents\",\"https://coinmarketcap.com/view/ai-agents\",\"AI Agents\",\"1.68 T\",\"+6.8%\",\"+7.33%\",\"44.72 B\",[\"AI\",\"Agents\"],null],[2,\"depin\",\"https://coinmarketcap.com/view/depin\",\"DePIN\",\"1.71 T\",\"-2.3%\",\"+7.42%\",\"46.6 B\",[\"DePIN\"],null],[3,\"rwa\",\"https://coinmarketcap.com/view/rwa\",\"RWA\",\"1.71 T\",\"+1.2%\",\"+7.42%\",\"46.6 B\",[\"RWA\"],null]]}}"
+      }
+    ],
+    "isError": false
+  }
+}

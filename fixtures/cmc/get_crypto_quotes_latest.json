@@ -1,0 +1,14 @@
+{
+  "_note": "SAMPLE — NOT a real live response (real keyed captures live under fixtures/cmc/live/). Tool: get_crypto_quotes_latest (id REQUIRED, numeric string). Mirrors the REAL CMC MCP envelope: result.content[0].text is a DOUBLE-ENCODED JSON ARRAY whose [0] carries FLAT numeric fields { id:\"1\", price, percent_change_1h/_24h/_7d, volume_24h, market_cap, market_cap_dominance, ... }. cmc.ts parses defensively.",
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[{\"id\":\"1\",\"name\":\"Bitcoin\",\"symbol\":\"BTC\",\"slug\":\"bitcoin\",\"price\":67250.42,\"rank\":1,\"percent_change_1h\":0.21,\"percent_change_24h\":-1.84,\"percent_change_7d\":4.12,\"percent_change_30d\":-12.5,\"market_cap\":1328000000000,\"volume_24h\":31840000000,\"volume_change_24h\":5.84,\"fully_diluted_market_cap\":1359535510762.66,\"total_supply\":20044134,\"circulating_supply\":20044134,\"market_cap_dominance\":57.9018}]"
+      }
+    ],
+    "isError": false
+  }
+}

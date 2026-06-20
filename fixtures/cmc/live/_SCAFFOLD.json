@@ -1,0 +1,57 @@
+{
+  "_capture": "SCAFFOLD",
+  "_WARNING": "THIS IS NOT A LIVE CAPTURE. It documents the EXACT layout backtest/cmc-live-roundtrip.ts writes for each wired tool when run with a real CMC_MCP_API_KEY. Every value below is a PLACEHOLDER (string 'PLACEHOLDER' / 0 / null), never a fabricated CMC response. The real keyed round-trip overwrites <tool>.json with _capture:'LIVE'. Do not consume this file anywhere.",
+  "_howToProduce": "CMC_MCP_API_KEY=<your-free-key> npx ts-node backtest/cmc-live-roundtrip.ts",
+  "_perToolFileShape": {
+    "_capture": "LIVE",
+    "_note": "RAW live tools/call envelope for \"<tool>\" — captured <UTC>. NOT a SAMPLE fixture.",
+    "capturedAt": "PLACEHOLDER_UTC_ISO_TIMESTAMP",
+    "tool": "PLACEHOLDER_TOOL_NAME",
+    "args": { "_": "the arguments the round-trip sent, e.g. { id: 1, symbol: \"BTC\" }" },
+    "envelope": {
+      "_": "the RAW JSON-RPC result object the server returned, e.g. { jsonrpc, id, result: { content: [ { type: 'text', text: '<double-encoded JSON>' } ], isError } }"
+    },
+    "unwrapped": {
+      "_": "the result of unwrapMcp(envelope) — the underlying tool payload, e.g. { data: { ... } }"
+    }
+  },
+  "_manifestShape": {
+    "_capture": "LIVE",
+    "capturedAt": "PLACEHOLDER_UTC_ISO_TIMESTAMP",
+    "endpoint": "https://mcp.coinmarketcap.com/mcp",
+    "tools": [
+      { "tool": "search_cryptos", "ok": null },
+      { "tool": "get_crypto_quotes_latest", "ok": null },
+      { "tool": "get_crypto_technical_analysis", "ok": null },
+      { "tool": "get_global_metrics_latest", "ok": null },
+      { "tool": "get_global_crypto_derivatives_metrics", "ok": null },
+      { "tool": "trending_crypto_narratives", "ok": null },
+      { "tool": "get_crypto_metrics", "ok": null }
+    ],
+    "normalizedParse": {
+      "_": "what the defensive adapters extracted from each live envelope. A field with available:false means the REAL path differs from the parser — fix src/data/cmc.ts then re-run.",
+      "search_cryptos": { "id": null, "available": false },
+      "get_crypto_quotes_latest": {
+        "price": { "value": 0, "available": false },
+        "percentChange24h": { "value": 0, "available": false }
+      },
+      "get_crypto_technical_analysis": {
+        "rsi": { "value": 0, "available": false },
+        "macdHist": { "value": 0, "available": false }
+      },
+      "get_global_metrics_latest": {
+        "fearGreed": { "value": 0, "available": false },
+        "btcDominance": { "value": 0, "available": false }
+      },
+      "get_global_crypto_derivatives_metrics": {
+        "fundingRate": { "value": 0, "available": false },
+        "openInterest": { "value": 0, "available": false }
+      },
+      "trending_crypto_narratives": { "available": false, "count": 0 },
+      "get_crypto_metrics": {
+        "holderCount": { "value": 0, "available": false },
+        "whalesPct": { "value": 0, "available": false }
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+name: CI
+
+# Stoic — CI (eval gap 7: "no CI").
+# Runs the two guarantees the submission stands on, on every push and PR:
+#   1. npx tsc --noEmit   — type-check the whole project (must exit 0).
+#   2. npm test           — the full mocha suite (look-ahead safety, byte-reproducible
+#                           reports, CMC contract + the live-HTTP-branch cassette tests).
+# Offline + deterministic: no CMC_MCP_API_KEY is set, so every test runs in keyless
+# FIXTURE mode and the live-branch test uses a stubbed fetch + recorded cassettes — no
+# network, no secrets, fully reproducible on a clean runner.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: tsc --noEmit + npm test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Node 20 LTS — matches @types/node ^20 and ships a native global fetch()
+      # (the live transport in src/data/cmc.ts uses globalThis.fetch).
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # Deterministic install from the committed lockfile.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check (tsc --noEmit, must exit 0)
+        run: npx tsc --noEmit
+
+      - name: Run test suite (mocha, all tests must pass)
+        run: npm test

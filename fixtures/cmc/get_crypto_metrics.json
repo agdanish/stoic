@@ -1,0 +1,14 @@
+{
+  "_note": "SAMPLE — NOT a real live response (real keyed captures live under fixtures/cmc/live/). Tool: get_crypto_metrics (id REQUIRED). Mirrors the REAL CMC MCP envelope: result.content[0].text is a DOUBLE-ENCODED JSON OBJECT with addressesByHoldingValue:{ usd0To1k, usd1kTo100k, usd100kPlus:{count,percentOfAddresses} }, circulatingSupplyDistribution, addressesByHoldingTime. Whale proxy = usd100kPlus.percentOfAddresses; holderCount = sum of the address buckets. whaleTxns24h / holderChange24h are NOT in the live payload (stay unavailable). cmc.ts parses defensively.",
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"addressesByHoldingValue\":{\"usd0To1k\":{\"count\":42737795,\"percentOfAddresses\":76.55},\"usd1kTo100k\":{\"count\":11972160,\"percentOfAddresses\":21.44},\"usd100kPlus\":{\"count\":1121507,\"percentOfAddresses\":2.01}},\"circulatingSupplyDistribution\":{\"whales\":{\"volume\":248597.58,\"percentOfSupply\":1.25},\"others\":{\"volume\":39351410.12,\"percentOfSupply\":98.75}},\"addressesByHoldingTime\":{\"traders\":{\"count\":2542722,\"percentOfAddresses\":4.61},\"cruisers\":{\"count\":10681905,\"percentOfAddresses\":19.35},\"holders\":{\"count\":41982983,\"percentOfAddresses\":76.05}}}"
+      }
+    ],
+    "isError": false
+  }
+}

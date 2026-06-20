@@ -1,0 +1,14 @@
+{
+  "_note": "SAMPLE — NOT a real live response (real keyed captures live under fixtures/cmc/live/). Tool: get_global_metrics_latest ({} args). Mirrors the REAL CMC MCP envelope: result.content[0].text is a DOUBLE-ENCODED JSON OBJECT with sentiment.fear_greed.current.index (NUMBER 0..100), dominance.btc.current (\"+54.70%\" percent string), rotation.altcoin_season.current.index (NUMBER). cmc.ts parses defensively.",
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"last_updated\":\"SAMPLE\",\"market_size\":{\"total_crypto_market_cap_usd\":{\"current\":\"2.41 T\"}},\"sentiment\":{\"fear_greed\":{\"current\":{\"value\":\"Greed\",\"index\":72},\"history\":{\"yesterday\":{\"value\":\"Greed\",\"index\":70}}}},\"rotation\":{\"altcoin_season\":{\"current\":{\"value\":\"\",\"index\":38}}},\"dominance\":{\"btc\":{\"current\":\"+54.70%\"},\"eth\":{\"current\":\"+17.2%\"}}}"
+      }
+    ],
+    "isError": false
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "_capture": "LIVE",
+  "capturedAt": "2026-06-17T19:36:35.175Z",
+  "endpoint": "https://mcp.coinmarketcap.com/mcp",
+  "tools": [
+    {
+      "tool": "search_cryptos",
+      "ok": true
+    },
+    {
+      "tool": "get_crypto_quotes_latest",
+      "ok": true
+    },
+    {
+      "tool": "get_crypto_technical_analysis",
+      "ok": true
+    },
+    {
+      "tool": "get_global_metrics_latest",
+      "ok": true
+    },
+    {
+      "tool": "get_global_crypto_derivatives_metrics",
+      "ok": true
+    },
+    {
+      "tool": "trending_crypto_narratives",
+      "ok": true
+    },
+    {
+      "tool": "get_crypto_metrics",
+      "ok": true
+    }
+  ],
+  "normalizedParse": {
+    "search_cryptos": {
+      "id": 1,
+      "available": true
+    },
+    "get_crypto_quotes_latest": {
+      "price": {
+        "value": 64423.60777929984,
+        "available": true
+      },
+      "percentChange24h": {
+        "value": -1.82169664,
+        "available": true
+      }
+    },
+    "get_crypto_technical_analysis": {
+      "rsi": {
+        "value": 41.85,
+        "available": true
+      },
+      "macdHist": {
+        "value": 620.87,
+        "available": true
+      }
+    },
+    "get_global_metrics_latest": {
+      "fearGreed": {
+        "value": 23,
+        "available": true
+      },
+      "btcDominance": {
+        "value": 58.26,
+        "available": true
+      }
+    },
+    "get_global_crypto_derivatives_metrics": {
+      "fundingRate": {
+        "value": 0.0006212,
+        "available": true
+      },
+      "openInterest": {
+        "value": 407900000000,
+        "available": true
+      }
+    },
+    "trending_crypto_narratives": {
+      "available": true,
+      "count": 5
+    },
+    "get_crypto_metrics": {
+      "holderCount": {
+        "value": 55831462,
+        "available": true
+      },
+      "whalesPct": {
+        "value": 2.01,
+        "available": true
+      }
+    }
+  }
+}

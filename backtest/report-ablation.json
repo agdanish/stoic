@@ -1,0 +1,611 @@
+{
+  "what": "LAYER-ATTRIBUTION ABLATION on the DAILY multi-regime harness. Holds the IN-SAMPLE-selected LOCKED config (long-only+ema30/80) fixed and toggles ONE overlay at a time — trend core alone (A1), +F&G gate (A2), +divergence/funding risk filter (A3 == full runStrategy / report-momentum.json) — to attribute what each layer contributes on the held-out OOS, net of cost. The cross-sectional dislocation layer (A4) lives on a SEPARATE hourly divergence harness and is surfaced from report-crosssectional.json, clearly labelled — it cannot be wired onto the daily trend core.",
+  "honesty": [
+    "Config LOCKED by selectInSample on the IN-SAMPLE 70% only (same winner as report-momentum.json: long-only+ema30/80). The SAME config is used across A1..A3; only the active overlays change.",
+    "Held-out OOS (trailing 30%) reported UNCONDITIONALLY for every arm; net of the labelled 10+10 bps cost folded into equity.",
+    "Each arm is reconstructed from the SAME exported pure functions the production pipeline uses (momentumSignal, applyRegimeGate, riskFilter, sizeFromConviction, decideTrade) — not a re-implementation. A test pins that arm A3 reproduces runStrategy byte-for-byte.",
+    "divergenceAddsValue / crossSectionalAddsValue are COMPUTED from the committed metrics (improves OOS risk-adjusted metrics without degrading return), never hand-set. If a layer is inert or negative it is reported as false.",
+    "NEW byte-reproducible file (report-ablation.json). The frozen report.json AND report-momentum.json are NEVER touched."
+  ],
+  "dataSource": {
+    "kind": "REAL",
+    "provider": "Binance public REST (keyless) DAILY spot klines OHLCV + USDT-M funding (8h forward-filled) + alternative.me historical daily Fear&Greed — the SAME fixtures as report-momentum.json.",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "BNBUSDT"
+    ],
+    "interval": "1d",
+    "bars": 1000
+  },
+  "params": {
+    "txCostBps": 10,
+    "slippageBps": 10,
+    "oosFraction": 0.3,
+    "barsPerYear": 365,
+    "costModelNote": "Transaction cost + slippage are a CONFIGURABLE ASSUMPTION (default 10 bps each), charged on |Δ signed notional| per position change, folded into equity. The exact organizer model is UNCONFIRMED."
+  },
+  "selectedConfig": {
+    "emaFast": 30,
+    "emaSlow": 80,
+    "momentumLookback": 20,
+    "entryThreshold": 120,
+    "allowShort": false,
+    "maxLeverage": 1,
+    "label": "long-only+ema30/80"
+  },
+  "arms": [
+    {
+      "id": "A1",
+      "label": "trendOnly",
+      "desc": "Directional trend/momentum core ALONE (no F&G gate, no risk filter).",
+      "layers": {
+        "fgGate": false,
+        "riskFilter": false
+      },
+      "riskActions": {
+        "trim": 0,
+        "veto": 0
+      },
+      "aggregate": {
+        "inSample": {
+          "totalReturn": 0.619580137276,
+          "buyAndHoldReturn": 2.620502619378,
+          "excessReturn": -2.000922482102,
+          "beatsBuyHold": false,
+          "sharpe": 0.939952196166,
+          "buyAndHoldSharpe": 1.504760925586,
+          "maxDrawdown": 0.314635771459,
+          "buyAndHoldMaxDrawdown": 0.421924262097,
+          "tradeCount": 43,
+          "bars": 2100
+        },
+        "outOfSample": {
+          "totalReturn": -0.003490025132,
+          "buyAndHoldReturn": -0.435033820369,
+          "excessReturn": 0.431543795237,
+          "beatsBuyHold": true,
+          "sharpe": -0.596558590964,
+          "buyAndHoldSharpe": -1.000405780621,
+          "maxDrawdown": 0.177458020965,
+          "buyAndHoldMaxDrawdown": 0.583020888755,
+          "tradeCount": 11,
+          "bars": 900
+        },
+        "full": {
+          "totalReturn": 0.621566838761,
+          "buyAndHoldReturn": 1.114030492073,
+          "excessReturn": -0.492463653312,
+          "beatsBuyHold": false,
+          "sharpe": 0.716636354828,
+          "buyAndHoldSharpe": 0.757158848915,
+          "maxDrawdown": 0.314635771459,
+          "buyAndHoldMaxDrawdown": 0.583020888755,
+          "tradeCount": 54,
+          "bars": 3000
+        }
+      },
+      "perToken": [
+        {
+          "symbol": "BTCUSDT",
+          "inSample": {
+            "totalReturn": 0.573792472383,
+            "buyAndHoldReturn": 3.232483350351,
+            "excessReturn": -2.658690877968,
+            "beatsBuyHold": false,
+            "sharpe": 0.972201444875,
+            "buyAndHoldSharpe": 1.793930996753,
+            "maxDrawdown": 0.300801719031,
+            "buyAndHoldMaxDrawdown": 0.280952767669,
+            "tradeCount": 15,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": -0.075294329068,
+            "buyAndHoldReturn": -0.429105155556,
+            "excessReturn": 0.353810826488,
+            "beatsBuyHold": true,
+            "sharpe": -2.03679282659,
+            "buyAndHoldSharpe": -1.280692089286,
+            "maxDrawdown": 0.088600350447,
+            "buyAndHoldMaxDrawdown": 0.511588857049,
+            "tradeCount": 7,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 0.455294824083,
+            "buyAndHoldReturn": 1.416302923912,
+            "excessReturn": -0.961008099829,
+            "beatsBuyHold": false,
+            "sharpe": 0.690353305241,
+            "buyAndHoldSharpe": 0.913614289838,
+            "maxDrawdown": 0.300801719031,
+            "buyAndHoldMaxDrawdown": 0.511588857049,
+            "tradeCount": 22,
+            "bars": 1000
+          }
+        },
+        {
+          "symbol": "ETHUSDT",
+          "inSample": {
+            "totalReturn": 0.583117341384,
+            "buyAndHoldReturn": 1.652283626685,
+            "excessReturn": -1.069166285301,
+            "beatsBuyHold": false,
+            "sharpe": 0.883131896025,
+            "buyAndHoldSharpe": 1.0862822926,
+            "maxDrawdown": 0.349193398971,
+            "buyAndHoldMaxDrawdown": 0.637519681165,
+            "tradeCount": 16,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": -0.119092464947,
+            "buyAndHoldReturn": -0.589203133505,
+            "excessReturn": 0.470110668559,
+            "beatsBuyHold": true,
+            "sharpe": -0.53951761367,
+            "buyAndHoldSharpe": -1.270584462458,
+            "maxDrawdown": 0.229709294803,
+            "buyAndHoldMaxDrawdown": 0.675151643085,
+            "tradeCount": 1,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 0.394579994899,
+            "buyAndHoldReturn": 0.089549802898,
+            "excessReturn": 0.305030192001,
+            "beatsBuyHold": true,
+            "sharpe": 0.546655300328,
+            "buyAndHoldSharpe": 0.381607475298,
+            "maxDrawdown": 0.349193398971,
+            "buyAndHoldMaxDrawdown": 0.675151643085,
+            "tradeCount": 17,
+            "bars": 1000
+          }
+        },
+        {
+          "symbol": "BNBUSDT",
+          "inSample": {
+            "totalReturn": 0.70183059806,
+            "buyAndHoldReturn": 2.976740881099,
+            "excessReturn": -2.274910283039,
+            "beatsBuyHold": false,
+            "sharpe": 0.964523247597,
+            "buyAndHoldSharpe": 1.634069487404,
+            "maxDrawdown": 0.293912196374,
+            "buyAndHoldMaxDrawdown": 0.347300337458,
+            "tradeCount": 12,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": 0.18391671862,
+            "buyAndHoldReturn": -0.286793172045,
+            "excessReturn": 0.470709890665,
+            "beatsBuyHold": true,
+            "sharpe": 0.786634667368,
+            "buyAndHoldSharpe": -0.449940790118,
+            "maxDrawdown": 0.214064417646,
+            "buyAndHoldMaxDrawdown": 0.562322166131,
+            "tradeCount": 3,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 1.014825697302,
+            "buyAndHoldReturn": 1.836238749408,
+            "excessReturn": -0.821413052106,
+            "beatsBuyHold": false,
+            "sharpe": 0.912900458914,
+            "buyAndHoldSharpe": 0.976254781608,
+            "maxDrawdown": 0.293912196374,
+            "buyAndHoldMaxDrawdown": 0.562322166131,
+            "tradeCount": 15,
+            "bars": 1000
+          }
+        }
+      ]
+    },
+    {
+      "id": "A2",
+      "label": "+fgGate",
+      "desc": "Trend core + the F&G contrarian regime gate (regimeGate.applyRegimeGate).",
+      "layers": {
+        "fgGate": true,
+        "riskFilter": false
+      },
+      "riskActions": {
+        "trim": 0,
+        "veto": 0
+      },
+      "aggregate": {
+        "inSample": {
+          "totalReturn": 0.54830578827,
+          "buyAndHoldReturn": 2.620502619378,
+          "excessReturn": -2.072196831108,
+          "beatsBuyHold": false,
+          "sharpe": 0.907216972551,
+          "buyAndHoldSharpe": 1.504760925586,
+          "maxDrawdown": 0.301681019143,
+          "buyAndHoldMaxDrawdown": 0.421924262097,
+          "tradeCount": 44,
+          "bars": 2100
+        },
+        "outOfSample": {
+          "totalReturn": -0.003156166226,
+          "buyAndHoldReturn": -0.435033820369,
+          "excessReturn": 0.431877654143,
+          "beatsBuyHold": true,
+          "sharpe": -0.595462333326,
+          "buyAndHoldSharpe": -1.000405780621,
+          "maxDrawdown": 0.177229005187,
+          "buyAndHoldMaxDrawdown": 0.583020888755,
+          "tradeCount": 11,
+          "bars": 900
+        },
+        "full": {
+          "totalReturn": 0.546675881084,
+          "buyAndHoldReturn": 1.114030492073,
+          "excessReturn": -0.567354610989,
+          "beatsBuyHold": false,
+          "sharpe": 0.6847616338,
+          "buyAndHoldSharpe": 0.757158848915,
+          "maxDrawdown": 0.301681019143,
+          "buyAndHoldMaxDrawdown": 0.583020888755,
+          "tradeCount": 55,
+          "bars": 3000
+        }
+      },
+      "perToken": [
+        {
+          "symbol": "BTCUSDT",
+          "inSample": {
+            "totalReturn": 0.512990775876,
+            "buyAndHoldReturn": 3.232483350351,
+            "excessReturn": -2.719492574475,
+            "beatsBuyHold": false,
+            "sharpe": 0.94440259577,
+            "buyAndHoldSharpe": 1.793930996753,
+            "maxDrawdown": 0.28410736761,
+            "buyAndHoldMaxDrawdown": 0.280952767669,
+            "tradeCount": 15,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": -0.075294329068,
+            "buyAndHoldReturn": -0.429105155556,
+            "excessReturn": 0.353810826488,
+            "beatsBuyHold": true,
+            "sharpe": -2.036792826573,
+            "buyAndHoldSharpe": -1.280692089286,
+            "maxDrawdown": 0.088600350447,
+            "buyAndHoldMaxDrawdown": 0.511588857049,
+            "tradeCount": 7,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 0.399071150521,
+            "buyAndHoldReturn": 1.416302923912,
+            "excessReturn": -1.017231773391,
+            "beatsBuyHold": false,
+            "sharpe": 0.658385282887,
+            "buyAndHoldSharpe": 0.913614289838,
+            "maxDrawdown": 0.28410736761,
+            "buyAndHoldMaxDrawdown": 0.511588857049,
+            "tradeCount": 22,
+            "bars": 1000
+          }
+        },
+        {
+          "symbol": "ETHUSDT",
+          "inSample": {
+            "totalReturn": 0.546385093719,
+            "buyAndHoldReturn": 1.652283626685,
+            "excessReturn": -1.105898532966,
+            "beatsBuyHold": false,
+            "sharpe": 0.877215649979,
+            "buyAndHoldSharpe": 1.0862822926,
+            "maxDrawdown": 0.33056555716,
+            "buyAndHoldMaxDrawdown": 0.637519681165,
+            "tradeCount": 16,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": -0.119018042469,
+            "buyAndHoldReturn": -0.589203133505,
+            "excessReturn": 0.470185091036,
+            "beatsBuyHold": true,
+            "sharpe": -0.539065783018,
+            "buyAndHoldSharpe": -1.270584462458,
+            "maxDrawdown": 0.229644217664,
+            "buyAndHoldMaxDrawdown": 0.675151643085,
+            "tradeCount": 1,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 0.362337366961,
+            "buyAndHoldReturn": 0.089549802898,
+            "excessReturn": 0.272787564063,
+            "beatsBuyHold": true,
+            "sharpe": 0.529485783132,
+            "buyAndHoldSharpe": 0.381607475298,
+            "maxDrawdown": 0.33056555716,
+            "buyAndHoldMaxDrawdown": 0.675151643085,
+            "tradeCount": 17,
+            "bars": 1000
+          }
+        },
+        {
+          "symbol": "BNBUSDT",
+          "inSample": {
+            "totalReturn": 0.585541495214,
+            "buyAndHoldReturn": 2.976740881099,
+            "excessReturn": -2.391199385885,
+            "beatsBuyHold": false,
+            "sharpe": 0.900032671903,
+            "buyAndHoldSharpe": 1.634069487404,
+            "maxDrawdown": 0.290370132658,
+            "buyAndHoldMaxDrawdown": 0.347300337458,
+            "tradeCount": 13,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": 0.18484387286,
+            "buyAndHoldReturn": -0.286793172045,
+            "excessReturn": 0.471637044905,
+            "beatsBuyHold": true,
+            "sharpe": 0.789471609614,
+            "buyAndHoldSharpe": -0.449940790118,
+            "maxDrawdown": 0.213442447451,
+            "buyAndHoldMaxDrawdown": 0.562322166131,
+            "tradeCount": 3,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 0.878619125769,
+            "buyAndHoldReturn": 1.836238749408,
+            "excessReturn": -0.957619623639,
+            "beatsBuyHold": false,
+            "sharpe": 0.866413835381,
+            "buyAndHoldSharpe": 0.976254781608,
+            "maxDrawdown": 0.290370132658,
+            "buyAndHoldMaxDrawdown": 0.562322166131,
+            "tradeCount": 16,
+            "bars": 1000
+          }
+        }
+      ]
+    },
+    {
+      "id": "A3",
+      "label": "+riskFilter (full pipeline)",
+      "desc": "Trend core + F&G gate + divergence/funding risk filter — IDENTICAL to runStrategy / report-momentum.json.",
+      "layers": {
+        "fgGate": true,
+        "riskFilter": true
+      },
+      "riskActions": {
+        "trim": 11,
+        "veto": 0
+      },
+      "aggregate": {
+        "inSample": {
+          "totalReturn": 0.574751382806,
+          "buyAndHoldReturn": 2.620502619378,
+          "excessReturn": -2.045751236572,
+          "beatsBuyHold": false,
+          "sharpe": 0.945313867343,
+          "buyAndHoldSharpe": 1.504760925586,
+          "maxDrawdown": 0.295330343398,
+          "buyAndHoldMaxDrawdown": 0.421924262097,
+          "tradeCount": 45,
+          "bars": 2100
+        },
+        "outOfSample": {
+          "totalReturn": -0.003156166226,
+          "buyAndHoldReturn": -0.435033820369,
+          "excessReturn": 0.431877654143,
+          "beatsBuyHold": true,
+          "sharpe": -0.595462333329,
+          "buyAndHoldSharpe": -1.000405780621,
+          "maxDrawdown": 0.177229005187,
+          "buyAndHoldMaxDrawdown": 0.583020888755,
+          "tradeCount": 11,
+          "bars": 900
+        },
+        "full": {
+          "totalReturn": 0.571494503311,
+          "buyAndHoldReturn": 1.114030492073,
+          "excessReturn": -0.542535988762,
+          "beatsBuyHold": false,
+          "sharpe": 0.715177550571,
+          "buyAndHoldSharpe": 0.757158848915,
+          "maxDrawdown": 0.295330343398,
+          "buyAndHoldMaxDrawdown": 0.583020888755,
+          "tradeCount": 56,
+          "bars": 3000
+        }
+      },
+      "perToken": [
+        {
+          "symbol": "BTCUSDT",
+          "inSample": {
+            "totalReturn": 0.588018055019,
+            "buyAndHoldReturn": 3.232483350351,
+            "excessReturn": -2.644465295332,
+            "beatsBuyHold": false,
+            "sharpe": 1.049506325373,
+            "buyAndHoldSharpe": 1.793930996753,
+            "maxDrawdown": 0.263703614299,
+            "buyAndHoldMaxDrawdown": 0.280952767669,
+            "tradeCount": 16,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": -0.075294329068,
+            "buyAndHoldReturn": -0.429105155556,
+            "excessReturn": 0.353810826488,
+            "beatsBuyHold": true,
+            "sharpe": -2.036792826585,
+            "buyAndHoldSharpe": -1.280692089286,
+            "maxDrawdown": 0.088600350447,
+            "buyAndHoldMaxDrawdown": 0.511588857049,
+            "tradeCount": 7,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 0.468449301019,
+            "buyAndHoldReturn": 1.416302923912,
+            "excessReturn": -0.947853622893,
+            "beatsBuyHold": false,
+            "sharpe": 0.743794033801,
+            "buyAndHoldSharpe": 0.913614289838,
+            "maxDrawdown": 0.263703614299,
+            "buyAndHoldMaxDrawdown": 0.511588857049,
+            "tradeCount": 23,
+            "bars": 1000
+          }
+        },
+        {
+          "symbol": "ETHUSDT",
+          "inSample": {
+            "totalReturn": 0.546478470937,
+            "buyAndHoldReturn": 1.652283626685,
+            "excessReturn": -1.105805155748,
+            "beatsBuyHold": false,
+            "sharpe": 0.878362998335,
+            "buyAndHoldSharpe": 1.0862822926,
+            "maxDrawdown": 0.322377398195,
+            "buyAndHoldMaxDrawdown": 0.637519681165,
+            "tradeCount": 16,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": -0.119018042469,
+            "buyAndHoldReturn": -0.589203133505,
+            "excessReturn": 0.470185091036,
+            "beatsBuyHold": true,
+            "sharpe": -0.539065783016,
+            "buyAndHoldSharpe": -1.270584462458,
+            "maxDrawdown": 0.229644217663,
+            "buyAndHoldMaxDrawdown": 0.675151643085,
+            "tradeCount": 1,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 0.362419630606,
+            "buyAndHoldReturn": 0.089549802898,
+            "excessReturn": 0.272869827708,
+            "beatsBuyHold": true,
+            "sharpe": 0.529916810759,
+            "buyAndHoldSharpe": 0.381607475298,
+            "maxDrawdown": 0.322377398195,
+            "buyAndHoldMaxDrawdown": 0.675151643085,
+            "tradeCount": 17,
+            "bars": 1000
+          }
+        },
+        {
+          "symbol": "BNBUSDT",
+          "inSample": {
+            "totalReturn": 0.589757622463,
+            "buyAndHoldReturn": 2.976740881099,
+            "excessReturn": -2.386983258636,
+            "beatsBuyHold": false,
+            "sharpe": 0.908072278321,
+            "buyAndHoldSharpe": 1.634069487404,
+            "maxDrawdown": 0.299910017701,
+            "buyAndHoldMaxDrawdown": 0.347300337458,
+            "tradeCount": 13,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": 0.18484387286,
+            "buyAndHoldReturn": -0.286793172045,
+            "excessReturn": 0.471637044904,
+            "beatsBuyHold": true,
+            "sharpe": 0.789471609613,
+            "buyAndHoldSharpe": -0.449940790118,
+            "maxDrawdown": 0.213442447451,
+            "buyAndHoldMaxDrawdown": 0.562322166131,
+            "tradeCount": 3,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 0.883614578307,
+            "buyAndHoldReturn": 1.836238749408,
+            "excessReturn": -0.952624171101,
+            "beatsBuyHold": false,
+            "sharpe": 0.871821807153,
+            "buyAndHoldSharpe": 0.976254781608,
+            "maxDrawdown": 0.299910017701,
+            "buyAndHoldMaxDrawdown": 0.562322166131,
+            "tradeCount": 16,
+            "bars": 1000
+          }
+        }
+      ]
+    }
+  ],
+  "attribution": {
+    "note": "Marginal OOS contribution of each overlay vs the layer beneath it (aggregate, equal-weight, net of cost). Positive Δreturn / Δsharpe and negative ΔmaxDrawdown = the overlay helped on the held-out OOS.",
+    "fgGate": {
+      "deltaOOSReturn": 0.000333858906,
+      "deltaOOSSharpe": 0.001096257638,
+      "deltaOOSMaxDrawdown": -0.000229015778,
+      "changedAnything": true,
+      "addsValue": true,
+      "summary": "A1 trendOnly OOS -0.35% (Sharpe -0.596558590964, maxDD 17.75%) → A2 +fgGate OOS -0.32% (Sharpe -0.595462333326, maxDD 17.72%). Δreturn 0.03%, Δsharpe 0.0011, ΔmaxDD -0.02%."
+    },
+    "divergenceRiskFilter": {
+      "deltaOOSReturn": 0,
+      "deltaOOSSharpe": -3e-12,
+      "deltaOOSMaxDrawdown": 0,
+      "changedAnything": true,
+      "riskActionsOnWindow": {
+        "trim": 11,
+        "veto": 0
+      },
+      "addsValue": false,
+      "summary": "A2 +fgGate OOS -0.32% (Sharpe -0.595462333326, maxDD 17.72%) → A3 +riskFilter OOS -0.32% (Sharpe -0.595462333329, maxDD 17.72%). Δreturn 0.00%, Δsharpe -0.0000, ΔmaxDD 0.00%. Risk filter fired trim=11 veto=0 across the full universe (3 tokens × 1000 bars)."
+    }
+  },
+  "crossSectional": {
+    "harness": "SEPARATE — hourly divergence full-coverage slice (report-crosssectional.json), NOT the daily trend core",
+    "whyNotWiredOntoDaily": "The cross-sectional dislocation layer is a CONTRARIAN relative-value (stat-arb) selection over the per-token positioning-vs-flow DIVERGENCE; it has no directional/trend meaning to add to the daily momentum core, and the daily fixtures carry no long/short or taker flow legs (those have only ~30d history). It is therefore evaluated on its own hourly divergence harness and reported here verbatim, NEVER folded into the daily ablation arms above.",
+    "window": [
+      {
+        "symbol": "BTCUSDT",
+        "bars": 499
+      },
+      {
+        "symbol": "ETHUSDT",
+        "bars": 499
+      },
+      {
+        "symbol": "BNBUSDT",
+        "bars": 499
+      }
+    ],
+    "buyAndHoldOOS": 0.040908413577,
+    "perTokenBaselineOOS": {
+      "totalReturn": -0.045048020504,
+      "maxDrawdown": 0.046678763066,
+      "tradeCount": 86
+    },
+    "crossSectionalOOS": {
+      "totalReturn": -0.01105520765,
+      "maxDrawdown": 0.011673633181,
+      "tradeCount": 29
+    },
+    "differsFromPerToken": true,
+    "beatsBuyHoldOOS": false,
+    "beatsPerTokenOOS": true
+  },
+  "verdict": {
+    "trendCoreIsTheEarner": "On the held-out OOS the directional TREND CORE alone (A1) already produces essentially the entire result — the bear-dodge (sit flat through the 2026 drawdown). The overlays modulate it at the margin only.",
+    "fgGateAddsValue": true,
+    "divergenceAddsValue": false,
+    "crossSectionalAddsValue": true,
+    "attributionStatement": "Trend core (A1) = the earner/bear-dodge. F&G gate (A2) adds marginal OOS risk-adjusted value. Divergence/funding risk filter (A3) is INERT/negligible on this OOS — it fired trim=11 veto=0 across the entire universe and leaves the OOS aggregate essentially unchanged (a non-earning safety veto, exactly as SKILL.md admits). Cross-sectional (A4) is a SEPARATE hourly-harness contrarian construct: it improves on the per-token divergence baseline (lower drawdown / less churn) but does NOT beat B&H on its rising OOS tail; it cannot be wired onto the daily trend core."
+  }
+}

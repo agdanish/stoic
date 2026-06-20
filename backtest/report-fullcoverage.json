@@ -1,0 +1,268 @@
+{
+  "strategy": "Stoic — FULL-COVERAGE run: positioning-vs-flow divergence on the contiguous tail where ALL flow legs (longShort/taker/OI) are present, so the measured construct equals the advertised one. SAME look-ahead-safe walk-forward + cost model as report.json.",
+  "dataSource": {
+    "kind": "REAL",
+    "provider": "Binance public REST (keyless): spot klines OHLCV + USDT-M futures funding/longShort/taker/OI",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "BNBUSDT"
+    ],
+    "interval": "1h",
+    "startTime": 1779908400000,
+    "endTime": 1781701200000,
+    "startISO": "2026-05-27T19:00:00.000Z",
+    "endISO": "2026-06-17T13:00:00.000Z",
+    "note": "FULL-COVERAGE SLICE of the committed REAL Binance fixtures. Each token sliced to the largest contiguous run on which longShortRatio + takerBuySellRatio + openInterest are ALL present (coverage ~1.0 on every flow leg — see per-token coverage), so buildCrowdLeg (funding + L/S ratio) and buildFlowLeg (taker ratio + momentum) are BOTH non-degenerate on every bar. The slice is chosen by data coverage, NOT by result (HONEST_SEARCH_RULES.md §3.3). The default full-window report.json (-36.48% vs B&H -5.36%) is retained UNCHANGED alongside this."
+  },
+  "params": {
+    "txCostBps": 10,
+    "slippageBps": 10,
+    "entryThreshold": 120,
+    "allowShort": true,
+    "maxLeverage": 1,
+    "oosFraction": 0.3,
+    "barsPerYear": 8760,
+    "costModelNote": "Transaction cost + slippage are a CONFIGURABLE ASSUMPTION (default 10 bps each), charged on |Δ signed notional| per position change. The exact organizer cost/slippage model is UNCONFIRMED (see BNB_BUILD_PLAN.md Q2).",
+    "engineConstants": {
+      "ZSCORE_WINDOW": 48,
+      "ZSCORE_MIN_OBS": 12,
+      "DIVERGENCE_FULL_Z": 2.5,
+      "DIVERGENCE_DEADBAND_Z": 0.5,
+      "FEAR_EXTREME": 25,
+      "GREED_EXTREME": 75,
+      "FUNDING_STRETCHED": 0.0005,
+      "ENTRY_THRESHOLD": 120
+    }
+  },
+  "methodology": [
+    "Walk-forward, one bar at a time. The conviction/side for bar i uses only bars <= i (runDivergence is look-ahead-safe; rolling z-score window ends at t-1).",
+    "The position decided at bar i is HELD INTO bar i+1; PnL is the close[i+1]/close[i]-1 move. The decision strictly precedes the move it is paid on (no look-ahead).",
+    "Transaction cost + slippage charged on |Δ signed notional| at every position change; folded into the equity curve (so Sharpe/Sortino are cost-inclusive).",
+    "Sharpe/Sortino annualised from per-bar equity returns (×sqrt(8760) for hourly bars). Zero-variance segments report 0, never infinity.",
+    "IN-SAMPLE = leading (1-oosFraction) of bars; HELD-OUT OUT-OF-SAMPLE = trailing oosFraction. Out-of-sample metrics are emitted unconditionally and NOT cherry-picked.",
+    "Aggregate = equal-weight mean of per-token segment metrics (tradeCount/bars summed). Buy-and-hold computed on the same bars for comparison."
+  ],
+  "perToken": [
+    {
+      "symbol": "BTCUSDT",
+      "synthetic": false,
+      "bars": 499,
+      "startTime": 1779908400000,
+      "endTime": 1781701200000,
+      "coverage": {
+        "funding": 1,
+        "longShortRatio": 1,
+        "takerBuySellRatio": 1,
+        "openInterest": 1
+      },
+      "full": {
+        "totalReturn": -0.138706426456,
+        "winRate": 0.25,
+        "maxDrawdown": 0.138706426456,
+        "sharpe": -20.335000907956,
+        "sortino": -24.954621608514,
+        "tradeCount": 92,
+        "bars": 499,
+        "buyAndHoldReturn": -0.130392848541
+      },
+      "inSample": {
+        "totalReturn": -0.095061886686,
+        "winRate": 0.3,
+        "maxDrawdown": 0.095061886686,
+        "sharpe": -17.57482668346,
+        "sortino": -21.732149934541,
+        "tradeCount": 60,
+        "bars": 349,
+        "buyAndHoldReturn": -0.164477617587,
+        "startBar": 0,
+        "endBar": 349,
+        "startTime": 1779908400000,
+        "endTime": 1781161200000
+      },
+      "outOfSample": {
+        "totalReturn": -0.048229308864,
+        "winRate": 0.15625,
+        "maxDrawdown": 0.05028740677,
+        "sharpe": -32.385540935676,
+        "sortino": -38.045056639903,
+        "tradeCount": 32,
+        "bars": 150,
+        "buyAndHoldReturn": 0.040794561299,
+        "startBar": 349,
+        "endBar": 499,
+        "startTime": 1781164800000,
+        "endTime": 1781701200000
+      }
+    },
+    {
+      "symbol": "ETHUSDT",
+      "synthetic": false,
+      "bars": 499,
+      "startTime": 1779908400000,
+      "endTime": 1781701200000,
+      "coverage": {
+        "funding": 1,
+        "longShortRatio": 1,
+        "takerBuySellRatio": 1,
+        "openInterest": 1
+      },
+      "full": {
+        "totalReturn": -0.151111572075,
+        "winRate": 0.288888888889,
+        "maxDrawdown": 0.155568131059,
+        "sharpe": -15.492621807718,
+        "sortino": -18.711423596808,
+        "tradeCount": 90,
+        "bars": 499,
+        "buyAndHoldReturn": -0.143972937637
+      },
+      "inSample": {
+        "totalReturn": -0.115353154952,
+        "winRate": 0.30303030303,
+        "maxDrawdown": 0.119997441192,
+        "sharpe": -15.649036848213,
+        "sortino": -18.127697521838,
+        "tradeCount": 66,
+        "bars": 349,
+        "buyAndHoldReturn": -0.195900790777,
+        "startBar": 0,
+        "endBar": 349,
+        "startTime": 1779908400000,
+        "endTime": 1781161200000
+      },
+      "outOfSample": {
+        "totalReturn": -0.040421120951,
+        "winRate": 0.25,
+        "maxDrawdown": 0.041820241245,
+        "sharpe": -15.342568316459,
+        "sortino": -22.405996093437,
+        "tradeCount": 24,
+        "bars": 150,
+        "buyAndHoldReturn": 0.064578913329,
+        "startBar": 349,
+        "endBar": 499,
+        "startTime": 1781164800000,
+        "endTime": 1781701200000
+      }
+    },
+    {
+      "symbol": "BNBUSDT",
+      "synthetic": false,
+      "bars": 499,
+      "startTime": 1779908400000,
+      "endTime": 1781701200000,
+      "coverage": {
+        "funding": 1,
+        "longShortRatio": 1,
+        "takerBuySellRatio": 1,
+        "openInterest": 1
+      },
+      "full": {
+        "totalReturn": -0.098332657127,
+        "winRate": 0.357894736842,
+        "maxDrawdown": 0.139748125206,
+        "sharpe": -11.007165851102,
+        "sortino": -14.857369251091,
+        "tradeCount": 95,
+        "bars": 499,
+        "buyAndHoldReturn": -0.068565481565
+      },
+      "inSample": {
+        "totalReturn": -0.054366732255,
+        "winRate": 0.4,
+        "maxDrawdown": 0.098764667073,
+        "sharpe": -7.371356887415,
+        "sortino": -10.153629894302,
+        "tradeCount": 65,
+        "bars": 349,
+        "buyAndHoldReturn": -0.084451858767,
+        "startBar": 0,
+        "endBar": 349,
+        "startTime": 1779908400000,
+        "endTime": 1781161200000
+      },
+      "outOfSample": {
+        "totalReturn": -0.046493631698,
+        "winRate": 0.266666666667,
+        "maxDrawdown": 0.047928641184,
+        "sharpe": -33.365370603186,
+        "sortino": -36.830933799483,
+        "tradeCount": 30,
+        "bars": 150,
+        "buyAndHoldReturn": 0.017351766102,
+        "startBar": 349,
+        "endBar": 499,
+        "startTime": 1781164800000,
+        "endTime": 1781701200000
+      }
+    }
+  ],
+  "aggregate": {
+    "full": {
+      "totalReturn": -0.129383551886,
+      "winRate": 0.298927875244,
+      "maxDrawdown": 0.144674227574,
+      "sharpe": -15.611596188925,
+      "sortino": -19.507804818804,
+      "tradeCount": 277,
+      "bars": 1497,
+      "buyAndHoldReturn": -0.114310422581
+    },
+    "inSample": {
+      "totalReturn": -0.088260591298,
+      "winRate": 0.334343434343,
+      "maxDrawdown": 0.104607998317,
+      "sharpe": -13.531740139696,
+      "sortino": -16.671159116894,
+      "tradeCount": 191,
+      "bars": 1047,
+      "buyAndHoldReturn": -0.14827675571,
+      "startBar": 0,
+      "endBar": 349,
+      "startTime": 1779908400000,
+      "endTime": 1781161200000
+    },
+    "outOfSample": {
+      "totalReturn": -0.045048020504,
+      "winRate": 0.224305555556,
+      "maxDrawdown": 0.046678763066,
+      "sharpe": -27.031159951774,
+      "sortino": -32.427328844274,
+      "tradeCount": 86,
+      "bars": 450,
+      "buyAndHoldReturn": 0.040908413577,
+      "startBar": 349,
+      "endBar": 499,
+      "startTime": 1781164800000,
+      "endTime": 1781701200000
+    }
+  },
+  "fullCoverage": {
+    "mode": "FULL_COVERAGE=1 — contiguous fully-covered flow tail per token",
+    "rationale": "On the full ~4-month window the futures flow legs are present on only ~17.4% of bars, so the two-leg construct collapses to z(funding)-z(momentum) on ~82% of bars. Slicing to the fully-covered tail makes the MEASURED thing equal the ADVERTISED thing. Chosen by coverage, never by result. report.json is not touched; this is a separate, byte-reproducible file.",
+    "perToken": [
+      {
+        "symbol": "BTCUSDT",
+        "sliceStartIndex": 2380,
+        "sliceEndIndex": 2878,
+        "slicedBars": 499,
+        "originalBars": 2880
+      },
+      {
+        "symbol": "ETHUSDT",
+        "sliceStartIndex": 2380,
+        "sliceEndIndex": 2878,
+        "slicedBars": 499,
+        "originalBars": 2880
+      },
+      {
+        "symbol": "BNBUSDT",
+        "sliceStartIndex": 2380,
+        "sliceEndIndex": 2878,
+        "slicedBars": 499,
+        "originalBars": 2880
+      }
+    ]
+  }
+}

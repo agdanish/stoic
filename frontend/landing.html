@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stoic — Unmoved by Fear &amp; Greed · AI Crypto-Trading Agent</title>
+  <meta name="description" content="Stoic is an AI crypto-trading agent unmoved by the crowd's Fear & Greed: a regime-aware directional core gated by CoinMarketCap's live Fear & Greed, with a divergence/funding risk filter. In the held-out 2026 bear it roughly halves max drawdown vs buy-and-hold — 17.7% vs 58.3%. BNB Hack: AI Trading Agent Edition, Track 2 + Best Use of CMC Agent Hub.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='5' y='20' width='22' height='4' rx='1' fill='%23F0B90B'/><rect x='7' y='14' width='18' height='4' rx='1' fill='%235B8DEF'/><rect x='9' y='8' width='14' height='4' rx='1' fill='%2316C784'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="signal-theme.css">
+  <link rel="stylesheet" href="landing.css">
+</head>
+<body class="ld-body" data-theme="dark">
+
+  <nav class="ld-nav">
+    <div class="ld-wrap">
+      <a class="ld-brand" href="landing.html">
+        <svg viewBox="0 0 32 32"><rect x="5" y="20" width="22" height="4" rx="1" fill="#F0B90B"/><rect x="7" y="14" width="18" height="4" rx="1" fill="#5B8DEF"/><rect x="9" y="8" width="14" height="4" rx="1" fill="#16C784"/></svg>
+        Stoic
+      </a>
+      <div class="ld-navlinks">
+        <a href="#cmc">Live CMC</a>
+        <a href="#how">How it works</a>
+        <a href="#proof">The proof</a>
+        <a href="#honesty">Honesty</a>
+      </div>
+      <div class="ld-nav-r">
+        <a class="ld-btn" href="https://github.com/agdanish/stoic" target="_blank" rel="noopener">GitHub</a>
+        <a class="ld-btn gold" href="./index.html">Open dashboard <span class="ld-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+        <button class="ld-burger" aria-label="Menu"><span></span></button>
+      </div>
+    </div>
+  </nav>
+  <div class="ld-drawer">
+    <a href="#cmc">Live CMC</a>
+    <a href="#how">How it works</a>
+    <a href="#proof">The proof</a>
+    <a href="#honesty">Honesty</a>
+    <a href="https://github.com/agdanish/stoic" target="_blank" rel="noopener">GitHub</a>
+    <a href="./index.html">Open dashboard →</a>
+  </div>
+
+  <!-- ===================== HERO (dark) ===================== -->
+  <header class="ld-section ld-hero" data-theme="dark">
+    <div class="ld-wrap ld-hero-grid">
+      <div class="ld-reveal">
+        <span class="ld-badge"><span class="dot fear"></span> BNB Hack · AI Trading Agent Edition · Fear &amp; Greed = 23 (Fear)</span>
+        <h1 class="ld-h1">Unmoved by <span class="ac">Fear &amp; Greed</span>.</h1>
+        <p class="ld-sub">An AI trading agent that rides the trend, reads CoinMarketCap's live regime, and sits out the storm. <b>The edge is knowing when not to play.</b></p>
+        <p class="ld-sub" style="margin-top:14px">Held-out 2026 bear: roughly <b>half the max drawdown</b> of buy-and-hold — <b style="color:var(--green)">17.7%</b> vs <b style="color:var(--red)">58.3%</b>.</p>
+        <div class="ld-cta-row">
+          <a class="ld-btn gold lg" href="./index.html">Open the dashboard <span class="ld-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+          <button class="ld-btn lg" data-watch>▶ See the held-out proof</button>
+        </div>
+        <div class="ld-chips ld-stagger">
+          <span class="ld-chip">max-DD <b data-count="17.7" data-dec="1" data-suffix="%">0</b> vs <b style="color:var(--red)">58.3%</b></span>
+          <span class="ld-chip"><b data-count="436">0</b> tests passing</span>
+          <span class="ld-chip"><b data-count="7">0</b> CMC tools wired</span>
+          <span class="ld-chip">Fear &amp; Greed <b data-count="23">0</b></span>
+        </div>
+      </div>
+
+      <div class="ld-herofig ld-reveal" id="ldHerofig" data-watch>
+        <div class="cap"><span class="t">Held-out 2026 bear · drawdown vs buy-and-hold</span><span class="live amber">● OUT-OF-SAMPLE</span></div>
+        <svg class="ld-herochart" id="ldHeroChart" viewBox="0 0 560 240" preserveAspectRatio="none" role="img" aria-label="Stoic vs Buy &amp; Hold drawdown in the held-out 2026 bear"></svg>
+        <div class="legend"><span><i style="background:var(--ai)"></i>Stoic (flat through the bear)</span><span><i style="background:var(--red)"></i>Buy &amp; Hold (−43.5%)</span></div>
+        <div class="ld-cursor" id="ldCursor"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> Expand</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== RISING TERMINAL — live CMC MCP round-trip ===================== -->
+  <section class="ld-termband" id="cmc">
+    <div class="ld-wrap">
+      <div class="ld-term" id="ldTerm">
+        <div class="ld-term-bar">
+          <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+          <span class="ttl">cmc-agent-hub — stoic</span>
+        </div>
+        <pre class="ld-term-body" id="ldTermBody"></pre>
+        <div class="ld-term-badge">
+          <span class="bdot"></span>
+          <div class="bt"><b>Live CMC Agent Hub</b><span>7 tools wired · MCP</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TRUST (dark) ===================== -->
+  <section class="ld-trust" data-theme="dark">
+    <div class="ld-wrap">
+      <div class="lbl">Wired into the stack · real, named data sources</div>
+      <div class="ld-marq">
+        <div class="ld-marq-track">
+          <span>CoinMarketCap</span><span>Trust Wallet</span><span>BNB Chain</span><span>CMC Agent Hub</span><span>MCP</span><span>Binance (daily data)</span><span>alternative.me (Fear &amp; Greed)</span>
+          <span>CoinMarketCap</span><span>Trust Wallet</span><span>BNB Chain</span><span>CMC Agent Hub</span><span>MCP</span><span>Binance (daily data)</span><span>alternative.me (Fear &amp; Greed)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SPINE — lime ribbon threading the dark story ===================== -->
+  <div class="ld-spine" id="ldSpine" data-theme="dark">
+    <svg class="ld-spine-svg" id="ldSpineSvg" aria-hidden="true" preserveAspectRatio="none">
+      <path class="ld-ribbon-bg" id="ldRibbonBg"></path>
+      <path class="ld-ribbon" id="ldRibbon"></path>
+    </svg>
+
+    <!-- ===================== HOW IT WORKS (dark) — originality ===================== -->
+    <section class="ld-section" id="how" data-theme="dark">
+      <div class="ld-wrap">
+        <div class="ld-reveal">
+          <span class="ld-eyebrow">How it works · the composition is the novelty</span>
+          <h2 class="ld-h2">A trend core. A <span class="ac">live regime gate</span>. A risk veto.</h2>
+          <p class="ld-lead">Not the canned "sentiment divergence" example — a regime-aware composition: a directional core that rides bulls, gated by CoinMarketCap's live Fear &amp; Greed, risk-filtered by positioning divergence.</p>
+        </div>
+
+        <!-- 3-layer pipeline figure -->
+        <div class="ld-pipe ld-reveal">
+          <div class="pl l1"><div class="pn">Layer 1 · regime</div><h4>Read live CMC</h4><p>Fear &amp; Greed, RSI(14), BTC dominance, funding — the live market regime, straight from CoinMarketCap.</p><div class="bar"></div></div>
+          <div class="pl l2"><div class="pn">Layer 2 · core</div><h4>Directional trend core</h4><p>Rides the bull, goes flat in bear/chop. <b>The OOS earner</b> per the honest ablation.</p><div class="bar"></div></div>
+          <div class="pl l3"><div class="pn">Layer 3 · gate + veto</div><h4>Gate &amp; risk filter</h4><p>Fear &amp; Greed gate trims greed / favours fear; a divergence/funding overlay vetoes euphoric entries.</p><div class="bar"></div></div>
+        </div>
+
+        <div class="ld-steps ld-stagger">
+          <div class="ld-step"><div class="n">01</div><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div><h3>Read live CMC regime</h3><p>Fear &amp; Greed, RSI(14), BTC dominance and funding — the live regime read from CoinMarketCap's Agent Hub.</p></div>
+          <div class="ld-step"><div class="n">02</div><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg></div><h3>Directional trend core</h3><p>A trend/momentum core that rides the bull and goes flat in bear/chop — the OOS earner per the internal ablation.</p></div>
+          <div class="ld-step"><div class="n">03</div><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><circle cx="12" cy="8" r="3"/><circle cx="12" cy="16" r="3"/></svg></div><h3>Fear &amp; Greed gate</h3><p>The contrarian regime gate: trim into extreme greed, favour longs in extreme fear. CMC's live read drives it.</p></div>
+          <div class="ld-step"><div class="n">04</div><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M15 9l-6 6M9 9l6 6"/></svg></div><h3>Divergence risk filter</h3><p>A positioning/funding overlay vetoes entries on euphoric positioning. <b>→ the result: sit out the storm.</b></p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== LIVE CMC REGIME GAUGE (dark) — special prize ===================== -->
+    <section class="ld-section" id="regime" data-theme="dark">
+      <div class="ld-wrap">
+        <div class="ld-reveal">
+          <span class="ld-eyebrow">Best Use of CMC Agent Hub · live regime read</span>
+          <h2 class="ld-h2">CoinMarketCap's <span class="ac">live Fear &amp; Greed</span> is the gate.</h2>
+          <p class="ld-lead">A real keyed MCP round-trip across 7 wired tools surfaces the live regime. Today it reads <b>Fear</b> — so the contrarian gate favours longs.</p>
+        </div>
+        <div class="ld-gauge ld-reveal">
+          <svg viewBox="0 0 200 118" role="img" aria-label="Fear and Greed gauge at 23, Fear">
+            <defs>
+              <linearGradient id="fg" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#F6465D"/><stop offset="0.5" stop-color="#F5A623"/><stop offset="1" stop-color="#16C784"/>
+              </linearGradient>
+            </defs>
+            <path d="M14 104 A86 86 0 0 1 186 104" fill="none" stroke="var(--border)" stroke-width="14" stroke-linecap="round"/>
+            <path d="M14 104 A86 86 0 0 1 186 104" fill="none" stroke="url(#fg)" stroke-width="14" stroke-linecap="round" stroke-dasharray="270" stroke-dashoffset="208"/>
+            <!-- needle at 23/100 → angle 180 - 1.8*23 = 138.6deg from +x -->
+            <g transform="rotate(-138.6 100 104)"><line x1="100" y1="104" x2="178" y2="104" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/></g>
+            <circle cx="100" cy="104" r="6" fill="var(--text)"/>
+            <text x="14" y="116" fill="var(--red)" font-family="var(--mono)" font-size="8">0 · Fear</text>
+            <text x="170" y="116" fill="var(--green)" font-family="var(--mono)" font-size="8">100 · Greed</text>
+          </svg>
+          <div class="gtxt">
+            <div class="gv">23</div>
+            <div class="gl">Fear</div>
+            <div class="gact">● gate action → favour longs</div>
+            <p>Live reads this round-trip: RSI(14) <b>41.85</b> · BTC dominance <b>58.26%</b>. In Fear, the contrarian gate leans into the directional core.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== THE PROOF (dark) — technical depth ===================== -->
+    <section class="ld-section ld-proof-head" id="proof" data-theme="dark">
+      <div class="ld-wrap ld-reveal" style="text-align:center">
+        <span class="ld-eyebrow">Held-out 2026 bear · out-of-sample · net 10+10 bps</span>
+        <h2 class="ld-h2" style="max-width:22ch;margin:12px auto 8px">It roughly <span class="ac">halves the max drawdown</span>.</h2>
+        <p class="ld-lead" style="margin:0 auto">Params selected in-sample only; the held-out 2026 period is reported as-is, net of cost, versus buy-and-hold.</p>
+        <div class="ld-proof-readout">
+          <div class="b dd"><div class="k">Stoic max-DD</div><div class="v">17.7%</div></div>
+          <div class="b bh"><div class="k">Buy &amp; Hold max-DD</div><div class="v">58.3%</div></div>
+          <div class="b ex"><div class="k">Excess return</div><div class="v">+43.19%</div></div>
+        </div>
+        <p class="ld-proof-sub">Aggregate −0.32% vs B&amp;H −43.50%; beats buy-and-hold net-of-cost on all three tokens (BTC / ETH / BNB); the beat survives 15+15 and 25+25 bps cost stress. The one robust, regime-independent claim is the lower drawdown.</p>
+      </div>
+
+      <div class="ld-wrap ld-reveal">
+        <a class="ld-shot" href="./index.html" aria-label="Open the live dashboard">
+          <img src="../docs/assets/dashboard-hero-fold.png" alt="Stoic dashboard — held-out out-of-sample backtest: max drawdown 17.7% vs 58.3%, total return -0.3% vs -43.5%, per-token table for BTC/ETH/BNB." loading="lazy" />
+          <div class="cap"><span>dashboard · held-out (OOS) view · real Binance daily data</span><span class="open">Open the dashboard ↗</span></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ===================== HONESTY (LIGHT interlude) — the trust differentiator ===================== -->
+    <section class="ld-section ld-honesty" id="honesty" data-theme="light">
+      <div class="ld-wrap">
+        <div class="ld-reveal">
+          <span class="ld-eyebrow">What this edge is — and is not</span>
+          <h2 class="ld-h2">We'll tell you the weakness <span class="ac" style="color:var(--gold)">ourselves</span>.</h2>
+          <p class="ld-lead">Radical transparency is the originality. The out-of-sample beat is a regime-conditional bear-dodge — not standalone alpha. Here is exactly where the edge holds and where it doesn't.</p>
+        </div>
+        <div class="ld-feat-grid ld-reveal">
+          <div class="ld-feat-cards">
+            <div class="ld-feat h-red"><span class="tag">Not alpha</span><h3>A regime-conditional <span class="ac">bear-dodge</span></h3><p>The OOS beat comes from sitting out the storm — capital preservation, not a standalone return engine.</p></div>
+            <div class="ld-feat h-red"><span class="tag">Lags in bull</span><h3>In-sample, it <span class="ac">lags</span> buy-and-hold</h3><p>In the in-sample bull it loses by a wide margin: <code>+57.48%</code> vs buy-and-hold <code>+262.05%</code>. The core goes flat; the bull runs.</p></div>
+            <div class="ld-feat h-amber"><span class="tag">Lost-less</span><h3>2 of 3 token beats are <span class="ac">"lost-less"</span></h3><p>Two of the three token beats are negative-absolute — it lost less than buy-and-hold, it did not win.</p></div>
+            <div class="ld-feat h-green"><span class="tag">The robust claim</span><h3>The one robust claim: <span class="ac">lower drawdown</span></h3><p>Halved max drawdown is the single regime-independent result — true across bull, bear and chop.</p></div>
+          </div>
+          <div class="ld-fadelist">
+            <div class="hd">Method log · how every number is grounded</div>
+            <div class="ld-fadescroll" id="ldFeed"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== REPRODUCE / WHO IT'S FOR (dark) ===================== -->
+    <section class="ld-section" id="reproduce" data-theme="dark">
+      <div class="ld-wrap">
+        <div class="ld-reveal">
+          <span class="ld-eyebrow">Who it's for · reproduce it</span>
+          <h2 class="ld-h2">Open the terminal. <span class="ac">Read every number.</span></h2>
+          <p class="ld-replead">For quant-curious traders and agent builders who value capital preservation over hero returns — and want every number reproducible byte-for-byte. Hover a panel to open the live dashboard inline.</p>
+        </div>
+        <div class="ld-gallery ld-reveal">
+          <div class="ld-strip active">
+            <iframe class="frame" data-src="./index.html?embed=1" data-scroll="120" title="Stoic dashboard — aggregate" tabindex="-1" scrolling="no"></iframe>
+            <div class="veil"></div><span class="open">open ↗</span>
+            <div class="meta"><span class="vlabel">Dashboard</span><div class="h">The live terminal</div><div class="d">KPIs, the drawdown comparison, the per-token table — the real app, embedded.</div></div>
+          </div>
+          <div class="ld-strip">
+            <iframe class="frame" data-src="./index.html?embed=1" data-scroll="520" title="Stoic dashboard — drawdown" tabindex="-1" scrolling="no"></iframe>
+            <div class="veil"></div><span class="open">open ↗</span>
+            <div class="meta"><span class="vlabel">Drawdown</span><div class="h">The halved drawdown</div><div class="d">Strategy 17.7% vs Buy &amp; Hold 58.3% — the robust, regime-independent claim.</div></div>
+          </div>
+          <div class="ld-strip">
+            <iframe class="frame" data-src="./index.html?embed=1" data-scroll="980" title="Stoic dashboard — per-token table" tabindex="-1" scrolling="no"></iframe>
+            <div class="veil"></div><span class="open">open ↗</span>
+            <div class="meta"><span class="vlabel">Per-token</span><div class="h">BTC · ETH · BNB</div><div class="d">The honest per-token table — including the "lost-less" rows, shown as-is.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div><!-- /ld-spine -->
+
+  <!-- ===================== CTA (dark, consistent with dashboard) ===================== -->
+  <section class="ld-section ld-cta" data-theme="dark">
+    <div class="ld-wrap ld-reveal">
+      <span class="ld-eyebrow">See it for yourself</span>
+      <h2>Open the terminal. Read every number.</h2>
+      <p class="ld-lead" style="margin:0 auto">Three doors, no inflated promise: launch the dashboard, audit the code, or read the strategy spec.</p>
+      <div class="ld-cta-row">
+        <a class="ld-btn gold lg" href="./index.html">Open the dashboard <span class="ld-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+        <a class="ld-btn lg" href="https://github.com/agdanish/stoic" target="_blank" rel="noopener">View the repo ↗</a>
+        <a class="ld-btn lg" href="../skills/sentiment-divergence-regime/SKILL.md">Read the Skill (SKILL.md)</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="ld-foot" data-theme="light">
+    <div class="ld-wrap">
+      <span>Stoic · BNB Hack: AI Trading Agent Edition 2026 · Track 2 + Best Use of CMC Agent Hub</span>
+      <span><a href="./index.html">Dashboard</a> · <a href="https://github.com/agdanish/stoic" target="_blank" rel="noopener">GitHub</a> · <a href="../skills/sentiment-divergence-regime/SKILL.md">Skill</a></span>
+    </div>
+  </footer>
+
+  <!-- hero popover (clip-path reveal) -->
+  <div class="ld-pop" id="ldPop" data-theme="dark">
+    <div class="ld-pop-bg"></div>
+    <div class="ld-pop-panel">
+      <button class="ld-pop-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <svg id="ldPopChart" viewBox="0 0 1040 560" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Stoic vs Buy &amp; Hold drawdown, expanded"></svg>
+    </div>
+  </div>
+
+  <script src="landing.js"></script>
+</body>
+</html>

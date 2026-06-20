@@ -1,0 +1,14 @@
+{
+  "_note": "RECORDED CASSETTE (shape only — SAMPLE values, NOT a real live capture) for the CMC MCP tools/call response to \"get_crypto_quotes_latest\". Drives the live HTTP branch of callTool in test/cmcLive.test.ts. A real captured envelope belongs in fixtures/cmc/live/.",
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[{\"id\":\"1\",\"name\":\"Bitcoin\",\"symbol\":\"BTC\",\"slug\":\"bitcoin\",\"price\":67250.42,\"rank\":1,\"percent_change_1h\":0.21,\"percent_change_24h\":-1.84,\"percent_change_7d\":4.12,\"market_cap\":1328000000000,\"volume_24h\":31840000000,\"market_cap_dominance\":57.9018}]"
+      }
+    ],
+    "isError": false
+  }
+}

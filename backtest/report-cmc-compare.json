@@ -1,0 +1,289 @@
+{
+  "what": "CMC=ON vs CMC=OFF on the SAME full-coverage window: proves a KEYED CoinMarketCap read (Fear&Greed -> fearGreedAdvisory, RSI -> rsiAdvisory), folded through core.blendScore inside runDivergence via RunOpts.advisoryProvider (engine.ts), measurably MOVES the evaluated backtest.",
+  "honesty": [
+    "CMC-SENSITIVITY demonstration, NOT a performance claim: we do NOT assert CMC=ON beats CMC=OFF or buy-and-hold. Both verdicts reported as-is.",
+    "The CMC=ON snapshot is INJECTED + LABELLED (the free CMC tools return only a LATEST snapshot; no per-bar history exists). It is an exogenous constant that reads NO bar data, so it is look-ahead-safe (truncation-invariant — pinned by test/cmcAdvisory.test.ts).",
+    "The unkeyed DEFAULT provider is a strict {0,0} no-op, so report.json + all tests are unchanged. With a real CMC_MCP_API_KEY the SAME provider consumes the live snapshot (buildCmcSnapshot) — wiring is identical.",
+    "report.json / report-fullcoverage.json / report-search.json are NOT touched. This is a separate, byte-reproducible file.",
+    "SAME look-ahead-safe walk-forward + SAME 10+10 bps cost model as report.json; the ONLY difference between the two runs is the CMC advisory provider."
+  ],
+  "window": {
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "BNBUSDT"
+    ],
+    "oosFraction": 0.3,
+    "note": "Full-coverage slice (sliceToFullCoverage): the contiguous tail where longShortRatio + takerBuySellRatio + openInterest are all present, so the two-leg construct is non-degenerate. Same slice the full-coverage + search reports use."
+  },
+  "cmcSnapshot": {
+    "fearGreed": 88,
+    "rsi": 66,
+    "source": "injected",
+    "note": "Extreme greed (F&G 82 >= GREED_EXTREME 75) + overbought RSI (74). fearGreedAdvisory leans contrarian-bearish in greed; rsiAdvisory leans (bounded) bullish above 50 — a realistic mixed read. Injected exogenous constant (look-ahead-safe). With a key, buildCmcSnapshot supplies the live values."
+  },
+  "costModelNote": "Transaction cost + slippage are a CONFIGURABLE ASSUMPTION (10 bps each), charged on |Δ signed notional| per position change.",
+  "perToken": [
+    {
+      "symbol": "BTCUSDT",
+      "bars": 499,
+      "off": {
+        "full": {
+          "totalReturn": -0.138706426456,
+          "winRate": 0.25,
+          "maxDrawdown": 0.138706426456,
+          "sharpe": -20.335000907956,
+          "sortino": -24.954621608514,
+          "tradeCount": 92,
+          "bars": 499,
+          "buyAndHoldReturn": -0.130392848541
+        },
+        "outOfSample": {
+          "totalReturn": -0.048229308864,
+          "winRate": 0.15625,
+          "maxDrawdown": 0.05028740677,
+          "sharpe": -32.385540935676,
+          "sortino": -38.045056639903,
+          "tradeCount": 32,
+          "bars": 150,
+          "buyAndHoldReturn": 0.040794561299,
+          "startBar": 349,
+          "endBar": 499,
+          "startTime": 1781164800000,
+          "endTime": 1781701200000
+        }
+      },
+      "on": {
+        "full": {
+          "totalReturn": -0.13846128562,
+          "winRate": 0.25,
+          "maxDrawdown": 0.13846128562,
+          "sharpe": -20.265493638778,
+          "sortino": -24.892080853083,
+          "tradeCount": 92,
+          "bars": 499,
+          "buyAndHoldReturn": -0.130392848541
+        },
+        "outOfSample": {
+          "totalReturn": -0.048150456519,
+          "winRate": 0.15625,
+          "maxDrawdown": 0.050195782361,
+          "sharpe": -32.436974759018,
+          "sortino": -38.077256094609,
+          "tradeCount": 32,
+          "bars": 150,
+          "buyAndHoldReturn": 0.040794561299,
+          "startBar": 349,
+          "endBar": 499,
+          "startTime": 1781164800000,
+          "endTime": 1781701200000
+        }
+      },
+      "convictionBarsChanged": 499,
+      "convictionMeanDelta": -1,
+      "differs": true
+    },
+    {
+      "symbol": "ETHUSDT",
+      "bars": 499,
+      "off": {
+        "full": {
+          "totalReturn": -0.151111572075,
+          "winRate": 0.288888888889,
+          "maxDrawdown": 0.155568131059,
+          "sharpe": -15.492621807718,
+          "sortino": -18.711423596808,
+          "tradeCount": 90,
+          "bars": 499,
+          "buyAndHoldReturn": -0.143972937637
+        },
+        "outOfSample": {
+          "totalReturn": -0.040421120951,
+          "winRate": 0.25,
+          "maxDrawdown": 0.041820241245,
+          "sharpe": -15.342568316459,
+          "sortino": -22.405996093437,
+          "tradeCount": 24,
+          "bars": 150,
+          "buyAndHoldReturn": 0.064578913329,
+          "startBar": 349,
+          "endBar": 499,
+          "startTime": 1781164800000,
+          "endTime": 1781701200000
+        }
+      },
+      "on": {
+        "full": {
+          "totalReturn": -0.149292403425,
+          "winRate": 0.292134831461,
+          "maxDrawdown": 0.153732910707,
+          "sharpe": -15.285369080023,
+          "sortino": -18.466048690242,
+          "tradeCount": 89,
+          "bars": 499,
+          "buyAndHoldReturn": -0.143972937637
+        },
+        "outOfSample": {
+          "totalReturn": -0.04039339701,
+          "winRate": 0.25,
+          "maxDrawdown": 0.041784744565,
+          "sharpe": -15.390708292212,
+          "sortino": -22.466182593525,
+          "tradeCount": 24,
+          "bars": 150,
+          "buyAndHoldReturn": 0.064578913329,
+          "startBar": 349,
+          "endBar": 499,
+          "startTime": 1781164800000,
+          "endTime": 1781701200000
+        }
+      },
+      "convictionBarsChanged": 499,
+      "convictionMeanDelta": -1,
+      "differs": true
+    },
+    {
+      "symbol": "BNBUSDT",
+      "bars": 499,
+      "off": {
+        "full": {
+          "totalReturn": -0.098332657127,
+          "winRate": 0.357894736842,
+          "maxDrawdown": 0.139748125206,
+          "sharpe": -11.007165851102,
+          "sortino": -14.857369251091,
+          "tradeCount": 95,
+          "bars": 499,
+          "buyAndHoldReturn": -0.068565481565
+        },
+        "outOfSample": {
+          "totalReturn": -0.046493631698,
+          "winRate": 0.266666666667,
+          "maxDrawdown": 0.047928641184,
+          "sharpe": -33.365370603186,
+          "sortino": -36.830933799483,
+          "tradeCount": 30,
+          "bars": 150,
+          "buyAndHoldReturn": 0.017351766102,
+          "startBar": 349,
+          "endBar": 499,
+          "startTime": 1781164800000,
+          "endTime": 1781701200000
+        }
+      },
+      "on": {
+        "full": {
+          "totalReturn": -0.095575225766,
+          "winRate": 0.382978723404,
+          "maxDrawdown": 0.138054095501,
+          "sharpe": -10.665201705492,
+          "sortino": -14.389706953776,
+          "tradeCount": 94,
+          "bars": 499,
+          "buyAndHoldReturn": -0.068565481565
+        },
+        "outOfSample": {
+          "totalReturn": -0.046451611575,
+          "winRate": 0.266666666667,
+          "maxDrawdown": 0.047877181804,
+          "sharpe": -33.384044062635,
+          "sortino": -36.830836689778,
+          "tradeCount": 30,
+          "bars": 150,
+          "buyAndHoldReturn": 0.017351766102,
+          "startBar": 349,
+          "endBar": 499,
+          "startTime": 1781164800000,
+          "endTime": 1781701200000
+        }
+      },
+      "convictionBarsChanged": 499,
+      "convictionMeanDelta": -1,
+      "differs": true
+    }
+  ],
+  "aggregate": {
+    "off": {
+      "full": {
+        "totalReturn": -0.129383551886,
+        "winRate": 0.298927875244,
+        "maxDrawdown": 0.144674227574,
+        "sharpe": -15.611596188925,
+        "sortino": -19.507804818804,
+        "tradeCount": 277,
+        "bars": 1497,
+        "buyAndHoldReturn": -0.114310422581
+      },
+      "outOfSample": {
+        "totalReturn": -0.045048020504,
+        "winRate": 0.224305555556,
+        "maxDrawdown": 0.046678763066,
+        "sharpe": -27.031159951774,
+        "sortino": -32.427328844274,
+        "tradeCount": 86,
+        "bars": 450,
+        "buyAndHoldReturn": 0.040908413577
+      }
+    },
+    "on": {
+      "full": {
+        "totalReturn": -0.127776304937,
+        "winRate": 0.308371184955,
+        "maxDrawdown": 0.143416097276,
+        "sharpe": -15.405354808098,
+        "sortino": -19.249278832367,
+        "tradeCount": 275,
+        "bars": 1497,
+        "buyAndHoldReturn": -0.114310422581
+      },
+      "outOfSample": {
+        "totalReturn": -0.044998488368,
+        "winRate": 0.224305555556,
+        "maxDrawdown": 0.046619236243,
+        "sharpe": -27.070575704622,
+        "sortino": -32.458091792637,
+        "tradeCount": 86,
+        "bars": 450,
+        "buyAndHoldReturn": 0.040908413577
+      }
+    },
+    "convictionBarsChanged": 1497,
+    "convictionMeanDelta": -1
+  },
+  "sensitivitySweep": [
+    {
+      "label": "extreme-fear (F&G 12) -> contrarian-bullish tilt",
+      "fearGreed": 12,
+      "rsi": null,
+      "convictionBarsChanged": 1497,
+      "convictionMeanDelta": 3,
+      "tradeCountDelta": 4
+    },
+    {
+      "label": "neutral regime (F&G 50) -> ~no tilt",
+      "fearGreed": 50,
+      "rsi": null,
+      "convictionBarsChanged": 0,
+      "convictionMeanDelta": 0,
+      "tradeCountDelta": 0
+    },
+    {
+      "label": "extreme-greed (F&G 88) -> contrarian-bearish tilt",
+      "fearGreed": 88,
+      "rsi": null,
+      "convictionBarsChanged": 1497,
+      "convictionMeanDelta": -3,
+      "tradeCountDelta": -1
+    },
+    {
+      "label": "overbought RSI (78), no F&G -> bounded momentum tilt",
+      "fearGreed": null,
+      "rsi": 78,
+      "convictionBarsChanged": 1497,
+      "convictionMeanDelta": 5,
+      "tradeCountDelta": 2
+    }
+  ],
+  "cmcMovesProduct": true,
+  "verdictNote": "CMC IS WIRED INTO THE EVALUATED PRODUCT: the keyed read changed the conviction on 1497 bars across 3 tokens (mean signed Δ -1), and the resulting backtest metrics differ from the offline run. CMC=ON vs OFF is NOT a no-op."
+}

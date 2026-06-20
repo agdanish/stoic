@@ -1,0 +1,14 @@
+{
+  "_note": "SAMPLE — NOT a real live response (real keyed captures live under fixtures/cmc/live/). Tool: get_crypto_technical_analysis (id REQUIRED). Mirrors the REAL CMC MCP envelope: result.content[0].text is a DOUBLE-ENCODED JSON OBJECT with { rsi:{rsi7,rsi14,rsi21}, macd:{macdLine,signalLine,histogram}, moving_averages:{...} }. NOTE: values are STRINGS WITH COMMAS (\"58.40\" / \"22.30\" / \"65,800.10\"); cmc.ts parses via Number(String(s).replace(/,/g,'')). RSI=rsi.rsi14, MACD hist=macd.histogram. There is NO 50-day EMA or ATR in the live payload (the 30-day EMA is the closest mid-term EMA; ATR stays unavailable).",
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"moving_averages\":{\"simple_moving_average_7_day\":\"66,100.00\",\"simple_moving_average_30_day\":\"65,900.00\",\"simple_moving_average_200_day\":\"61,500.00\",\"exponential_moving_average_7_day\":\"66,400.50\",\"exponential_moving_average_30_day\":\"65,800.10\",\"exponential_moving_average_200_day\":\"61,200.70\"},\"macd\":{\"macdLine\":\"120.50\",\"signalLine\":\"98.20\",\"histogram\":\"22.30\"},\"rsi\":{\"rsi7\":\"61.20\",\"rsi14\":\"58.40\",\"rsi21\":\"55.10\"},\"fibonacciLevels\":{\"swingHigh\":\"78,100.56\",\"swingLow\":\"59,108.92\"},\"pivotPoint\":\"65948.11\"}"
+      }
+    ],
+    "isError": false
+  }
+}

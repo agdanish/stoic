@@ -1,0 +1,241 @@
+{
+  "strategy": "Stoic — regime-gated, rolling-window z-scored positioning/attention-vs-flow divergence (contrarian).",
+  "dataSource": {
+    "kind": "REAL",
+    "provider": "Binance public REST (keyless): spot klines OHLCV + USDT-M futures funding/longShort/taker/OI",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "BNBUSDT"
+    ],
+    "interval": "1h",
+    "startTime": 1771340400000,
+    "endTime": 1781704800000,
+    "startISO": "2026-02-17T15:00:00.000Z",
+    "endISO": "2026-06-17T14:00:00.000Z",
+    "note": "REAL Binance public-REST data. Futures flow legs (longShort/taker/OI) retain ~30 days on the public API, so older bars carry only OHLCV + funding (see per-token coverage). No data is fabricated to fill gaps."
+  },
+  "params": {
+    "txCostBps": 10,
+    "slippageBps": 10,
+    "entryThreshold": 120,
+    "allowShort": true,
+    "maxLeverage": 1,
+    "oosFraction": 0.3,
+    "barsPerYear": 8760,
+    "costModelNote": "Transaction cost + slippage are a CONFIGURABLE ASSUMPTION (default 10 bps each), charged on |Δ signed notional| per position change. The exact organizer cost/slippage model is UNCONFIRMED (see BNB_BUILD_PLAN.md Q2).",
+    "engineConstants": {
+      "ZSCORE_WINDOW": 48,
+      "ZSCORE_MIN_OBS": 12,
+      "DIVERGENCE_FULL_Z": 2.5,
+      "DIVERGENCE_DEADBAND_Z": 0.5,
+      "FEAR_EXTREME": 25,
+      "GREED_EXTREME": 75,
+      "FUNDING_STRETCHED": 0.0005,
+      "ENTRY_THRESHOLD": 120
+    }
+  },
+  "methodology": [
+    "Walk-forward, one bar at a time. The conviction/side for bar i uses only bars <= i (runDivergence is look-ahead-safe; rolling z-score window ends at t-1).",
+    "The position decided at bar i is HELD INTO bar i+1; PnL is the close[i+1]/close[i]-1 move. The decision strictly precedes the move it is paid on (no look-ahead).",
+    "Transaction cost + slippage charged on |Δ signed notional| at every position change; folded into the equity curve (so Sharpe/Sortino are cost-inclusive).",
+    "Sharpe/Sortino annualised from per-bar equity returns (×sqrt(8760) for hourly bars). Zero-variance segments report 0, never infinity.",
+    "IN-SAMPLE = leading (1-oosFraction) of bars; HELD-OUT OUT-OF-SAMPLE = trailing oosFraction. Out-of-sample metrics are emitted unconditionally and NOT cherry-picked.",
+    "Aggregate = equal-weight mean of per-token segment metrics (tradeCount/bars summed). Buy-and-hold computed on the same bars for comparison."
+  ],
+  "perToken": [
+    {
+      "symbol": "BTCUSDT",
+      "synthetic": false,
+      "bars": 2880,
+      "startTime": 1771340400000,
+      "endTime": 1781704800000,
+      "coverage": {
+        "funding": 0.9993055555555556,
+        "longShortRatio": 0.1736111111111111,
+        "takerBuySellRatio": 0.1736111111111111,
+        "openInterest": 0.1736111111111111
+      },
+      "full": {
+        "totalReturn": -0.387967971921,
+        "winRate": 0.232394366197,
+        "maxDrawdown": 0.391352717018,
+        "sharpe": -14.121413196831,
+        "sortino": -18.198963391398,
+        "tradeCount": 284,
+        "bars": 2880,
+        "buyAndHoldReturn": -0.032453976396
+      },
+      "inSample": {
+        "totalReturn": -0.245751907505,
+        "winRate": 0.229813664596,
+        "maxDrawdown": 0.249923155766,
+        "sharpe": -11.774420583902,
+        "sortino": -15.579637414871,
+        "tradeCount": 161,
+        "bars": 2015,
+        "buyAndHoldReturn": 0.194011904965,
+        "startBar": 0,
+        "endBar": 2015,
+        "startTime": 1771340400000,
+        "endTime": 1778590800000
+      },
+      "outOfSample": {
+        "totalReturn": -0.188553429344,
+        "winRate": 0.235772357724,
+        "maxDrawdown": 0.188553429344,
+        "sharpe": -19.377495373607,
+        "sortino": -23.66212459701,
+        "tradeCount": 123,
+        "bars": 865,
+        "buyAndHoldReturn": -0.189668026273,
+        "startBar": 2015,
+        "endBar": 2880,
+        "startTime": 1778594400000,
+        "endTime": 1781704800000
+      }
+    },
+    {
+      "symbol": "ETHUSDT",
+      "synthetic": false,
+      "bars": 2880,
+      "startTime": 1771340400000,
+      "endTime": 1781704800000,
+      "coverage": {
+        "funding": 0.9993055555555556,
+        "longShortRatio": 0.1736111111111111,
+        "takerBuySellRatio": 0.1736111111111111,
+        "openInterest": 0.1736111111111111
+      },
+      "full": {
+        "totalReturn": -0.344174513196,
+        "winRate": 0.317164179104,
+        "maxDrawdown": 0.347728830294,
+        "sharpe": -9.113857830505,
+        "sortino": -12.267927071311,
+        "tradeCount": 268,
+        "bars": 2880,
+        "buyAndHoldReturn": -0.108499527578
+      },
+      "inSample": {
+        "totalReturn": -0.194396276198,
+        "winRate": 0.342281879195,
+        "maxDrawdown": 0.198762332638,
+        "sharpe": -7.027351881177,
+        "sortino": -10.042751299443,
+        "tradeCount": 149,
+        "bars": 2015,
+        "buyAndHoldReturn": 0.154126324559,
+        "startBar": 0,
+        "endBar": 2015,
+        "startTime": 1771340400000,
+        "endTime": 1778590800000
+      },
+      "outOfSample": {
+        "totalReturn": -0.185920487422,
+        "winRate": 0.285714285714,
+        "maxDrawdown": 0.190151244164,
+        "sharpe": -13.365372693862,
+        "sortino": -16.447149587089,
+        "tradeCount": 119,
+        "bars": 865,
+        "buyAndHoldReturn": -0.227553818459,
+        "startBar": 2015,
+        "endBar": 2880,
+        "startTime": 1778594400000,
+        "endTime": 1781704800000
+      }
+    },
+    {
+      "symbol": "BNBUSDT",
+      "synthetic": false,
+      "bars": 2880,
+      "startTime": 1771340400000,
+      "endTime": 1781704800000,
+      "coverage": {
+        "funding": 0.9993055555555556,
+        "longShortRatio": 0.1736111111111111,
+        "takerBuySellRatio": 0.1736111111111111,
+        "openInterest": 0.1736111111111111
+      },
+      "full": {
+        "totalReturn": -0.362403815762,
+        "winRate": 0.285223367698,
+        "maxDrawdown": 0.3639275977,
+        "sharpe": -13.477715927831,
+        "sortino": -17.351070234645,
+        "tradeCount": 291,
+        "bars": 2880,
+        "buyAndHoldReturn": -0.019715883233
+      },
+      "inSample": {
+        "totalReturn": -0.233968938248,
+        "winRate": 0.26582278481,
+        "maxDrawdown": 0.235799664849,
+        "sharpe": -13.945896644289,
+        "sortino": -17.642857767966,
+        "tradeCount": 158,
+        "bars": 2015,
+        "buyAndHoldReturn": 0.068103504324,
+        "startBar": 0,
+        "endBar": 2015,
+        "startTime": 1771340400000,
+        "endTime": 1778590800000
+      },
+      "outOfSample": {
+        "totalReturn": -0.167662754067,
+        "winRate": 0.308270676692,
+        "maxDrawdown": 0.167662754067,
+        "sharpe": -13.758345372678,
+        "sortino": -17.978149515823,
+        "tradeCount": 133,
+        "bars": 865,
+        "buyAndHoldReturn": -0.082219922696,
+        "startBar": 2015,
+        "endBar": 2880,
+        "startTime": 1778594400000,
+        "endTime": 1781704800000
+      }
+    }
+  ],
+  "aggregate": {
+    "full": {
+      "totalReturn": -0.36484876696,
+      "winRate": 0.278260637666,
+      "maxDrawdown": 0.367669715004,
+      "sharpe": -12.237662318389,
+      "sortino": -15.939320232451,
+      "tradeCount": 843,
+      "bars": 8640,
+      "buyAndHoldReturn": -0.053556462402
+    },
+    "inSample": {
+      "totalReturn": -0.224705707317,
+      "winRate": 0.279306109534,
+      "maxDrawdown": 0.228161717751,
+      "sharpe": -10.915889703123,
+      "sortino": -14.421748827427,
+      "tradeCount": 468,
+      "bars": 6045,
+      "buyAndHoldReturn": 0.138747244616,
+      "startBar": 0,
+      "endBar": 2015,
+      "startTime": 1771340400000,
+      "endTime": 1778590800000
+    },
+    "outOfSample": {
+      "totalReturn": -0.180712223611,
+      "winRate": 0.276585773377,
+      "maxDrawdown": 0.182122475858,
+      "sharpe": -15.500404480049,
+      "sortino": -19.362474566641,
+      "tradeCount": 375,
+      "bars": 2595,
+      "buyAndHoldReturn": -0.166480589143,
+      "startBar": 2015,
+      "endBar": 2880,
+      "startTime": 1778594400000,
+      "endTime": 1781704800000
+    }
+  }
+}

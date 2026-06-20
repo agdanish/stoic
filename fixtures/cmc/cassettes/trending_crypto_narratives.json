@@ -1,0 +1,14 @@
+{
+  "_note": "RECORDED CASSETTE (shape only — SAMPLE values, NOT a real live capture) for the CMC MCP tools/call response to \"trending_crypto_narratives\". Drives the live HTTP branch of callTool in test/cmcLive.test.ts. A real captured envelope belongs in fixtures/cmc/live/.",
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"categoryList\":{\"headers\":[\"trendingRank\",\"slug\",\"categoryCmcUrl\",\"categoryName\",\"marketCapUsd\",\"marketCapChangePercentage24h\",\"marketCapChangePercentage7d\",\"volume24h\",\"socialKeywords\",\"topCoinList\"],\"rows\":[[1,\"ai-agents\",\"https://coinmarketcap.com/view/ai-agents\",\"AI Agents\",\"1.68 T\",\"+6.8%\",\"+7.33%\",\"44.72 B\",[\"AI\",\"Agents\"],null],[2,\"depin\",\"https://coinmarketcap.com/view/depin\",\"DePIN\",\"1.71 T\",\"-2.3%\",\"+7.42%\",\"46.6 B\",[\"DePIN\"],null],[3,\"rwa\",\"https://coinmarketcap.com/view/rwa\",\"RWA\",\"1.71 T\",\"+1.2%\",\"+7.42%\",\"46.6 B\",[\"RWA\"],null]]}}"
+      }
+    ],
+    "isError": false
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "_capture": "LIVE",
+  "_note": "RAW live tools/call envelope for \"search_cryptos\" — captured 2026-06-17T19:36:35.175Z. NOT a SAMPLE fixture.",
+  "capturedAt": "2026-06-17T19:36:35.175Z",
+  "tool": "search_cryptos",
+  "args": {
+    "query": "BTC"
+  },
+  "envelope": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"id\":1,\"name\":\"Bitcoin\",\"symbol\":\"BTC\",\"slug\":\"bitcoin\",\"rank\":1}]"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "unwrapped": [
+    {
+      "id": 1,
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "slug": "bitcoin",
+      "rank": 1
+    }
+  ]
+}

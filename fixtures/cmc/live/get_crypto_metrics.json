@@ -1,0 +1,72 @@
+{
+  "_capture": "LIVE",
+  "_note": "RAW live tools/call envelope for \"get_crypto_metrics\" — captured 2026-06-17T19:36:35.175Z. NOT a SAMPLE fixture.",
+  "capturedAt": "2026-06-17T19:36:35.175Z",
+  "tool": "get_crypto_metrics",
+  "args": {
+    "id": "1"
+  },
+  "envelope": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"definitions\":{\"traders\":\"Addresses whose coins have moved in the last 30 days (< 1 month).\",\"holders\":\"Addresses whose coins have been untouched for more than 12 months (> 1 year).\",\"avgTransactionFee30d\":\"30-day trailing average fee per transaction onchain.\",\"cruisers\":\"Addresses whose coins last moved 1 – 12 months ago.\",\"whales\":\"Wallet addresses that each control more than 1% of the circulating crypto supply.\",\"others\":\"All wallet addresses that each control 1% or less of the circulating crypto supply.\"},\"addressesByHoldingValue\":{\"usd0To1k\":{\"count\":42737795.00,\"percentOfAddresses\":76.55},\"usd1kTo100k\":{\"count\":11972160.00,\"percentOfAddresses\":21.44},\"usd100kPlus\":{\"count\":1121507.00,\"percentOfAddresses\":2.01}},\"circulatingSupplyDistribution\":{\"whales\":{\"volume\":248597.58,\"percentOfSupply\":1.25},\"others\":{\"volume\":39351410.12,\"percentOfSupply\":98.75}},\"addressesByHoldingTime\":{\"traders\":{\"count\":2542722.00,\"percentOfAddresses\":4.61},\"cruisers\":{\"count\":10681905.00,\"percentOfAddresses\":19.35},\"holders\":{\"count\":41982983.00,\"percentOfAddresses\":76.05}},\"avgTransactionFee30d\":{},\"coinMarketCapCryptoTotalHolderData\":{}}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "unwrapped": {
+    "definitions": {
+      "traders": "Addresses whose coins have moved in the last 30 days (< 1 month).",
+      "holders": "Addresses whose coins have been untouched for more than 12 months (> 1 year).",
+      "avgTransactionFee30d": "30-day trailing average fee per transaction onchain.",
+      "cruisers": "Addresses whose coins last moved 1 – 12 months ago.",
+      "whales": "Wallet addresses that each control more than 1% of the circulating crypto supply.",
+      "others": "All wallet addresses that each control 1% or less of the circulating crypto supply."
+    },
+    "addressesByHoldingValue": {
+      "usd0To1k": {
+        "count": 42737795,
+        "percentOfAddresses": 76.55
+      },
+      "usd1kTo100k": {
+        "count": 11972160,
+        "percentOfAddresses": 21.44
+      },
+      "usd100kPlus": {
+        "count": 1121507,
+        "percentOfAddresses": 2.01
+      }
+    },
+    "circulatingSupplyDistribution": {
+      "whales": {
+        "volume": 248597.58,
+        "percentOfSupply": 1.25
+      },
+      "others": {
+        "volume": 39351410.12,
+        "percentOfSupply": 98.75
+      }
+    },
+    "addressesByHoldingTime": {
+      "traders": {
+        "count": 2542722,
+        "percentOfAddresses": 4.61
+      },
+      "cruisers": {
+        "count": 10681905,
+        "percentOfAddresses": 19.35
+      },
+      "holders": {
+        "count": 41982983,
+        "percentOfAddresses": 76.05
+      }
+    },
+    "avgTransactionFee30d": {},
+    "coinMarketCapCryptoTotalHolderData": {}
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "stoic",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Stoic — a CoinMarketCap-powered crypto trading-signal Skill emitting a backtestable, regime-gated, rolling-window z-scored positioning/attention-vs-flow divergence strategy (BNB Hack Track 2).",
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha -r ts-node/register \"test/**/*.test.ts\"",
+    "backtest": "ts-node backtest/run.ts",
+    "fetch-data": "ts-node src/data/fetchHistory.ts"
+  },
+  "devDependencies": {
+    "@types/chai": "^4",
+    "@types/mocha": "^10",
+    "@types/node": "^20",
+    "chai": "^4",
+    "mocha": "^10",
+    "ts-node": "^10",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "_note": "RECORDED CASSETTE (shape only — SAMPLE values, NOT a real live capture) for the CMC MCP tools/call response to \"get_global_crypto_derivatives_metrics\". Drives the live HTTP branch of callTool in test/cmcLive.test.ts. A real captured envelope belongs in fixtures/cmc/live/.",
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"totalOpenInterest\":{\"current\":\"18.9 B\",\"percentage_change_24h\":\"+3.4%\"},\"fundingRate\":{\"current\":\"0.00012\",\"percentage_change_24h\":\"-73.08%\"},\"btc_liquidations\":{\"total_usd_24h\":{\"total\":\"142 M\",\"long\":\"91 M\",\"short\":\"51 M\"}}}"
+      }
+    ],
+    "isError": false
+  }
+}

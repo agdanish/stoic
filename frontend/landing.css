@@ -1,0 +1,339 @@
+/* ============================================================
+   Strata — Landing page styles (vanilla; reuses strata-theme.css tokens)
+   Hybrid: per-section [data-theme="light"|"dark"] flips the palette.
+   Motion patterns inspired by Skiper UI (ported to vanilla CSS/JS).
+   ============================================================ */
+
+:root{ --motion:1; --ld-max:1200px; --ld-ease:cubic-bezier(.22,1,.36,1); }
+@media (prefers-reduced-motion: reduce){ :root{ --motion:0; } }
+
+.ld-body{font-family:var(--main);background:var(--bg);color:var(--text);overflow-x:hidden}
+.ld-wrap{max-width:var(--ld-max);margin:0 auto;padding:0 24px}
+.ld-section{position:relative;background:var(--bg);color:var(--text);padding:96px 0}
+.ld-section .ld-wrap{position:relative;z-index:1}
+.ld-eyebrow{font-family:var(--mono);font-size:.78rem;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--gold)}
+.ld-h2{font-family:var(--head);font-weight:800;font-size:clamp(1.7rem,4vw,2.9rem);
+  letter-spacing:-.02em;line-height:1.05;margin:12px 0 14px}
+.ld-h2 .ac{font-style:italic;color:var(--ai)}
+.ld-lead{color:var(--text2);font-size:1.05rem;max-width:620px}
+
+/* ---------- nav ---------- */
+.ld-nav{position:fixed;top:0;left:0;right:0;z-index:60;height:66px;display:flex;align-items:center;
+  transition:background .3s,border-color .3s,backdrop-filter .3s;border-bottom:1px solid transparent}
+.ld-nav.scrolled{background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(12px);
+  border-bottom-color:var(--border)}
+.ld-nav .ld-wrap{display:flex;align-items:center;gap:18px;width:100%}
+.ld-brand{display:flex;align-items:center;gap:10px;font-family:var(--head);font-weight:800;font-size:1.16rem;letter-spacing:-.01em}
+.ld-brand svg{width:28px;height:28px}
+.ld-navlinks{margin-left:24px;display:flex;gap:6px}
+.ld-navlinks a{color:var(--text2);font-weight:600;font-size:.9rem;padding:8px 12px;border-radius:9px;transition:.15s}
+.ld-navlinks a:hover{color:var(--text);background:var(--surface)}
+.ld-nav-r{margin-left:auto;display:flex;align-items:center;gap:12px}
+.ld-burger{display:none;width:40px;height:40px;border:1px solid var(--border);border-radius:10px;
+  background:var(--surface);cursor:pointer;place-items:center;color:var(--text)}
+.ld-burger span{position:relative;width:18px;height:2px;background:currentColor;border-radius:2px;display:block;transition:.25s var(--ld-ease)}
+.ld-burger span::before,.ld-burger span::after{content:'';position:absolute;left:0;width:18px;height:2px;background:currentColor;border-radius:2px;transition:.25s var(--ld-ease)}
+.ld-burger span::before{top:-6px} .ld-burger span::after{top:6px}
+.ld-burger.open span{background:transparent}
+.ld-burger.open span::before{top:0;transform:rotate(45deg)}
+.ld-burger.open span::after{top:0;transform:rotate(-45deg)}
+
+/* buttons */
+.ld-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);cursor:pointer;
+  font-family:var(--main);font-weight:600;font-size:.92rem;padding:11px 19px;border-radius:11px;
+  background:var(--surface);color:var(--text);transition:.16s var(--ld-ease);text-decoration:none}
+.ld-btn:hover{transform:translateY(-1px);border-color:var(--border2)}
+.ld-btn.gold{background:var(--gold);color:#15171C;border-color:var(--gold)}
+.ld-btn.gold:hover{background:#ffc62b;box-shadow:0 8px 24px rgba(240,185,11,.25)}
+.ld-btn.lg{padding:14px 24px;font-size:1rem}
+.ld-btn .ld-arrow{display:inline-grid;place-items:center}
+.ld-btn .ld-arrow svg{width:16px;height:16px;transition:transform .3s var(--ld-ease)}
+.ld-btn:hover .ld-arrow svg{transform:translateX(3px)}
+
+/* ---------- hero ---------- */
+.ld-hero{padding-top:140px;padding-bottom:80px;overflow:hidden}
+.ld-hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+.ld-badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.74rem;font-weight:600;
+  color:var(--text2);border:1px solid var(--border);border-radius:999px;padding:5px 13px;background:var(--surface)}
+.ld-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-dim)}
+.ld-h1{font-family:var(--head);font-weight:800;font-size:clamp(2.3rem,5.4vw,4rem);line-height:1.1;
+  letter-spacing:-.03em;margin:18px 0 16px;padding-bottom:.04em}
+.ld-h1 .ac{font-style:italic;background:linear-gradient(100deg,var(--ai),var(--gold));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  padding:0 .1em .08em 0;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.ld-sub{color:var(--text2);font-size:1.12rem;max-width:540px;line-height:1.55}
+.ld-cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+.ld-chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:30px}
+.ld-chip{font-family:var(--mono);font-size:.76rem;color:var(--text2);border:1px solid var(--border);
+  border-radius:9px;padding:7px 12px;background:var(--surface)}
+.ld-chip b{color:var(--text);font-weight:700}
+
+/* hero figure: animated SVG replay + click-to-expand */
+.ld-herofig{position:relative;border:1px solid var(--border);border-radius:18px;background:var(--surface);
+  padding:16px;box-shadow:var(--shadow);cursor:pointer;overflow:hidden}
+.ld-herofig .cap{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ld-herofig .cap .t{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.ld-herofig .cap .live{font-family:var(--mono);font-size:.68rem;font-weight:700;color:var(--green);
+  background:var(--green-dim);border-radius:999px;padding:3px 9px}
+.ld-herochart{width:100%;height:240px;display:block}
+.ld-herofig .legend{display:flex;gap:14px;margin-top:8px;font-size:.72rem;color:var(--text2)}
+.ld-herofig .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.ld-cursor{position:absolute;z-index:5;pointer-events:none;display:flex;align-items:center;gap:6px;
+  font-size:.82rem;font-weight:600;color:#fff;mix-blend-mode:exclusion;opacity:0;transform:translate(-50%,-50%);will-change:left,top,opacity}
+.ld-cursor svg{width:14px;height:14px;fill:#fff}
+
+/* hero popover (clip-path reveal) */
+.ld-pop{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center}
+.ld-pop.open{display:flex}
+.ld-pop-bg{position:absolute;inset:0;background:color-mix(in srgb,#000 72%,transparent);backdrop-filter:blur(10px);opacity:0;transition:opacity .25s}
+.ld-pop.open .ld-pop-bg{opacity:1}
+.ld-pop-panel{position:relative;width:min(1040px,92vw);aspect-ratio:16/9;background:var(--surface);
+  border:1px solid var(--border2);border-radius:14px;overflow:hidden;
+  clip-path:inset(44% 44% 34% 44% round 14px);opacity:.4;
+  transition:clip-path .7s var(--ld-ease),opacity .5s}
+.ld-pop.open .ld-pop-panel{clip-path:inset(0 0 0 0 round 14px);opacity:1}
+.ld-pop-panel svg{width:100%;height:100%}
+.ld-pop-close{position:absolute;top:12px;right:12px;z-index:2;width:34px;height:34px;border-radius:50%;
+  border:1px solid var(--border2);background:color-mix(in srgb,var(--bg) 60%,transparent);color:var(--text);
+  cursor:pointer;display:grid;place-items:center}
+.ld-pop-close svg{width:16px;height:16px}
+
+/* ---------- trust marquee ---------- */
+.ld-trust{padding:34px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.ld-trust .lbl{text-align:center;font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+.ld-marq{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.ld-marq-track{display:flex;gap:48px;width:max-content;animation:ld-marq calc(28s / var(--motion,1)) linear infinite}
+.ld-trust:hover .ld-marq-track{animation-play-state:paused}
+.ld-marq-track span{font-family:var(--head);font-weight:700;font-size:1.15rem;color:var(--text2);white-space:nowrap;opacity:.7}
+@keyframes ld-marq{to{transform:translateX(-50%)}}
+
+/* ---------- Turing-proof scroll-draw ---------- */
+.ld-proof{height:280vh;position:relative;background:var(--bg);color:var(--text)}
+.ld-proof-sticky{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;overflow:hidden;text-align:center}
+.ld-proof h2{font-family:var(--head);font-weight:800;font-size:clamp(1.8rem,4.5vw,3.2rem);
+  letter-spacing:-.02em;line-height:1.06;max-width:14ch;position:relative;z-index:2}
+.ld-proof h2 b{color:var(--ai)}
+.ld-proof .note{margin-top:14px;color:var(--text2);font-size:1rem;position:relative;z-index:2}
+.ld-proof-svg{position:absolute;inset:0;width:100%;height:100%;z-index:1;opacity:.9}
+.ld-proof-readout{position:absolute;bottom:7vh;left:50%;transform:translateX(-50%);z-index:2;
+  display:flex;gap:26px;font-family:var(--mono)}
+.ld-proof-readout .b{text-align:center}
+.ld-proof-readout .b .k{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ld-proof-readout .b .v{font-size:1.5rem;font-weight:700}
+
+/* ---------- spine: lime green scroll ribbon threading the dark sections ---------- */
+.ld-spine{position:relative;background:var(--bg)}
+.ld-spine .ld-section{background:transparent;position:relative;z-index:1}
+.ld-spine-svg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.ld-ribbon-bg{fill:none;stroke:rgba(194,248,79,.12);stroke-width:3}
+.ld-ribbon{fill:none;stroke:#C2F84F;stroke-width:3.5;stroke-linecap:round}
+@media (min-width:861px){ .ld-ribbon{filter:drop-shadow(0 0 7px rgba(194,248,79,.45))} }
+.ld-wp{transition:opacity .3s ease}
+.ld-proof-head{padding-top:116px;padding-bottom:60px}
+.ld-proof-head .ld-proof-readout{position:static;transform:none;justify-content:center;margin-top:18px}
+
+/* ---------- hover-expand gallery ---------- */
+.ld-gallery{display:flex;gap:10px;height:440px;margin-top:34px}
+.ld-strip{position:relative;flex:1 1 0;min-width:54px;border-radius:18px;overflow:hidden;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface);transition:flex .5s var(--ld-ease)}
+.ld-strip.active{flex:6 1 0}
+.ld-strip .frame{position:absolute;inset:0;width:200%;height:200%;transform:scale(.5);transform-origin:top left;border:0;pointer-events:none}
+.ld-strip .veil{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.5),transparent 55%);
+  opacity:.85;transition:opacity .4s}
+.ld-strip.active .veil{opacity:.55}
+.ld-strip .meta{position:absolute;left:0;bottom:0;padding:16px;z-index:2}
+.ld-strip .meta .vlabel{writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--mono);
+  font-size:.78rem;letter-spacing:.08em;color:var(--text2);transition:opacity .3s}
+.ld-strip.active .meta .vlabel{display:none}
+.ld-strip .meta .h{font-family:var(--head);font-weight:700;font-size:1.1rem;color:#fff;opacity:0;transition:opacity .35s .1s}
+.ld-strip .meta .d{font-size:.84rem;color:rgba(255,255,255,.7);opacity:0;transition:opacity .35s .15s;max-width:38ch}
+.ld-strip.active .meta .h,.ld-strip.active .meta .d{opacity:1}
+.ld-strip .open{position:absolute;top:14px;right:14px;z-index:2;font-family:var(--mono);font-size:.7rem;
+  color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:4px 9px;opacity:0;transition:opacity .3s}
+.ld-strip.active .open{opacity:1}
+
+/* ---------- how it works ---------- */
+.ld-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:34px}
+.ld-step{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:20px}
+.ld-step .n{font-family:var(--mono);font-size:.74rem;color:var(--gold);font-weight:700}
+.ld-step .ic{width:42px;height:42px;border-radius:11px;background:var(--ai-dim);display:grid;place-items:center;margin:12px 0}
+.ld-step .ic svg{width:22px;height:22px;stroke:var(--ai);fill:none;stroke-width:1.7}
+.ld-step h3{font-family:var(--head);font-weight:700;font-size:1.05rem;margin-bottom:5px}
+.ld-step p{color:var(--text2);font-size:.88rem}
+
+/* ---------- features + scroll-fade list ---------- */
+.ld-feat-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-top:34px}
+.ld-feat-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ld-feat{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:20px}
+.ld-feat h3{font-family:var(--head);font-weight:700;font-size:1.02rem;margin-bottom:5px}
+.ld-feat h3 .ac{color:var(--ai);font-style:italic}
+.ld-feat p{color:var(--text2);font-size:.86rem}
+.ld-fadelist{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:8px;overflow:hidden}
+.ld-fadelist .hd{font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);padding:10px 12px 6px}
+.ld-fadescroll{height:330px;overflow-y:auto;padding:0 6px 6px;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);
+  mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
+.ld-fadescroll::-webkit-scrollbar{width:0}
+.ld-fadescroll .row{display:flex;gap:10px;align-items:baseline;padding:10px 10px;border-radius:9px}
+.ld-fadescroll .row:hover{background:var(--surface2)}
+.ld-fadescroll .ts{font-family:var(--mono);font-size:.7rem;color:var(--muted);white-space:nowrap}
+.ld-fadescroll .msg{font-size:.85rem;color:var(--text2)} .ld-fadescroll .msg b{color:var(--text)}
+
+/* ---------- CTA + footer ---------- */
+.ld-cta{text-align:center}
+.ld-cta h2{font-family:var(--head);font-weight:800;font-size:clamp(1.9rem,4.5vw,3rem);letter-spacing:-.02em;margin-bottom:10px}
+.ld-cta .ld-cta-row{justify-content:center;margin-top:24px}
+.ld-foot{border-top:1px solid var(--border);padding:34px 0;color:var(--muted);font-size:.84rem}
+.ld-foot .ld-wrap{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:center}
+.ld-foot a{color:var(--text2)}
+
+/* ---------- reveal (progressive enhancement: visible by default,
+   hidden+animated ONLY when JS adds html.ld-js, so no-JS/IO-fail never blanks) ---------- */
+.ld-reveal{transition:opacity .7s var(--ld-ease),transform .7s var(--ld-ease)}
+.ld-stagger > *{transition:opacity .6s var(--ld-ease),transform .6s var(--ld-ease)}
+html.ld-js .ld-reveal{opacity:0;transform:translateY(22px)}
+html.ld-js .ld-reveal.in{opacity:1;transform:none}
+html.ld-js .ld-stagger > *{opacity:0;transform:translateY(18px)}
+html.ld-js .ld-stagger.in > *{opacity:1;transform:none}
+.ld-stagger.in > *:nth-child(2){transition-delay:.08s}
+.ld-stagger.in > *:nth-child(3){transition-delay:.16s}
+.ld-stagger.in > *:nth-child(4){transition-delay:.24s}
+@media (prefers-reduced-motion: reduce){
+  html.ld-js .ld-reveal,html.ld-js .ld-stagger > *{opacity:1;transform:none;transition:none}
+  .ld-marq-track{animation:none}
+}
+
+/* ---------- responsive ---------- */
+@media(max-width:920px){
+  .ld-hero-grid{grid-template-columns:1fr;gap:30px}
+  .ld-feat-grid{grid-template-columns:1fr}
+  .ld-steps{grid-template-columns:1fr 1fr}
+  .ld-navlinks{display:none}
+  .ld-burger{display:grid}
+  .ld-nav-r .ld-btn:not(.gold){display:none}
+}
+@media(max-width:560px){
+  .ld-section{padding:64px 0}
+  .ld-steps{grid-template-columns:1fr}
+  .ld-feat-cards{grid-template-columns:1fr}
+  .ld-gallery{flex-direction:column;height:auto}
+  .ld-strip{height:120px} .ld-strip.active{height:300px;flex:none}
+  .ld-strip .frame{width:100%;height:100%;transform:scale(1)}
+  .ld-proof{height:auto} .ld-proof-sticky{position:static;height:auto;padding:90px 0}
+}
+/* mobile drawer */
+.ld-drawer{position:fixed;inset:66px 0 auto 0;z-index:55;background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:16px 24px;display:none;flex-direction:column;gap:4px}
+.ld-drawer.open{display:flex}
+.ld-drawer a{color:var(--text);font-weight:600;padding:11px 8px;border-radius:8px}
+.ld-drawer a:hover{background:var(--surface)}
+
+/* ---- rising terminal (agent CLI) — Clustly-style scroll reveal ---- */
+.ld-termband{padding:4px 0 78px}
+.ld-term{max-width:860px;margin:0 auto;border-radius:14px;overflow:hidden;background:#0A0C10;
+  border:1px solid #232A35;box-shadow:0 44px 96px rgba(20,16,12,.28);position:relative;
+  transform-origin:center bottom;will-change:transform,opacity}
+.ld-term-bar{display:flex;align-items:center;gap:8px;padding:11px 15px;background:#13171E;border-bottom:1px solid #232A35}
+.ld-term-bar .d{width:12px;height:12px;border-radius:50%}
+.ld-term-bar .d.r{background:#FF5F57}.ld-term-bar .d.y{background:#FEBC2E}.ld-term-bar .d.g{background:#28C840}
+.ld-term-bar .ttl{flex:1;text-align:center;font-family:var(--mono,monospace);font-size:.76rem;color:#6C7585;margin-right:40px}
+.ld-term-body{margin:0;padding:18px 20px;font-family:var(--mono,monospace);font-size:.82rem;line-height:1.75;
+  color:#A7AFBE;white-space:pre;overflow-x:auto}
+.ld-term-body .c-p{color:#16C784}.ld-term-body .c-cmd{color:#E7EBF2}.ld-term-body .c-ai{color:#5B8DEF}
+.ld-term-body .c-mut{color:#6C7585}.ld-term-body .c-amber{color:#F5A623}
+.ld-term-body .c-alarm{color:#F6465D;font-weight:600}.ld-term-body .c-ok{color:#16C784}
+.ld-term-badge{position:absolute;right:-12px;bottom:20px;background:#fff;color:#13171E;border-radius:999px;
+  padding:8px 16px 8px 11px;display:flex;align-items:center;gap:10px;box-shadow:0 14px 34px rgba(20,16,12,.22)}
+.ld-term-badge .bdot{width:9px;height:9px;border-radius:50%;background:#16C784;flex:none;box-shadow:0 0 0 4px rgba(22,199,132,.18)}
+.ld-term-badge .bt b{display:block;font-size:.78rem;font-weight:700;line-height:1.15}
+.ld-term-badge .bt span{font-family:var(--mono,monospace);font-size:.64rem;color:#6C7585}
+@media(max-width:560px){
+  .ld-term-body{font-size:.71rem;padding:14px 14px}
+  .ld-term-badge{right:6px;bottom:6px;padding:6px 12px 6px 9px}
+}
+
+/* ============================================================
+   STOIC additions (additive only — kit classes above untouched)
+   ============================================================ */
+
+/* hero figure caption tweak for the static drawdown figure */
+.ld-herofig .cap .live.amber{color:var(--amber);background:var(--amber-dim)}
+
+/* hero badge — Fear dot matches the gauge's Fear zone (red), not the gate action */
+.ld-badge .dot.fear{background:var(--red);box-shadow:0 0 0 3px var(--red-dim)}
+
+/* ---- inline figure: live Fear & Greed gauge (=23 "Fear") ---- */
+.ld-gauge{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:30px;
+  border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:22px 24px}
+.ld-gauge svg{width:200px;height:118px;flex:none}
+.ld-gauge .gtxt .gv{font-family:var(--head);font-weight:800;font-size:2.4rem;line-height:1;color:var(--red)}
+.ld-gauge .gtxt .gl{font-family:var(--mono);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--red);font-weight:700}
+.ld-gauge .gtxt .gact{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-family:var(--mono);
+  font-size:.68rem;font-weight:700;letter-spacing:.04em;color:var(--green);background:var(--green-dim);
+  border-radius:999px;padding:4px 11px}
+.ld-gauge .gtxt p{color:var(--text2);font-size:.9rem;max-width:36ch;margin-top:10px}
+
+/* ---- 3-layer pipeline visual (how it works hero figure) ---- */
+.ld-pipe{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+.ld-pipe .pl{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:16px;position:relative}
+.ld-pipe .pl .pn{font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.ld-pipe .pl.l1 .pn{color:var(--gold)} .ld-pipe .pl.l2 .pn{color:var(--ai)} .ld-pipe .pl.l3 .pn{color:var(--green)}
+.ld-pipe .pl h4{font-family:var(--head);font-weight:700;font-size:.98rem;margin:8px 0 4px}
+.ld-pipe .pl p{color:var(--text2);font-size:.82rem}
+.ld-pipe .pl .bar{height:4px;border-radius:3px;margin-top:12px}
+.ld-pipe .pl.l1 .bar{background:var(--gold)} .ld-pipe .pl.l2 .bar{background:var(--ai)} .ld-pipe .pl.l3 .bar{background:var(--green)}
+@media(max-width:720px){.ld-pipe{grid-template-columns:1fr}}
+
+/* ---- proof readout: 3-cell colored mono comparison ---- */
+.ld-proof-readout .b.dd .v{color:var(--green)}
+.ld-proof-readout .b.bh .v{color:var(--red)}
+.ld-proof-readout .b.ex .v{color:var(--gold)}
+
+/* ---- embedded dashboard screenshot card ---- */
+.ld-shot{display:block;border:1px solid var(--border);border-radius:16px;overflow:hidden;
+  background:var(--surface);box-shadow:var(--shadow);margin-top:26px}
+.ld-shot img{display:block;width:100%;height:auto}
+.ld-shot .cap{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 16px;border-top:1px solid var(--border);font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.ld-shot .cap .open{color:var(--gold);font-weight:700}
+
+/* ---- honesty cards: per-card honest accents (red/amber/green) ---- */
+.ld-feat.h-red{border-color:color-mix(in srgb,var(--red) 36%,var(--border))}
+.ld-feat.h-red h3 .ac{color:var(--red);font-style:normal}
+.ld-feat.h-amber{border-color:color-mix(in srgb,var(--amber) 36%,var(--border))}
+.ld-feat.h-amber h3 .ac{color:var(--amber);font-style:normal}
+.ld-feat.h-green{border-color:color-mix(in srgb,var(--green) 42%,var(--border))}
+.ld-feat.h-green h3 .ac{color:var(--green);font-style:normal}
+.ld-feat .tag{display:inline-block;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;
+  text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:999px;margin-bottom:10px}
+.ld-feat.h-red .tag{color:var(--red);background:var(--red-dim)}
+.ld-feat.h-amber .tag{color:var(--amber);background:var(--amber-dim)}
+.ld-feat.h-green .tag{color:var(--green);background:var(--green-dim)}
+.ld-feat code{font-family:var(--mono);font-size:.82em;color:var(--text)}
+
+/* ---- bigger drawdown callout numbers in proof + sub caption ---- */
+.ld-proof-head .ld-proof-readout{flex-wrap:wrap;row-gap:18px}
+.ld-proof-readout .b .v{font-size:1.9rem}
+.ld-proof-sub{font-size:.84rem;color:var(--muted);max-width:62ch;margin:16px auto 0;text-align:center;line-height:1.6}
+@media(max-width:560px){
+  .ld-proof-head .ld-proof-readout{gap:18px}
+  .ld-proof-readout .b .v{font-size:1.55rem}
+}
+
+/* let the honesty interlude breathe as the one LIGHT band.
+   It lives inside .ld-spine (which forces sections transparent), so we
+   must explicitly repaint its light --bg or it would inherit the dark spine. */
+.ld-spine .ld-section.ld-honesty,
+.ld-honesty{background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border);z-index:1}
+.ld-honesty .ld-eyebrow{color:var(--red)}
+
+/* reproduce lead text */
+.ld-replead{color:var(--text2);font-size:1rem;max-width:64ch;margin-top:10px}
+
+/* footer link spacing */
+.ld-foot a{margin:0 2px}

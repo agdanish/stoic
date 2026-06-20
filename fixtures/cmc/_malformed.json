@@ -1,0 +1,13 @@
+{
+  "_note": "SAMPLE — NOT a real tool response. Intentionally MALFORMED / empty-shaped payload used by test/cmcContract.test.ts to prove every parser degrades to a graceful no-op ({ available:false } -> {0,0}) instead of throwing. Replace nothing; this is a test fixture.",
+  "content": [
+    {
+      "type": "text",
+      "text": "not-json-at-all <<<"
+    }
+  ],
+  "data": null,
+  "unexpected": {
+    "shape": "the live MCP envelope is unverified beyond 2 tools; parsers must never throw on a surprise shape"
+  }
+}

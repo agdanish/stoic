@@ -1,0 +1,334 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://stoic/skills/sentiment-divergence-regime/capsule.schema.json",
+  "title": "Stoic — Strategy Capsule",
+  "description": "Machine-readable, backtestable strategy SPEC emitted by the sentiment-divergence-regime CMC Skill. A regime-gated, rolling-window z-scored positioning/attention-vs-flow divergence strategy. All numeric rules reference the engine's EXPORTED constants (src/signal/divergence.ts, src/signal/core.ts) by name — the engine is the single source of truth; constantValues below are a snapshot only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "strategyId",
+    "generatedAt",
+    "dataSources",
+    "engineConstants",
+    "regime",
+    "universe",
+    "entryRule",
+    "exitRule",
+    "invalidation",
+    "positionSizing",
+    "riskLimits",
+    "backtestReplay"
+  ],
+  "properties": {
+    "strategyId": {
+      "const": "sentiment-divergence-regime",
+      "description": "Fixed strategy identifier == the Skill folder name."
+    },
+    "version": {
+      "type": "string",
+      "description": "Engine constants version (git sha or package version) that this Capsule was generated against."
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp the Capsule was emitted."
+    },
+    "dataSources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["live", "backtest"],
+      "properties": {
+        "live": {
+          "type": "string",
+          "description": "Live data surface for regime/positioning/narratives.",
+          "examples": ["CoinMarketCap MCP (https://mcp.coinmarketcap.com/mcp)"]
+        },
+        "backtest": {
+          "type": "string",
+          "description": "Historical-bar source for the reproducible backtest (no key).",
+          "examples": ["Binance public REST (klines + funding + long/short account ratio + taker buy/sell volume)"]
+        },
+        "cmcKeyPresent": {
+          "type": "boolean",
+          "description": "Whether a live CMC MCP key was available when this Capsule was generated. False => live regime/signal fields are placeholders ('NEEDS YOUR FREE CMC KEY')."
+        }
+      }
+    },
+    "engineConstants": {
+      "type": "object",
+      "description": "Names of the engine constants this Capsule's rules reference (single source of truth) and the values they held at generation time. If the engine and these values disagree, the engine wins.",
+      "additionalProperties": false,
+      "required": [
+        "ZSCORE_WINDOW",
+        "ZSCORE_MIN_OBS",
+        "MOMENTUM_LOOKBACK",
+        "DIVERGENCE_DEADBAND_Z",
+        "DIVERGENCE_FULL_Z",
+        "FEAR_EXTREME",
+        "GREED_EXTREME",
+        "FUNDING_STRETCHED",
+        "REGIME_GATE_MAX",
+        "REGIME_GATE_MIN",
+        "CONVICTION_FLAT",
+        "ENTRY_THRESHOLD",
+        "ENTRY_MIN",
+        "ENTRY_MAX",
+        "CALIBRATION_STEP",
+        "REGIME_FLATTEN_BAND",
+        "STRONG_DIVERGENCE"
+      ],
+      "properties": {
+        "ZSCORE_WINDOW": { "type": "number", "description": "src/signal/divergence.ts — rolling z-score lookback W (bars). Snapshot: 48." },
+        "ZSCORE_MIN_OBS": { "type": "number", "description": "src/signal/divergence.ts — min past obs before a z is defined (else 0). Snapshot: 12." },
+        "MOMENTUM_LOOKBACK": { "type": "number", "description": "src/signal/divergence.ts — price-momentum lookback for the flow leg. Snapshot: 12." },
+        "DIVERGENCE_DEADBAND_Z": { "type": "number", "description": "src/signal/divergence.ts — |divergence| below this => no edge. Snapshot: 0.5." },
+        "DIVERGENCE_FULL_Z": { "type": "number", "description": "src/signal/divergence.ts — |divergence| at/above this saturates the bias. Snapshot: 2.5." },
+        "FEAR_EXTREME": { "type": "number", "description": "src/signal/divergence.ts — F&G <= this => extreme fear (favours long). Snapshot: 25." },
+        "GREED_EXTREME": { "type": "number", "description": "src/signal/divergence.ts — F&G >= this => extreme greed (favours short). Snapshot: 75." },
+        "FUNDING_STRETCHED": { "type": "number", "description": "src/signal/divergence.ts — |funding| above this => stretched regime. Snapshot: 0.0005." },
+        "REGIME_GATE_MAX": { "type": "number", "description": "src/signal/divergence.ts — regime gain when regime agrees. Snapshot: 1.35." },
+        "REGIME_GATE_MIN": { "type": "number", "description": "src/signal/divergence.ts — regime gain when regime disagrees. Snapshot: 0.5." },
+        "CONVICTION_FLAT": { "type": "number", "description": "src/signal/core.ts — flat/no-edge midpoint of 0..1000 conviction. Snapshot: 500." },
+        "ENTRY_THRESHOLD": { "type": "number", "description": "src/signal/core.ts — |conviction-500| must exceed this to trade. Snapshot: 120." },
+        "ENTRY_MIN": { "type": "number", "description": "src/signal/core.ts — lower bound of the calibrated entry threshold. Snapshot: 60." },
+        "ENTRY_MAX": { "type": "number", "description": "src/signal/core.ts — upper bound of the calibrated entry threshold. Snapshot: 220." },
+        "CALIBRATION_STEP": { "type": "number", "description": "src/signal/core.ts — entry-threshold nudge per resolved outcome. Snapshot: 10." },
+        "REGIME_FLATTEN_BAND": { "type": "number", "description": "src/signal/core.ts — |divergenceBias-500| below this => pull toward flat. Snapshot: 60." },
+        "STRONG_DIVERGENCE": { "type": "number", "description": "src/signal/core.ts — |divergenceBias-500| at/above this => full-weight branch. Snapshot: 200." }
+      }
+    },
+    "regime": {
+      "type": "object",
+      "description": "Live regime read (readRegime). Fields may be null when no CMC key is present.",
+      "additionalProperties": false,
+      "required": ["label", "favoredSide", "regimeGain"],
+      "properties": {
+        "fearGreed": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Fear & Greed index 0..100 (CMC get_global_metrics_latest). Null = unknown/no key."
+        },
+        "funding": {
+          "type": ["number", "null"],
+          "description": "Funding rate (fraction per interval) used for the funding regime. Null = unknown/no key."
+        },
+        "stretchedFunding": {
+          "type": "boolean",
+          "description": "Whether |funding| >= FUNDING_STRETCHED."
+        },
+        "label": {
+          "type": "string",
+          "enum": ["extreme-fear", "extreme-greed", "stretched-funding", "neutral", "unknown"],
+          "description": "Regime label from readRegime."
+        },
+        "favoredSide": {
+          "type": "integer",
+          "enum": [-1, 0, 1],
+          "description": "Side the regime favours for a contrarian read: +1 long (extreme fear / crowded shorts), -1 short (extreme greed / crowded longs), 0 neutral/unknown."
+        },
+        "regimeGain": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Gain applied to the divergence edge, bounded to [REGIME_GATE_MIN, REGIME_GATE_MAX]. 1.0 = regime-neutral."
+        }
+      }
+    },
+    "universe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["barInterval", "pairConvention", "symbols"],
+      "properties": {
+        "barInterval": {
+          "type": "string",
+          "description": "Bar interval the strategy and backtest use.",
+          "examples": ["1h"]
+        },
+        "pairConvention": {
+          "type": "string",
+          "description": "Pair convention for the backtest history.",
+          "examples": ["<SYMBOL>USDT"]
+        },
+        "symbols": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Resolved universe. Every symbol's CMC numeric id MUST come from search_cryptos; an unresolved id is excluded, never guessed.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["symbol", "cmcId", "resolved"],
+            "properties": {
+              "symbol": { "type": "string", "description": "Ticker, e.g. BTC." },
+              "cmcId": { "type": ["integer", "null"], "description": "CMC numeric id from search_cryptos; null if unresolved." },
+              "resolved": { "type": "boolean", "description": "True iff a numeric id was resolved (never guessed)." }
+            }
+          }
+        }
+      }
+    },
+    "signal": {
+      "type": "object",
+      "description": "Optional current-bar snapshot (look-ahead-safe; window ends at t-1). Omitted when no live data is available.",
+      "additionalProperties": false,
+      "properties": {
+        "crowdZ": { "type": ["number", "null"], "description": "Rolling z-score of the crowd/positioning leg." },
+        "flowZ": { "type": ["number", "null"], "description": "Rolling z-score of the realised-flow leg." },
+        "divergence": { "type": ["number", "null"], "description": "crowdZ - flowZ, signed, in z-units." },
+        "divergenceBias": { "type": ["number", "null"], "minimum": 0, "maximum": 1000, "description": "Signed divergence mapped onto 0..1000 (500 = no edge), contrarian + regime-gated." },
+        "conviction": { "type": ["number", "null"], "minimum": 0, "maximum": 1000, "description": "scoreConviction output (500 = flat, >500 long bias, <500 short bias)." },
+        "warming": { "type": "boolean", "description": "True while either leg has fewer than ZSCORE_MIN_OBS past obs (z = 0, no edge)." }
+      }
+    },
+    "entryRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expression", "referencesConstants"],
+      "properties": {
+        "expression": {
+          "type": "string",
+          "description": "Human/replayable entry condition.",
+          "examples": ["Trade only when |conviction - CONVICTION_FLAT| > ENTRY_THRESHOLD; conviction>500+ENTRY_THRESHOLD => LONG, conviction<500-ENTRY_THRESHOLD => SHORT (contrarian)."]
+        },
+        "thresholdConstant": {
+          "type": "string",
+          "const": "ENTRY_THRESHOLD",
+          "description": "Constant gating entry (calibratable in [ENTRY_MIN, ENTRY_MAX])."
+        },
+        "referencesConstants": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "Engine constant names this rule cites (e.g. CONVICTION_FLAT, ENTRY_THRESHOLD)."
+        }
+      }
+    },
+    "exitRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expression", "referencesConstants"],
+      "properties": {
+        "expression": {
+          "type": "string",
+          "examples": ["Exit to FLAT when |conviction - CONVICTION_FLAT| <= ENTRY_THRESHOLD (|divergenceBias-500| < REGIME_FLATTEN_BAND), OR on a side flip (decideTrade.flip)."]
+        },
+        "referencesConstants": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      }
+    },
+    "invalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conditions"],
+      "properties": {
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "Conditions that invalidate an open position (regime flip + divergence leaving band; either leg warming; funding leaving the stretched regime the trade relied on)."
+        }
+      }
+    },
+    "positionSizing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "expression"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "const": "sizeFromConviction",
+          "description": "Sizing function (src/signal/core.ts)."
+        },
+        "expression": {
+          "type": "string",
+          "examples": ["sizeBps = 10000 * |conviction - CONVICTION_FLAT| / CONVICTION_FLAT (0 bps at flat, 10000 bps at the extreme), scaled by the account risk budget."]
+        },
+        "maxPositionBps": {
+          "type": ["number", "null"],
+          "description": "Optional per-trade cap on sizeBps imposed by the operator."
+        }
+      }
+    },
+    "riskLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lookAheadSafe", "calibratedThreshold", "advisoriesBounded"],
+      "properties": {
+        "lookAheadSafe": {
+          "type": "boolean",
+          "const": true,
+          "description": "The signal at any bar uses only bars < t (rolling z-score window ends at t-1)."
+        },
+        "calibratedThreshold": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["function", "bounds", "step"],
+          "properties": {
+            "function": { "type": "string", "const": "calibrateEntryThreshold" },
+            "bounds": {
+              "type": "array",
+              "items": { "type": "number" },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[ENTRY_MIN, ENTRY_MAX]."
+            },
+            "step": { "type": "number", "description": "CALIBRATION_STEP nudge per resolved outcome (FN/missed => loosen, FP/chop => tighten)." }
+          }
+        },
+        "advisoriesBounded": {
+          "type": "boolean",
+          "const": true,
+          "description": "Optional CMC/LLM advisories fold through blendScore (|adjustment| <= 50); absent => strict {0,0} no-op; can never override the deterministic engine."
+        },
+        "maxPositionBps": {
+          "type": ["number", "null"],
+          "description": "Optional account-level per-trade size cap."
+        }
+      }
+    },
+    "backtestReplay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["steps", "metrics", "baseline", "outOfSample", "reproducible"],
+      "properties": {
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "Ordered commands to reproduce the backtest (npm install; npm run fetch-data; npm run backtest; report on held-out window)."
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["totalReturn", "winRate", "maxDrawdown", "sharpe", "sortino"]
+          },
+          "minItems": 1,
+          "description": "Metrics the report emits."
+        },
+        "baseline": {
+          "type": "string",
+          "const": "buy-and-hold",
+          "description": "The control the strategy is reported against."
+        },
+        "outOfSample": {
+          "type": "boolean",
+          "const": true,
+          "description": "Metrics are reported on a HELD-OUT out-of-sample window (no cherry-pick)."
+        },
+        "reproducible": {
+          "type": "boolean",
+          "const": true,
+          "description": "With no CMC/LLM key the advisories are {0,0} no-ops, so report.json is byte-reproducible from the committed fixtures."
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Free-form honesty notes (e.g. which legs were unavailable; that the narrative term is attention momentum, not sentiment polarity)."
+    }
+  }
+}

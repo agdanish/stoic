@@ -1,0 +1,587 @@
+{
+  "strategy": "Stoic — MOMENTUM PIVOT: a regime-aware DIRECTIONAL core (trend/momentum, src/signal/momentum.ts) that RIDES bull markets, with a Fear&Greed CONTRARIAN regime gate (regimeGate.ts) and the divergence/funding signal DEMOTED to a contrarian RISK FILTER (strategy.ts). Walk-forward over the DAILY multi-regime fixtures (~1000 daily bars ≈ 2.7yr/token). Params selected on the IN-SAMPLE 70% ONLY; held-out OOS 30% run once and reported as-is. The frozen backtest/report.json is UNTOUCHED.",
+  "dataSource": {
+    "kind": "REAL",
+    "provider": "Binance public REST (keyless) DAILY spot klines OHLCV + USDT-M funding (8h, forward-filled to daily); Fear&Greed = alternative.me historical daily index (NOT CMC live F&G — that is the live/demo path), joined by UTC date.",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "BNBUSDT"
+    ],
+    "interval": "1d",
+    "startTime": 1695340800000,
+    "endTime": 1781654400000,
+    "startDate": "2023-09-22",
+    "endDate": "2026-06-17",
+    "note": "REAL multi-regime DAILY data spanning 2023-24 recovery/bull, 2025 cycle, and a 2026 YTD drawdown — exactly the multi-regime span the pivot needs. The Binance long/short ACCOUNT ratio + taker buy/sell ratio legs have only ~30d history, so they are NOT used in this multi-year backtest (they remain a recent/live refinement via StrategyBarInput.positioning). This is stated, not hidden."
+  },
+  "params": {
+    "txCostBps": 10,
+    "slippageBps": 10,
+    "oosFraction": 0.3,
+    "barsPerYear": 365,
+    "costModelNote": "Transaction cost + slippage are a CONFIGURABLE ASSUMPTION (default 10 bps each), charged on |Δ signed notional| per position change, folded into the equity curve so all returns + Sharpe/Sortino are NET OF COST. The exact organizer cost model is UNCONFIRMED.",
+    "moduleConstants": {
+      "EMA_FAST": 20,
+      "EMA_SLOW": 50,
+      "MOMENTUM_LOOKBACK": 20,
+      "TREND_FULL_SEP": 0.06,
+      "MOMENTUM_FULL_RET": 0.15,
+      "TREND_WEIGHT": 0.6,
+      "MOMENTUM_WEIGHT": 0.4,
+      "FEAR_EXTREME": 25,
+      "GREED_EXTREME": 75,
+      "GATE_MAX": 1.25,
+      "GATE_MIN": 0.4,
+      "FUNDING_STRETCHED": 0.0005,
+      "RISK_FILTER_TRIM": 0.5,
+      "RISK_FILTER_VETO_INTENSITY": 0.6,
+      "ENTRY_THRESHOLD": 120,
+      "ENTRY_MIN": 60,
+      "ENTRY_MAX": 220
+    },
+    "regimeProxy": {
+      "lookback": 60,
+      "bullThresh": 0.15,
+      "bearThresh": 0.15
+    }
+  },
+  "methodology": [
+    "Walk-forward, one DAILY bar at a time. The conviction/side for bar i uses only bars <= i (runStrategy is look-ahead-safe; EMAs are a forward recurrence; F&G/funding read the bar's own values).",
+    "The position decided at bar i is HELD INTO bar i+1; PnL is the close[i+1]/close[i]-1 move. The decision strictly precedes the move it is paid on (no look-ahead).",
+    "Transaction cost + slippage charged on |Δ signed notional| at every position change; folded into the equity curve (so Sharpe/Sortino + totalReturn are cost-inclusive).",
+    "Sharpe/Sortino annualised from per-bar equity returns (×sqrt(365) for daily bars). Zero-variance segments report 0, never infinity. Buy-and-hold Sharpe/drawdown computed on the SAME bars.",
+    "IN-SAMPLE = leading (1-oosFraction)=70% of bars; HELD-OUT OOS = trailing 30%. The split is fixed BEFORE the search. The search reads ONLY in-sample aggregate metrics; OOS is run ONCE on the locked winner and reported as-is.",
+    "Selection objective: maximise the IN-SAMPLE aggregate EXCESS return vs B&H (ties: higher in-sample Sharpe, then lower drawdown, then sweep order). NEVER selected on OOS.",
+    "Aggregate = equal-weight mean of per-token segment metrics (tradeCount/bars summed). Buy-and-hold computed on the same bars per token + aggregate.",
+    "Per-regime breakout uses a LOOK-AHEAD-SAFE trailing-trend label (60d trailing return >= +15% -> bull, <= -15% -> bear, else chop). Disclosure-only; NOT an input to selection. Per-regime returns use position-weighted close-to-close (a behaviour proxy, BEFORE the cost drag which is booked into equity); the headline verdict uses the cost-inclusive segment metrics."
+  ],
+  "search": {
+    "budget": 15,
+    "maxBudget": 24,
+    "note": "Bounded coordinate sweep AROUND the module defaults (one axis at a time): EMA span pair, momentum lookback, entry threshold, long/short-vs-long/flat, trend-full-sep, momentum-full-ret, trend/momentum weight tilt, and two long-only archetypes. All candidates' IN-SAMPLE aggregate metrics are disclosed below (no candidate hidden).",
+    "inSampleAll": [
+      {
+        "label": "default(EMA20/50,L20,thr120,short)",
+        "inSampleTotalReturn": 0.046343297167,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.574159322211,
+        "inSampleSharpe": 0.215645278305,
+        "inSampleMaxDrawdown": 0.505830133056,
+        "selected": false
+      },
+      {
+        "label": "ema10/30",
+        "inSampleTotalReturn": -0.075421760099,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.695924379477,
+        "inSampleSharpe": -0.006004160737,
+        "inSampleMaxDrawdown": 0.550776822445,
+        "selected": false
+      },
+      {
+        "label": "ema30/80",
+        "inSampleTotalReturn": 0.139364452278,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.4811381671,
+        "inSampleSharpe": 0.363141502488,
+        "inSampleMaxDrawdown": 0.478889779292,
+        "selected": false
+      },
+      {
+        "label": "ema50/100",
+        "inSampleTotalReturn": 0.18312011515,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.437382504228,
+        "inSampleSharpe": 0.448077080203,
+        "inSampleMaxDrawdown": 0.441698511879,
+        "selected": false
+      },
+      {
+        "label": "lookback10",
+        "inSampleTotalReturn": 0.031433811132,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.589068808246,
+        "inSampleSharpe": 0.15734186253,
+        "inSampleMaxDrawdown": 0.427734801757,
+        "selected": false
+      },
+      {
+        "label": "lookback40",
+        "inSampleTotalReturn": 0.255070460649,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.365432158729,
+        "inSampleSharpe": 0.462976297519,
+        "inSampleMaxDrawdown": 0.44082653635,
+        "selected": false
+      },
+      {
+        "label": "entry60",
+        "inSampleTotalReturn": 0.041093123779,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.579409495599,
+        "inSampleSharpe": 0.212735120744,
+        "inSampleMaxDrawdown": 0.503906081206,
+        "selected": false
+      },
+      {
+        "label": "entry200",
+        "inSampleTotalReturn": -0.065789107506,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.686291726884,
+        "inSampleSharpe": -0.009400105239,
+        "inSampleMaxDrawdown": 0.522683518549,
+        "selected": false
+      },
+      {
+        "label": "long-only",
+        "inSampleTotalReturn": 0.484264034605,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.136238584773,
+        "inSampleSharpe": 0.864533817109,
+        "inSampleMaxDrawdown": 0.29334769794,
+        "selected": false
+      },
+      {
+        "label": "trendFullSep0.04",
+        "inSampleTotalReturn": 0.033943379726,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.586559239652,
+        "inSampleSharpe": 0.214242098593,
+        "inSampleMaxDrawdown": 0.544704033339,
+        "selected": false
+      },
+      {
+        "label": "momentumFullRet0.10",
+        "inSampleTotalReturn": -0.032125027607,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.652627646985,
+        "inSampleSharpe": 0.10549567341,
+        "inSampleMaxDrawdown": 0.54527056844,
+        "selected": false
+      },
+      {
+        "label": "trendWeight0.75",
+        "inSampleTotalReturn": 0.134970209946,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.485532409432,
+        "inSampleSharpe": 0.335266525892,
+        "inSampleMaxDrawdown": 0.474960873131,
+        "selected": false
+      },
+      {
+        "label": "trendWeight0.40",
+        "inSampleTotalReturn": -0.122181152716,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.742683772094,
+        "inSampleSharpe": -0.047440214569,
+        "inSampleMaxDrawdown": 0.553835293147,
+        "selected": false
+      },
+      {
+        "label": "long-only+ema30/80",
+        "inSampleTotalReturn": 0.574751382806,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.045751236572,
+        "inSampleSharpe": 0.945313867343,
+        "inSampleMaxDrawdown": 0.295330343398,
+        "selected": true
+      },
+      {
+        "label": "long-only+entry60",
+        "inSampleTotalReturn": 0.482138964865,
+        "inSampleBuyHold": 2.620502619378,
+        "inSampleExcess": -2.138363654513,
+        "inSampleSharpe": 0.859490667017,
+        "inSampleMaxDrawdown": 0.301207584557,
+        "selected": false
+      }
+    ]
+  },
+  "selectedConfig": {
+    "emaFast": 30,
+    "emaSlow": 80,
+    "momentumLookback": 20,
+    "trendFullSep": 0.06,
+    "momentumFullRet": 0.15,
+    "trendWeight": 0.6,
+    "momentumWeight": 0.4,
+    "entryThreshold": 120,
+    "allowShort": false,
+    "maxLeverage": 1,
+    "label": "long-only+ema30/80"
+  },
+  "perToken": [
+    {
+      "symbol": "BTCUSDT",
+      "synthetic": false,
+      "bars": 1000,
+      "splitBar": 700,
+      "full": {
+        "totalReturn": 0.468449301019,
+        "buyAndHoldReturn": 1.416302923912,
+        "excessReturn": -0.947853622893,
+        "beatsBuyHold": false,
+        "winRate": 0.347826086957,
+        "maxDrawdown": 0.263703614299,
+        "buyAndHoldMaxDrawdown": 0.511588857049,
+        "sharpe": 0.743794033801,
+        "buyAndHoldSharpe": 0.913614289838,
+        "sortino": 1.17494227983,
+        "tradeCount": 23,
+        "bars": 1000
+      },
+      "inSample": {
+        "totalReturn": 0.588018055019,
+        "buyAndHoldReturn": 3.232483350351,
+        "excessReturn": -2.644465295332,
+        "beatsBuyHold": false,
+        "winRate": 0.4375,
+        "maxDrawdown": 0.263703614299,
+        "buyAndHoldMaxDrawdown": 0.280952767669,
+        "sharpe": 1.049506325373,
+        "buyAndHoldSharpe": 1.793930996753,
+        "sortino": 1.667915133954,
+        "tradeCount": 16,
+        "bars": 700
+      },
+      "outOfSample": {
+        "totalReturn": -0.075294329068,
+        "buyAndHoldReturn": -0.429105155556,
+        "excessReturn": 0.353810826488,
+        "beatsBuyHold": true,
+        "winRate": 0.142857142857,
+        "maxDrawdown": 0.088600350447,
+        "buyAndHoldMaxDrawdown": 0.511588857049,
+        "sharpe": -2.036792826585,
+        "buyAndHoldSharpe": -1.280692089286,
+        "sortino": -2.259122387085,
+        "tradeCount": 7,
+        "bars": 300
+      }
+    },
+    {
+      "symbol": "ETHUSDT",
+      "synthetic": false,
+      "bars": 1000,
+      "splitBar": 700,
+      "full": {
+        "totalReturn": 0.362419630606,
+        "buyAndHoldReturn": 0.089549802898,
+        "excessReturn": 0.272869827708,
+        "beatsBuyHold": true,
+        "winRate": 0.411764705882,
+        "maxDrawdown": 0.322377398195,
+        "buyAndHoldMaxDrawdown": 0.675151643085,
+        "sharpe": 0.529916810759,
+        "buyAndHoldSharpe": 0.381607475298,
+        "sortino": 0.818890313141,
+        "tradeCount": 17,
+        "bars": 1000
+      },
+      "inSample": {
+        "totalReturn": 0.546478470937,
+        "buyAndHoldReturn": 1.652283626685,
+        "excessReturn": -1.105805155748,
+        "beatsBuyHold": false,
+        "winRate": 0.4375,
+        "maxDrawdown": 0.322377398195,
+        "buyAndHoldMaxDrawdown": 0.637519681165,
+        "sharpe": 0.878362998335,
+        "buyAndHoldSharpe": 1.0862822926,
+        "sortino": 1.35948769917,
+        "tradeCount": 16,
+        "bars": 700
+      },
+      "outOfSample": {
+        "totalReturn": -0.119018042469,
+        "buyAndHoldReturn": -0.589203133505,
+        "excessReturn": 0.470185091036,
+        "beatsBuyHold": true,
+        "winRate": 0,
+        "maxDrawdown": 0.229644217663,
+        "buyAndHoldMaxDrawdown": 0.675151643085,
+        "sharpe": -0.539065783016,
+        "buyAndHoldSharpe": -1.270584462458,
+        "sortino": -0.825318520481,
+        "tradeCount": 1,
+        "bars": 300
+      }
+    },
+    {
+      "symbol": "BNBUSDT",
+      "synthetic": false,
+      "bars": 1000,
+      "splitBar": 700,
+      "full": {
+        "totalReturn": 0.883614578307,
+        "buyAndHoldReturn": 1.836238749408,
+        "excessReturn": -0.952624171101,
+        "beatsBuyHold": false,
+        "winRate": 0.375,
+        "maxDrawdown": 0.299910017701,
+        "buyAndHoldMaxDrawdown": 0.562322166131,
+        "sharpe": 0.871821807153,
+        "buyAndHoldSharpe": 0.976254781608,
+        "sortino": 1.40635168752,
+        "tradeCount": 16,
+        "bars": 1000
+      },
+      "inSample": {
+        "totalReturn": 0.589757622463,
+        "buyAndHoldReturn": 2.976740881099,
+        "excessReturn": -2.386983258636,
+        "beatsBuyHold": false,
+        "winRate": 0.384615384615,
+        "maxDrawdown": 0.299910017701,
+        "buyAndHoldMaxDrawdown": 0.347300337458,
+        "sharpe": 0.908072278321,
+        "buyAndHoldSharpe": 1.634069487404,
+        "sortino": 1.524023844135,
+        "tradeCount": 13,
+        "bars": 700
+      },
+      "outOfSample": {
+        "totalReturn": 0.18484387286,
+        "buyAndHoldReturn": -0.286793172045,
+        "excessReturn": 0.471637044904,
+        "beatsBuyHold": true,
+        "winRate": 0.333333333333,
+        "maxDrawdown": 0.213442447451,
+        "buyAndHoldMaxDrawdown": 0.562322166131,
+        "sharpe": 0.789471609613,
+        "buyAndHoldSharpe": -0.449940790118,
+        "sortino": 1.177643188578,
+        "tradeCount": 3,
+        "bars": 300
+      }
+    }
+  ],
+  "aggregate": {
+    "inSample": {
+      "totalReturn": 0.574751382806,
+      "buyAndHoldReturn": 2.620502619378,
+      "excessReturn": -2.045751236572,
+      "beatsBuyHold": false,
+      "winRate": 0.419871794872,
+      "maxDrawdown": 0.295330343398,
+      "buyAndHoldMaxDrawdown": 0.421924262097,
+      "sharpe": 0.945313867343,
+      "buyAndHoldSharpe": 1.504760925586,
+      "sortino": 1.517142225753,
+      "tradeCount": 45,
+      "bars": 2100
+    },
+    "outOfSample": {
+      "totalReturn": -0.003156166226,
+      "buyAndHoldReturn": -0.435033820369,
+      "excessReturn": 0.431877654143,
+      "beatsBuyHold": true,
+      "winRate": 0.15873015873,
+      "maxDrawdown": 0.177229005187,
+      "buyAndHoldMaxDrawdown": 0.583020888755,
+      "sharpe": -0.595462333329,
+      "buyAndHoldSharpe": -1.000405780621,
+      "sortino": -0.635599239663,
+      "tradeCount": 11,
+      "bars": 900
+    },
+    "full": {
+      "totalReturn": 0.571494503311,
+      "buyAndHoldReturn": 1.114030492073,
+      "excessReturn": -0.542535988762,
+      "beatsBuyHold": false,
+      "winRate": 0.378196930946,
+      "maxDrawdown": 0.295330343398,
+      "buyAndHoldMaxDrawdown": 0.583020888755,
+      "sharpe": 0.715177550571,
+      "buyAndHoldSharpe": 0.757158848915,
+      "sortino": 1.133394760164,
+      "tradeCount": 56,
+      "bars": 3000
+    }
+  },
+  "perRegime": {
+    "note": "Per-regime returns are a BEHAVIOUR proxy (position-weighted close-to-close, before the cost drag booked into equity). They show whether the directional core rode the bull and dodged the bear. NOT used for the win/loss verdict (that uses cost-inclusive OOS metrics).",
+    "perToken": [
+      {
+        "symbol": "BTCUSDT",
+        "full": [
+          {
+            "regime": "bull",
+            "bars": 278,
+            "strategyReturn": 1.012958713987,
+            "buyAndHoldReturn": 1.746333772301,
+            "excessReturn": -0.733375058314,
+            "beatsBuyHold": false
+          },
+          {
+            "regime": "bear",
+            "bars": 143,
+            "strategyReturn": -0.009590151633,
+            "buyAndHoldReturn": -0.509819364557,
+            "excessReturn": 0.500229212924,
+            "beatsBuyHold": true
+          },
+          {
+            "regime": "chop",
+            "bars": 579,
+            "strategyReturn": -0.187335885084,
+            "buyAndHoldReturn": 0.794906835156,
+            "excessReturn": -0.98224272024,
+            "beatsBuyHold": false
+          }
+        ],
+        "outOfSample": [
+          {
+            "regime": "bull",
+            "bars": 15,
+            "strategyReturn": 0.00973927601,
+            "buyAndHoldReturn": 0.054594274005,
+            "excessReturn": -0.044854997995,
+            "beatsBuyHold": false
+          },
+          {
+            "regime": "bear",
+            "bars": 112,
+            "strategyReturn": 0,
+            "buyAndHoldReturn": -0.272375962638,
+            "excessReturn": 0.272375962638,
+            "beatsBuyHold": true
+          },
+          {
+            "regime": "chop",
+            "bars": 173,
+            "strategyReturn": -0.073377542343,
+            "buyAndHoldReturn": -0.256015865378,
+            "excessReturn": 0.182638323035,
+            "beatsBuyHold": true
+          }
+        ]
+      },
+      {
+        "symbol": "ETHUSDT",
+        "full": [
+          {
+            "regime": "bull",
+            "bars": 350,
+            "strategyReturn": 1.088214713149,
+            "buyAndHoldReturn": 4.680058482522,
+            "excessReturn": -3.591843769373,
+            "beatsBuyHold": false
+          },
+          {
+            "regime": "bear",
+            "bars": 309,
+            "strategyReturn": 0,
+            "buyAndHoldReturn": -0.811370460586,
+            "excessReturn": 0.811370460586,
+            "beatsBuyHold": true
+          },
+          {
+            "regime": "chop",
+            "bars": 341,
+            "strategyReturn": -0.29010910652,
+            "buyAndHoldReturn": 0.016914816053,
+            "excessReturn": -0.307023922573,
+            "beatsBuyHold": false
+          }
+        ],
+        "outOfSample": [
+          {
+            "regime": "bull",
+            "bars": 59,
+            "strategyReturn": 0.083774569344,
+            "buyAndHoldReturn": 0.275975421033,
+            "excessReturn": -0.192200851689,
+            "beatsBuyHold": false
+          },
+          {
+            "regime": "bear",
+            "bars": 136,
+            "strategyReturn": 0,
+            "buyAndHoldReturn": -0.4897622184,
+            "excessReturn": 0.4897622184,
+            "beatsBuyHold": true
+          },
+          {
+            "regime": "chop",
+            "bars": 105,
+            "strategyReturn": -0.177538416638,
+            "buyAndHoldReturn": -0.369024930989,
+            "excessReturn": 0.191486514351,
+            "beatsBuyHold": true
+          }
+        ]
+      },
+      {
+        "symbol": "BNBUSDT",
+        "full": [
+          {
+            "regime": "bull",
+            "bars": 311,
+            "strategyReturn": 2.318091543928,
+            "buyAndHoldReturn": 6.398426029406,
+            "excessReturn": -4.080334485478,
+            "beatsBuyHold": false
+          },
+          {
+            "regime": "bear",
+            "bars": 127,
+            "strategyReturn": 0,
+            "buyAndHoldReturn": -0.569806617825,
+            "excessReturn": 0.569806617825,
+            "beatsBuyHold": true
+          },
+          {
+            "regime": "chop",
+            "bars": 562,
+            "strategyReturn": -0.381525229201,
+            "buyAndHoldReturn": -0.108872748588,
+            "excessReturn": -0.272652480613,
+            "beatsBuyHold": false
+          }
+        ],
+        "outOfSample": [
+          {
+            "regime": "bull",
+            "bars": 76,
+            "strategyReturn": 0.28766761198,
+            "buyAndHoldReturn": 0.373405437172,
+            "excessReturn": -0.085737825192,
+            "beatsBuyHold": false
+          },
+          {
+            "regime": "bear",
+            "bars": 97,
+            "strategyReturn": 0,
+            "buyAndHoldReturn": -0.291836718597,
+            "excessReturn": 0.291836718597,
+            "beatsBuyHold": true
+          },
+          {
+            "regime": "chop",
+            "bars": 127,
+            "strategyReturn": -0.068500099173,
+            "buyAndHoldReturn": -0.266697230431,
+            "excessReturn": 0.198197131258,
+            "beatsBuyHold": true
+          }
+        ]
+      }
+    ]
+  },
+  "verdict": {
+    "edgeFound": true,
+    "edgeFoundBasis": "aggregate OOS strictly beats B&H net of cost",
+    "tokensBeatingBuyHoldOOS": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "BNBUSDT"
+    ],
+    "aggregateBeatsBuyHoldOOS": true,
+    "riskAdjustedWin": true,
+    "riskAdjustedBasis": "aggregate OOS has higher Sharpe AND lower maxDrawdown than buy-and-hold OOS",
+    "honesty": "Selected on in-sample only; OOS reported unconditionally; all tokens + all sweep candidates disclosed; net of a labelled 10+10 bps cost. The frozen report.json is untouched. If neither edgeFound nor riskAdjustedWin holds, this is stated plainly."
+  }
+}

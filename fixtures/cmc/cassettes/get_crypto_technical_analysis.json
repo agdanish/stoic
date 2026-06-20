@@ -1,0 +1,14 @@
+{
+  "_note": "RECORDED CASSETTE (shape only — SAMPLE values, NOT a real live capture) for the CMC MCP tools/call response to \"get_crypto_technical_analysis\". Drives the live HTTP branch of callTool in test/cmcLive.test.ts. A real captured envelope belongs in fixtures/cmc/live/.",
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"moving_averages\":{\"simple_moving_average_30_day\":\"65,900.00\",\"exponential_moving_average_30_day\":\"65,800.10\",\"exponential_moving_average_200_day\":\"61,200.70\"},\"macd\":{\"macdLine\":\"120.50\",\"signalLine\":\"98.20\",\"histogram\":\"22.30\"},\"rsi\":{\"rsi7\":\"61.20\",\"rsi14\":\"58.40\",\"rsi21\":\"55.10\"},\"pivotPoint\":\"65948.11\"}"
+      }
+    ],
+    "isError": false
+  }
+}

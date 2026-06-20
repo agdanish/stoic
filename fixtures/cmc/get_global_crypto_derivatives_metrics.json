@@ -1,0 +1,14 @@
+{
+  "_note": "SAMPLE — NOT a real live response (real keyed captures live under fixtures/cmc/live/). Tool: get_global_crypto_derivatives_metrics ({} args — GLOBAL aggregate). Mirrors the REAL CMC MCP envelope: result.content[0].text is a DOUBLE-ENCODED JSON OBJECT with fundingRate.current (\"0.00012\" fraction string), totalOpenInterest.current (\"409.62 B\" unit string -> 409.62e9), totalOpenInterest.percentage_change_24h (\"-3.47%\" percent), btc_liquidations.total_usd_24h.total (\"66.03 M\" -> 66.03e6). No global long/short ratio is exposed -> longShortRatio stays unavailable. cmc.ts parses unit strings (T/B/M/K, %) defensively.",
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"totalOpenInterest\":{\"current\":\"18.9 B\",\"percentage_change_24h\":\"+3.4%\",\"percentage_change_7d\":\"+7.79%\"},\"totalVolume\":{\"total_usd_24h\":\"219.13 T\"},\"fundingRate\":{\"current\":\"0.00012\",\"percentage_change_24h\":\"-73.08%\"},\"btc_liquidations\":{\"total_usd_24h\":{\"total\":\"142 M\",\"long\":\"91 M\",\"short\":\"51 M\"}}}"
+      }
+    ],
+    "isError": false
+  }
+}

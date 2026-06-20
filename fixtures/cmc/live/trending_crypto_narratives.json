@@ -1,0 +1,315 @@
+{
+  "_capture": "LIVE",
+  "_note": "RAW live tools/call envelope for \"trending_crypto_narratives\" — captured 2026-06-17T19:36:35.175Z. NOT a SAMPLE fixture.",
+  "capturedAt": "2026-06-17T19:36:35.175Z",
+  "tool": "trending_crypto_narratives",
+  "args": {},
+  "envelope": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"categoryList\":{\"headers\":[\"trendingRank\",\"slug\",\"categoryCmcUrl\",\"categoryName\",\"marketCapUsd\",\"marketCapChangePercentage24h\",\"marketCapChangePercentage7d\",\"marketCapChangePercentage30d\",\"marketCapChangePercentage90d\",\"marketCapChangePercentage1y\",\"volume24h\",\"volumeChangePercentage24h\",\"volumeWeightedPricePerfVsCryptoMarketCap24h\",\"volumeWeightedPricePerfVsCryptoMarketCap7d\",\"volumeWeightedPricePerfVsCryptoMarketCap30d\",\"socialKeywords\",\"socialKeywordUniqueAuthorCount\",\"topCoinList\"],\"rows\":[[1,\"binance-ecosystem\",\"https://coinmarketcap.com/view/binance-ecosystem\",\"Binance Ecosystem\",\"2.23 T\",\"-1.04%\",\"+5.19%\",\"-14.32%\",\"-12.27%\",\"-31.42%\",\"144.65 B\",\"-4.16%\",\"+1.25%\",\"-1.22%\",\"+12.6%\",[\"SPCX\",\"Hyperliquid\",\"Binance\",\"BNB\"],\"19\",{\"headers\":[\"coinSymbol\",\"coinName\",\"coinCmcUrl\",\"priceChangePercent7d\"],\"rows\":[[\"BTC\",\"Bitcoin\",\"https://coinmarketcap.com/currencies/bitcoin/\",\"+4.59%\"],[\"ETH\",\"Ethereum\",\"https://coinmarketcap.com/currencies/ethereum/\",\"+8.03%\"],[\"USDT\",\"Tether USDt\",\"https://coinmarketcap.com/currencies/tether/\",\"+0.018978%\"]]}],[2,\"sec-cftc-token-taxonomy\",\"https://coinmarketcap.com/view/sec-cftc-token-taxonomy\",\"SEC/CFTC Token\",\"1.68 T\",\"-1.36%\",\"+5.87%\",\"-17.39%\",null,null,\"46.79 B\",\"-6.02%\",\"+0.1%\",\"+1.88%\",\"-1.37%\",[\"SPCX\",\"XRP\",\"HYPE\",\"TAO\",\"DeFi\",\"USDT\",\"USDC\",\"Stablecoin\",\"ETF\",\"UNI\"],\"42\",{\"headers\":[\"coinSymbol\",\"coinName\",\"coinCmcUrl\",\"priceChangePercent7d\"],\"rows\":[[\"BTC\",\"Bitcoin\",\"https://coinmarketcap.com/currencies/bitcoin/\",\"+4.59%\"],[\"ETH\",\"Ethereum\",\"https://coinmarketcap.com/currencies/ethereum/\",\"+8.03%\"],[\"XRP\",\"XRP\",\"https://coinmarketcap.com/currencies/xrp/\",\"+8.27%\"]]}],[3,\"sec-cftc-token-taxonomy\",\"https://coinmarketcap.com/view/sec-cftc-token-taxonomy\",\"SEC/CFTC Token Taxonomy\",\"1.68 T\",\"-1.36%\",\"+5.87%\",\"-17.39%\",null,null,\"46.79 B\",\"-6.02%\",\"+0.1%\",\"+1.88%\",\"-1.37%\",[\"USDT\",\"USDC\",\"Stablecoin\",\"Stablecoins\"],\"17\",{\"headers\":[\"coinSymbol\",\"coinName\",\"coinCmcUrl\",\"priceChangePercent7d\"],\"rows\":[[\"BTC\",\"Bitcoin\",\"https://coinmarketcap.com/currencies/bitcoin/\",\"+4.59%\"],[\"ETH\",\"Ethereum\",\"https://coinmarketcap.com/currencies/ethereum/\",\"+8.03%\"],[\"XRP\",\"XRP\",\"https://coinmarketcap.com/currencies/xrp/\",\"+8.27%\"]]}],[4,\"ftx-bankruptcy-estate\",\"https://coinmarketcap.com/view/ftx-bankruptcy-estate\",\"FTX Bankruptcy Estate \",\"1.65 T\",\"-1.38%\",\"+5.78%\",\"-17.35%\",\"-15.46%\",\"-37.65%\",\"44.91 B\",\"-5.86%\",\"+0.07%\",\"+1.7%\",\"-1.42%\",[\"SPCX\"],\"5\",{\"headers\":[\"coinSymbol\",\"coinName\",\"coinCmcUrl\",\"priceChangePercent7d\"],\"rows\":[[\"BTC\",\"Bitcoin\",\"https://coinmarketcap.com/currencies/bitcoin/\",\"+4.59%\"],[\"ETH\",\"Ethereum\",\"https://coinmarketcap.com/currencies/ethereum/\",\"+8.03%\"],[\"XRP\",\"XRP\",\"https://coinmarketcap.com/currencies/xrp/\",\"+8.27%\"]]}],[5,\"layer-1\",\"https://coinmarketcap.com/view/layer-1\",\"Layer 1\",\"1.76 T\",\"-1.24%\",\"+5.74%\",\"-16.47%\",\"-14.26%\",\"-35.5%\",\"50.1 B\",\"-6.57%\",\"+0.63%\",\"+2.7%\",\"+0.86%\",[\"ETH\",\"Ethereum\",\"Solana\",\"DeFi\",\"TAO\",\"UNI\",\"SUI\",\"AVAX\",\"NEAR\",\"Base\"],\"34\",{\"headers\":[\"coinSymbol\",\"coinName\",\"coinCmcUrl\",\"priceChangePercent7d\"],\"rows\":[[\"BTC\",\"Bitcoin\",\"https://coinmarketcap.com/currencies/bitcoin/\",\"+4.98%\"],[\"ETH\",\"Ethereum\",\"https://coinmarketcap.com/currencies/ethereum/\",\"+8.31%\"],[\"BNB\",\"BNB\",\"https://coinmarketcap.com/currencies/bnb/\",\"+2.65%\"]]}]]}}"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "unwrapped": {
+    "categoryList": {
+      "headers": [
+        "trendingRank",
+        "slug",
+        "categoryCmcUrl",
+        "categoryName",
+        "marketCapUsd",
+        "marketCapChangePercentage24h",
+        "marketCapChangePercentage7d",
+        "marketCapChangePercentage30d",
+        "marketCapChangePercentage90d",
+        "marketCapChangePercentage1y",
+        "volume24h",
+        "volumeChangePercentage24h",
+        "volumeWeightedPricePerfVsCryptoMarketCap24h",
+        "volumeWeightedPricePerfVsCryptoMarketCap7d",
+        "volumeWeightedPricePerfVsCryptoMarketCap30d",
+        "socialKeywords",
+        "socialKeywordUniqueAuthorCount",
+        "topCoinList"
+      ],
+      "rows": [
+        [
+          1,
+          "binance-ecosystem",
+          "https://coinmarketcap.com/view/binance-ecosystem",
+          "Binance Ecosystem",
+          "2.23 T",
+          "-1.04%",
+          "+5.19%",
+          "-14.32%",
+          "-12.27%",
+          "-31.42%",
+          "144.65 B",
+          "-4.16%",
+          "+1.25%",
+          "-1.22%",
+          "+12.6%",
+          [
+            "SPCX",
+            "Hyperliquid",
+            "Binance",
+            "BNB"
+          ],
+          "19",
+          {
+            "headers": [
+              "coinSymbol",
+              "coinName",
+              "coinCmcUrl",
+              "priceChangePercent7d"
+            ],
+            "rows": [
+              [
+                "BTC",
+                "Bitcoin",
+                "https://coinmarketcap.com/currencies/bitcoin/",
+                "+4.59%"
+              ],
+              [
+                "ETH",
+                "Ethereum",
+                "https://coinmarketcap.com/currencies/ethereum/",
+                "+8.03%"
+              ],
+              [
+                "USDT",
+                "Tether USDt",
+                "https://coinmarketcap.com/currencies/tether/",
+                "+0.018978%"
+              ]
+            ]
+          }
+        ],
+        [
+          2,
+          "sec-cftc-token-taxonomy",
+          "https://coinmarketcap.com/view/sec-cftc-token-taxonomy",
+          "SEC/CFTC Token",
+          "1.68 T",
+          "-1.36%",
+          "+5.87%",
+          "-17.39%",
+          null,
+          null,
+          "46.79 B",
+          "-6.02%",
+          "+0.1%",
+          "+1.88%",
+          "-1.37%",
+          [
+            "SPCX",
+            "XRP",
+            "HYPE",
+            "TAO",
+            "DeFi",
+            "USDT",
+            "USDC",
+            "Stablecoin",
+            "ETF",
+            "UNI"
+          ],
+          "42",
+          {
+            "headers": [
+              "coinSymbol",
+              "coinName",
+              "coinCmcUrl",
+              "priceChangePercent7d"
+            ],
+            "rows": [
+              [
+                "BTC",
+                "Bitcoin",
+                "https://coinmarketcap.com/currencies/bitcoin/",
+                "+4.59%"
+              ],
+              [
+                "ETH",
+                "Ethereum",
+                "https://coinmarketcap.com/currencies/ethereum/",
+                "+8.03%"
+              ],
+              [
+                "XRP",
+                "XRP",
+                "https://coinmarketcap.com/currencies/xrp/",
+                "+8.27%"
+              ]
+            ]
+          }
+        ],
+        [
+          3,
+          "sec-cftc-token-taxonomy",
+          "https://coinmarketcap.com/view/sec-cftc-token-taxonomy",
+          "SEC/CFTC Token Taxonomy",
+          "1.68 T",
+          "-1.36%",
+          "+5.87%",
+          "-17.39%",
+          null,
+          null,
+          "46.79 B",
+          "-6.02%",
+          "+0.1%",
+          "+1.88%",
+          "-1.37%",
+          [
+            "USDT",
+            "USDC",
+            "Stablecoin",
+            "Stablecoins"
+          ],
+          "17",
+          {
+            "headers": [
+              "coinSymbol",
+              "coinName",
+              "coinCmcUrl",
+              "priceChangePercent7d"
+            ],
+            "rows": [
+              [
+                "BTC",
+                "Bitcoin",
+                "https://coinmarketcap.com/currencies/bitcoin/",
+                "+4.59%"
+              ],
+              [
+                "ETH",
+                "Ethereum",
+                "https://coinmarketcap.com/currencies/ethereum/",
+                "+8.03%"
+              ],
+              [
+                "XRP",
+                "XRP",
+                "https://coinmarketcap.com/currencies/xrp/",
+                "+8.27%"
+              ]
+            ]
+          }
+        ],
+        [
+          4,
+          "ftx-bankruptcy-estate",
+          "https://coinmarketcap.com/view/ftx-bankruptcy-estate",
+          "FTX Bankruptcy Estate ",
+          "1.65 T",
+          "-1.38%",
+          "+5.78%",
+          "-17.35%",
+          "-15.46%",
+          "-37.65%",
+          "44.91 B",
+          "-5.86%",
+          "+0.07%",
+          "+1.7%",
+          "-1.42%",
+          [
+            "SPCX"
+          ],
+          "5",
+          {
+            "headers": [
+              "coinSymbol",
+              "coinName",
+              "coinCmcUrl",
+              "priceChangePercent7d"
+            ],
+            "rows": [
+              [
+                "BTC",
+                "Bitcoin",
+                "https://coinmarketcap.com/currencies/bitcoin/",
+                "+4.59%"
+              ],
+              [
+                "ETH",
+                "Ethereum",
+                "https://coinmarketcap.com/currencies/ethereum/",
+                "+8.03%"
+              ],
+              [
+                "XRP",
+                "XRP",
+                "https://coinmarketcap.com/currencies/xrp/",
+                "+8.27%"
+              ]
+            ]
+          }
+        ],
+        [
+          5,
+          "layer-1",
+          "https://coinmarketcap.com/view/layer-1",
+          "Layer 1",
+          "1.76 T",
+          "-1.24%",
+          "+5.74%",
+          "-16.47%",
+          "-14.26%",
+          "-35.5%",
+          "50.1 B",
+          "-6.57%",
+          "+0.63%",
+          "+2.7%",
+          "+0.86%",
+          [
+            "ETH",
+            "Ethereum",
+            "Solana",
+            "DeFi",
+            "TAO",
+            "UNI",
+            "SUI",
+            "AVAX",
+            "NEAR",
+            "Base"
+          ],
+          "34",
+          {
+            "headers": [
+              "coinSymbol",
+              "coinName",
+              "coinCmcUrl",
+              "priceChangePercent7d"
+            ],
+            "rows": [
+              [
+                "BTC",
+                "Bitcoin",
+                "https://coinmarketcap.com/currencies/bitcoin/",
+                "+4.98%"
+              ],
+              [
+                "ETH",
+                "Ethereum",
+                "https://coinmarketcap.com/currencies/ethereum/",
+                "+8.31%"
+              ],
+              [
+                "BNB",
+                "BNB",
+                "https://coinmarketcap.com/currencies/bnb/",
+                "+2.65%"
+              ]
+            ]
+          }
+        ]
+      ]
+    }
+  }
+}
