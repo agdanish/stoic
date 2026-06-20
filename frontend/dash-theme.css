@@ -1,0 +1,14 @@
+/* ════════════════════════════════════════════════════════════════════════
+   signal-theme.css · Stoic
+   ----------------------------------------------------------------------------
+   INLINE-FIRST CONTRACT: the dashboard's full theme (tokens, layout, the
+   Pass-3 cursor-reactive chrome) lives in the inline <style> of index.html so
+   it paints on first byte with no FOUC and no external-load dependency.
+
+   This stylesheet is intentionally a thin, optional progressive-enhancement
+   layer. It is safe to be absent (the page is complete without it) and safe to
+   extend with repo-only overrides. It deliberately does NOT duplicate or
+   override the inline theme — duplication would risk load-order drift.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* (no overrides — inline theme is authoritative) */

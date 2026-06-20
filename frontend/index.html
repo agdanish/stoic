@@ -1,858 +1,1721 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-contrast="normal">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Stoic — Regime-Aware Risk Overlay</title>
-  <meta name="description" content="Stoic — a CoinMarketCap-powered Strategy Skill (Track 2, BNB Hack). A regime-aware DIRECTIONAL (trend/momentum) core gated by a CMC Fear & Greed contrarian regime read, with the positioning/flow divergence demoted to a risk filter. It is a RISK OVERLAY / drawdown manager: on REAL multi-regime daily Binance data it roughly HALVES max drawdown vs buy-and-hold and beats B&H out-of-sample specifically by sitting out the 2026 bear — a bear-dodge, not standalone alpha. Look-ahead-safe, in-sample-selected, OOS reported as-is.">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='5' y='20' width='22' height='4' rx='1' fill='%23F0B90B'/><rect x='7' y='14' width='18' height='4' rx='1' fill='%235B8DEF'/><rect x='9' y='8' width='14' height='4' rx='1' fill='%2316C784'/></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="signal-theme.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stoic — an AI trading agent unmoved by the crowd's Fear &amp; Greed</title>
+<meta name="description" content="Stoic roughly halves the worst-case drawdown of holding crypto (17.7% vs 58.3%) on real held-out data, and is honest about exactly what its edge is and isn't. CoinMarketCap × Trust Wallet × BNB Chain, Track 2 — Strategy Skills." />
+
+<!-- FONT DELIVERY: documented system-font fallback stack (NO Google-Fonts @import / preconnect, NO inlined woff2). -->
+<!-- Repo-context progressive enhancement only — the inline fallback always renders first. -->
+<link rel="stylesheet" href="dash-theme.css" />
+
+<style>
+/* Pass-5 · animatable angle for the single regime-state ring (registered so it can tween) */
+@property --a{syntax:'<angle>'; inherits:false; initial-value:0deg}
+:root{
+  --bg:#0B0E11; --surface:#13171E; --surface2:#181D26; --border:#232A35;
+  --gold:#F0B90B; --gold-text:#FFD54A;
+  --green:#16C784; --red:#F6465D; --blue:#5B8DEF; --amber:#F5A623;
+  --green-dim:rgba(22,199,132,.14); --red-dim:rgba(246,70,93,.14);
+  --blue-dim:rgba(91,141,239,.14); --amber-dim:rgba(245,166,35,.14);
+  --gold-dim:rgba(240,185,11,.16);
+  --text:#E7EBF2; --text2:#A7AFBE;
+  --mono: ui-monospace,"JetBrains Mono","SFMono-Regular",Menlo,monospace;
+  --head:"Plus Jakarta Sans",system-ui,sans-serif;
+  --main:Inter,-apple-system,system-ui,sans-serif;
+  --ld-ease: cubic-bezier(.22,1,.36,1);
+  --maxw:1320px;
+  --gap:clamp(12px,1.2vw,16px);
+  /* hero fill tokens — the drawdown chart fills whatever height the bento gives the hero */
+  --hero-stack-gap:clamp(12px,1.4vw,20px);
+  --bar-w:clamp(72px,9vw,128px);
+  --bar-gap:clamp(28px,6vw,80px);
+  --bar-min-h:150px;
+  --rad:14px;
+  --ring: 0 0 0 3px rgba(240,185,11,.55);
+  --shadow: 0 1px 0 rgba(0,0,0,.4), 0 6px 16px rgba(0,0,0,.35), 0 18px 40px rgba(0,0,0,.30);
+  --inset: inset 0 0 0 1px rgba(255,255,255,.06);
+}
+html[data-contrast="high"]{
+  --gold:#FFD54A; --gold-dim:rgba(255,213,74,.22);
+  --surface:#171C25; --surface2:#1E242F; --border:#33405250;
+  --border:#3A4555; --text:#FFFFFF; --text2:#C7CEDB;
+  --green:#27E29A; --red:#FF6075; --blue:#7DA6FF; --amber:#FFB94A;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:var(--main); font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+h1,h2,h3,h4{font-family:var(--head); font-weight:800; letter-spacing:-.02em; margin:0; line-height:1.1}
+p{margin:0}
+a{color:inherit}
+.mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+button{font-family:var(--main); cursor:pointer; color:inherit}
+:focus{outline:none}
+:focus-visible{outline:none; box-shadow:var(--ring); border-radius:8px}
+::selection{background:rgba(240,185,11,.28); color:#fff}
+
+/* Layer 1 reduced-motion CSS reset */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important; animation-iteration-count:1!important;
+    transition-duration:.01ms!important; scroll-behavior:auto!important;
+  }
+}
+
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 clamp(16px,3vw,32px)}
+
+/* ── status / dual-encode ── */
+.up{color:var(--green)} .down{color:var(--red)} .flat{color:var(--text2)}
+.is-amber{color:var(--amber)} .is-blue{color:var(--blue)} .is-gold{color:var(--gold-text)}
+
+/* ── tooltips (glossary) ── */
+[data-tip]{position:relative; cursor:help; border-bottom:1px dotted rgba(167,175,190,.5)}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{
+  content:attr(data-tip); position:absolute; left:0; bottom:calc(100% + 8px);
+  width:max-content; max-width:260px; background:var(--surface2); color:var(--text);
+  border:1px solid var(--border); border-radius:8px; padding:8px 10px; font:400 12.5px/1.45 var(--main);
+  letter-spacing:0; box-shadow:var(--shadow); z-index:40; white-space:normal;
+}
+[data-tip]:hover::before,[data-tip]:focus-visible::before{
+  content:""; position:absolute; left:14px; bottom:calc(100% + 2px);
+  border:6px solid transparent; border-top-color:var(--border); z-index:41;
+}
+
+/* ── eyebrow strip ── */
+.topbar{background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:30; backdrop-filter:blur(6px)}
+.topbar-inner{display:flex; align-items:center; gap:16px; min-height:52px; padding:8px clamp(16px,3vw,32px); max-width:var(--maxw); margin:0 auto}
+.brand{display:flex; align-items:center; gap:9px}
+.logomark{display:block}
+.brand-name{font-family:var(--head); font-weight:800; font-size:17px; letter-spacing:-.02em}
+.eyebrow{font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.14em; color:var(--text2)}
+.eyebrow b{color:var(--gold-text); font-weight:600}
+.chip{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11.5px;
+  border:1px solid var(--border); background:var(--surface2); border-radius:8px; padding:5px 9px; color:var(--text); text-decoration:none}
+.chip .badge{display:inline-grid; place-items:center; min-width:16px; height:16px; padding:0 4px;
+  background:var(--gold-dim); color:var(--gold-text); border-radius:5px; font-size:10.5px; font-weight:700}
+.topbar .right{margin-left:auto; display:flex; align-items:center; gap:12px}
+.toggle-btn{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11.5px;
+  border:1px solid var(--border); background:var(--surface2); border-radius:8px; padding:6px 10px; min-height:32px}
+.toggle-btn[aria-pressed="true"]{border-color:var(--gold); color:var(--gold-text); box-shadow:inset 0 0 0 1px var(--gold)}
+.muted-meta{font-family:var(--mono); font-size:11.5px; color:var(--text2); white-space:nowrap}
+
+/* ── bento grid ── */
+main{display:block}
+.bento{display:grid; grid-template-columns:repeat(12,1fr); gap:var(--gap); padding:var(--gap) 0;
+  grid-auto-rows:minmax(108px,auto); align-items:stretch}
+.card{background:var(--surface); border-radius:var(--rad); box-shadow:var(--shadow),var(--inset); padding:clamp(16px,2vw,24px); position:relative; min-width:0; display:flex; flex-direction:column}
+.card.flat{background:var(--surface)}
+.num,.kpi .v,.stat-val,.stat-delta,.ml-v,table.tt td,table.tt th{font-variant-numeric:tabular-nums}
+/* bottom-pinned footer strip that turns a short card's dead space into information */
+.card-foot{margin-top:auto; padding-top:13px; border-top:1px solid var(--border)}
+.micro-ladder{display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
+.micro-ladder .ml-cell{display:flex; flex-direction:column; gap:2px; min-width:0}
+.micro-ladder .ml-k{font-family:var(--mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.micro-ladder .ml-v{font-family:var(--mono); font-weight:700; font-size:15px; line-height:1.1; letter-spacing:-.01em}
+.micro-spark{margin-top:11px; display:flex; align-items:center; gap:9px}
+.micro-spark svg{display:block; flex:none}
+.micro-spark .ms-cap{font-family:var(--mono); font-size:9.5px; color:var(--text2); line-height:1.35; text-wrap:pretty}
+.card h3{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--text2); font-family:var(--mono); font-weight:600}
+.cap{font-size:12.5px; color:var(--text2); line-height:1.5; margin-top:10px}
+
+.c-hero{grid-column:span 6; grid-row:span 2}
+.c-gauge{grid-column:span 3; grid-row:span 2}
+.c-trace{grid-column:span 3; grid-row:span 2}
+.c-stat{grid-column:span 4}
+
+@media (max-width:959px) and (min-width:640px){
+  .bento{grid-template-columns:repeat(6,1fr)}
+  .c-hero{grid-column:span 6; grid-row:auto}
+  .c-gauge{grid-column:span 3; grid-row:auto}
+  .c-trace{grid-column:span 3; grid-row:auto}
+  .c-stat{grid-column:span 2}
+}
+@media (max-width:639px){
+  .bento{grid-template-columns:1fr}
+  .c-hero,.c-gauge,.c-trace,.c-stat{grid-column:span 1; grid-row:auto}
+}
+/* Desktop (12-col): the Agent Trace is a long feed — cap ONLY it and let it scroll INSIDE its
+   card (trading-terminal style), so it no longer drags the whole row to ~850px. The hero and gauge
+   size naturally; whichever is tallest sets a neat, bounded band height. The hero centres its
+   compact composition in that band (never clipped — it defines the band when it's the tallest). */
+@media (min-width:960px){
+  /* Explicit, bounded band height for the top row (≥ the gauge's ~536px natural height, so the
+     gauge fills it with no void and the compact hero — kept from wrapping tall by the trimmed
+     number size — fits without clipping). The Agent Trace fills the band and scrolls its long feed
+     INTERNALLY (trading-terminal style), so the 7 reads can't drag the above-fold tall. */
+  .c-hero,.c-gauge,.c-trace{height:clamp(540px,58vh,564px)}
+  .c-trace{overflow:hidden}
+  .c-trace .trace-list{flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+    scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+    -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+            mask-image:linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);}
+  .c-hero .hero-inner{justify-content:center}
+  .c-hero .hero-prov{margin-top:0}
+}
+
+
+/* ── hero (the ONE glass surface) ── */
+.c-hero{overflow:hidden; background:
+  radial-gradient(120% 90% at 18% 12%, rgba(240,185,11,.05), transparent 55%),
+  linear-gradient(180deg, rgba(255,255,255,.02), transparent 40%),
+  var(--surface);
+  box-shadow:var(--shadow), inset 0 0 0 1px rgba(255,255,255,.08), inset 0 1px 0 rgba(255,255,255,.06);
+  backdrop-filter:blur(8px)}
+.aurora{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0}
+.blob{position:absolute; border-radius:50%; filter:blur(100px); opacity:.09; will-change:transform}
+.blob.g{width:340px;height:340px; background:var(--gold); left:-8%; bottom:-18%; animation:drift1 30s ease-in-out infinite}
+.blob.b{width:300px;height:300px; background:var(--blue); left:34%; top:18%; animation:drift2 34s ease-in-out infinite}
+.blob.gr{width:280px;height:280px; background:var(--green); right:-6%; top:-14%; animation:drift3 32s ease-in-out infinite}
+.grain{position:absolute; inset:0; opacity:.17; mix-blend-mode:overlay; pointer-events:none; z-index:1}
+@keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(28px,-22px)}}
+@keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-24px,18px)}}
+@keyframes drift3{0%,100%{transform:translate(0,0)}50%{transform:translate(18px,24px)}}
+.hero-inner{position:relative; z-index:2; display:flex; flex-direction:column; gap:6px; height:100%}
+.hero-eyebrow{font-family:var(--mono); font-size:11.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold-text); font-weight:600}
+.hero-row{display:flex; gap:clamp(20px,3vw,44px); align-items:flex-end; align-content:flex-start; flex-wrap:wrap; margin-top:6px}
+.hero-num-wrap{display:flex; flex-direction:column; gap:0}
+.hero-num{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700;
+  font-size:clamp(4rem,10vw,8rem); letter-spacing:-.03em; line-height:.92; color:var(--gold)}
+.hero-num .pctsign{font-size:.55em; color:var(--text2); vertical-align:.42em; margin-left:.02em}
+.hero-ghost{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700;
+  font-size:clamp(.9rem,2.2vw,1.6rem); opacity:.4; letter-spacing:-.02em; margin-top:2px}
+.hero-ghost s{text-decoration:none; color:var(--red)}
+.ddbars{display:flex; align-items:flex-end; gap:18px; height:168px; padding-bottom:2px}
+.ddbar{display:flex; flex-direction:column; align-items:center; gap:8px; justify-content:flex-end}
+.ddtrack{width:48px; height:158px; display:flex; align-items:flex-end; border-bottom:1px solid var(--border)}
+.ddfill{width:100%; border-radius:6px 6px 0 0; transform-origin:bottom; transform:scaleY(0)}
+.ddfill.stoic{background:linear-gradient(180deg,var(--green),rgba(22,199,132,.55)); box-shadow:0 0 18px rgba(22,199,132,.25)}
+.ddfill.bh{background:linear-gradient(180deg,var(--red),rgba(246,70,93,.5))}
+.ddlabel{font-family:var(--mono); font-size:11px; text-align:center; line-height:1.3}
+.ddlabel .v{display:block; font-size:14px; font-weight:700; font-variant-numeric:tabular-nums}
+.hero-sub{font-family:var(--head); font-weight:700; font-size:clamp(1rem,2.1vw,1.35rem); letter-spacing:-.02em; margin-top:16px; text-wrap:pretty}
+.hero-sub .halved{color:var(--green)}
+.hero-supp{font-family:var(--mono); font-size:12.5px; color:var(--text2); margin-top:8px; line-height:1.6}
+.hero-supp b{color:var(--text)}
+.hero-prov{font-family:var(--mono); font-size:11.5px; color:var(--text2); margin-top:auto; padding-top:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.check-chip{display:inline-flex; align-items:center; gap:9px; align-self:flex-start; margin-top:14px;
+  font-family:var(--mono); font-size:13px; color:var(--amber); background:var(--amber-dim);
+  border:1px solid rgba(245,166,35,.4); border-radius:10px; padding:9px 14px; opacity:0}
+.check-chip .ck{display:inline-grid; place-items:center; width:18px; height:18px; border-radius:50%;
+  background:rgba(245,166,35,.25); color:var(--amber); font-size:11px; font-weight:800}
+.prov-dot{display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11px;
+  border:1px solid var(--border); border-radius:6px; padding:3px 7px; color:var(--text2)}
+.dot{width:7px; height:7px; border-radius:50%; background:var(--green)}
+.dot.real{background:var(--green)} .dot.illus{background:var(--blue)} .dot.sample{background:var(--amber)} .dot.dep{background:var(--red)}
+
+/* ── gauge ── */
+.gauge-val{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700; font-size:2.6rem; line-height:1; color:var(--gold)}
+.gauge-label{position:relative; display:inline-flex; align-items:center; gap:7px;
+  font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--amber); margin-top:8px; font-weight:600;
+  padding:6px 13px; border:1px solid var(--border); border-radius:999px; background:rgba(255,255,255,.015)}
+/* ── Pass-5 signature: ONE slow gold ring marking the active REGIME-STATE element (#gauge-label).
+   It is a regime marker, NOT a liveness signal: the spin runs only on the cached read and is
+   stopped (static ring) when the chip carries the SAMPLE provenance, so motion never implies
+   liveness the demo data lacks. 1px masked conic, gold-only, ≥6s — a quiet status backlight. */
+.gauge-label::before{content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none;
+  background:conic-gradient(from var(--a, 0deg), transparent 0 68%, var(--gold) 84%, transparent 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite:exclude;
+  opacity:.55}
+@media (prefers-reduced-motion:no-preference){
+  .gauge-label[data-provenance="cached"]::before{animation:ringspin 8s linear infinite}
+}
+/* sample/replay demo OR reduced-motion → static ring (still marks the element, no implied liveness) */
+.gauge-label[data-provenance="sample"]::before{animation:none; opacity:.3}
+@keyframes ringspin{to{--a:1turn}}
+.gauge-svg{display:block; width:100%; max-width:280px; margin:8px auto 0}
+.needle-grp{transform-box:fill-box}
+.reads{margin-top:14px; border-top:1px solid var(--border); padding-top:12px; display:none}
+.reads.open{display:block}
+.read{display:flex; justify-content:space-between; gap:10px; font-family:var(--mono); font-size:12px; padding:4px 0; color:var(--text2)}
+.read b{color:var(--text); font-weight:600}
+.read .stretched{color:var(--amber)}
+.gauge-foot{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:12px; font-family:var(--mono); font-size:11px; color:var(--text2)}
+.expand-btn{font-family:var(--mono); font-size:11.5px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:5px 9px; min-height:30px}
+.live-pill{display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11px; border:1px solid var(--border); border-radius:6px; padding:4px 8px}
+.live-pill .hb{width:8px; height:8px; border-radius:50%; background:var(--green)}
+.live-pill.is-live .hb{animation:heartbeat 1.6s ease-in-out infinite}
+.live-pill.is-cached{color:var(--amber)} .live-pill.is-cached .hb{background:var(--amber); animation:none}
+@keyframes heartbeat{0%,100%{transform:scale(1);opacity:1}14%{transform:scale(1.5);opacity:.7}28%{transform:scale(1)}42%{transform:scale(1.4);opacity:.75}}
+
+/* ── agent trace ── */
+.c-trace{display:flex; flex-direction:column}
+.trace-head{font-family:var(--mono); font-size:12.5px; color:var(--text); line-height:1.5; margin-top:8px}
+.trace-list{list-style:none; margin:14px 0 0; padding:0 0 0 16px; border-left:3px solid var(--gold); display:flex; flex-direction:column; gap:0; flex:1}
+.trace-row{position:relative; padding:9px 0 9px 4px; border-bottom:1px solid rgba(35,42,53,.6); opacity:0; transform:translateY(6px); --accent:var(--text2)}
+.trace-row::before{content:""; position:absolute; left:-22px; top:14px; width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px var(--bg)}
+.trace-line{display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; font-family:var(--mono); font-size:12px; line-height:1.5}
+.trace-ts{color:var(--text2); font-size:10.5px; min-width:54px}
+.trace-tool{color:var(--gold-text); opacity:.92; font-weight:600}
+.trace-arrow{color:var(--text2); opacity:.55}
+.trace-input{color:var(--text2)}
+.trace-signal{color:var(--text)}
+.trace-gate{font-weight:700}
+.trace-raw{margin-top:5px; margin-left:61px}
+.trace-raw summary{font-family:var(--mono); font-size:10.5px; color:var(--text2); cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:5px}
+.trace-raw summary::-webkit-details-marker{display:none}
+.trace-raw summary::before{content:"▸"; transition:transform .15s}
+.trace-raw[open] summary::before{transform:rotate(90deg)}
+.trace-raw pre{margin:6px 0 2px; font-size:11px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text2); overflow-x:auto; white-space:pre-wrap}
+.trace-invalid{margin-top:12px; font-family:var(--mono); font-size:11.5px; color:var(--amber); background:var(--amber-dim); border:1px solid rgba(245,166,35,.35); border-radius:10px; padding:9px 12px; line-height:1.5}
+.trace-badge{display:inline-flex; align-items:center; gap:6px; align-self:flex-start; margin-top:10px; font-family:var(--mono); font-size:10.5px; color:var(--blue); border:1px solid rgba(91,141,239,.35); background:var(--blue-dim); border-radius:6px; padding:3px 8px}
+
+/* ── stat tiles ── */
+.c-stat{display:flex; flex-direction:column}
+.stat-top{display:flex; align-items:center; gap:8px}
+.stat-ico{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:var(--surface2);border:1px solid var(--border)}
+.stat-label{font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--text2)}
+.stat-val{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700; font-size:2rem; line-height:1.05; margin-top:10px; letter-spacing:-.01em}
+.stat-delta{font-family:var(--mono); font-size:12px; margin-top:4px; color:var(--text2)}
+.stat-spark{margin-top:auto; padding-top:8px}
+.stat-sub{font-family:var(--mono); font-size:11.5px; color:var(--text2); margin-top:9px; padding-top:9px; border-top:1px solid var(--border)}
+
+/* ── below-fold narrative ── */
+.section{padding:clamp(40px,6vw,72px) 0 0}
+.section-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:6px}
+.kicker{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-text); font-weight:600}
+.section h2{font-size:clamp(1.5rem,3.4vw,2.3rem)}
+.section-lede{color:var(--text2); font-size:15px; max-width:64ch; margin-top:10px; line-height:1.6; text-wrap:pretty}
+
+/* tearsheet */
+.ts-controls{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:18px 0}
+.seg{display:inline-flex; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:3px}
+.seg button{font-family:var(--mono); font-size:12px; border:none; background:transparent; color:var(--text2); border-radius:7px; padding:7px 13px; min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--surface); color:var(--text); box-shadow:var(--inset)}
+.ts-select{font-family:var(--mono); font-size:12px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:8px 11px; min-height:38px}
+.ts-grid{display:grid; grid-template-columns:1.3fr 1fr; gap:var(--gap)}
+@media (max-width:840px){.ts-grid{grid-template-columns:1fr}}
+.kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap); margin-bottom:var(--gap)}
+@media (max-width:560px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--surface); border-radius:12px; box-shadow:var(--inset); padding:14px}
+.kpi .k{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text2)}
+.kpi .v{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700; font-size:1.35rem; margin-top:6px}
+.kpi .bh{font-family:var(--mono); font-size:11px; color:var(--text2); margin-top:3px}
+.verdict{border-radius:12px; padding:12px 14px; font-family:var(--mono); font-size:13px; margin-top:4px; line-height:1.5; border:1px solid var(--border)}
+.verdict.good{background:var(--green-dim); border-color:rgba(22,199,132,.4); color:var(--green)}
+.verdict.lag{background:var(--amber-dim); border-color:rgba(245,166,35,.4); color:var(--amber)}
+.verdict.bad{background:var(--red-dim); border-color:rgba(246,70,93,.4); color:var(--red)}
+.illus-tag{display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; color:var(--blue); border:1px solid rgba(91,141,239,.35); background:var(--blue-dim); border-radius:6px; padding:3px 8px; margin-bottom:10px}
+.chart-card{background:var(--surface); border-radius:12px; box-shadow:var(--inset); padding:16px}
+.chart-card svg{display:block; width:100%; height:auto}
+.tbl-wrap{overflow-x:auto; border-radius:12px; box-shadow:var(--inset); margin-top:var(--gap)}
+table.tt{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:560px; background:var(--surface)}
+table.tt th,table.tt td{padding:11px 14px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--border)}
+table.tt thead th{position:sticky; top:0; background:var(--surface2); color:var(--text2); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.05em; z-index:2}
+table.tt th:first-child,table.tt td:first-child{text-align:left; position:sticky; left:0; background:var(--surface); z-index:1}
+table.tt thead th:first-child{z-index:3; background:var(--surface2)}
+table.tt td .num{font-variant-numeric:tabular-nums}
+.beat-pill{display:inline-block; font-size:10px; padding:1px 6px; border-radius:5px; margin-left:6px}
+.beat-pill.pos{background:var(--green-dim); color:var(--green)}
+.beat-pill.less{background:var(--amber-dim); color:var(--amber)}
+
+/* capsule */
+.capsule{background:var(--surface); border-radius:12px; box-shadow:var(--inset); overflow:hidden}
+.capsule-bar{display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--border); flex-wrap:wrap}
+.capsule pre{margin:0; padding:18px; font-family:var(--mono); font-size:12.5px; line-height:1.65; overflow-x:auto; max-height:440px; color:var(--text2)}
+.capsule pre .jk{color:var(--gold-text); opacity:.9}
+.capsule pre .js{color:var(--text)}
+.capsule pre .jn{color:var(--blue)}
+.capsule pre .jb{color:var(--green)}
+.capsule pre .jh{color:var(--amber)}
+.btn{display:inline-flex; align-items:center; gap:8px; min-height:40px; min-width:44px; justify-content:center;
+  font-family:var(--mono); font-size:12.5px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:9px 14px; color:var(--text); text-decoration:none}
+.btn.primary{border-color:var(--gold); color:var(--gold-text)}
+.btn:hover{border-color:var(--text2)}
+.badge-soft{display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11px; color:var(--text2); border:1px solid var(--border); border-radius:6px; padding:4px 8px}
+.toast{position:fixed; left:50%; bottom:32px; transform:translate(-50%,80px); opacity:0; z-index:60;
+  background:var(--surface2); border:1px solid var(--gold); color:var(--gold-text);
+  font-family:var(--mono); font-size:13px; padding:12px 18px; border-radius:12px; box-shadow:var(--shadow); pointer-events:none}
+.toast.show{animation:toastIn .4s var(--ld-ease) forwards}
+@supports (transition-timing-function: linear(0,1)){
+  .toast.show{animation:toastInSpring .6s linear(0,.4 18%,1.06 42%,.98 62%,1) forwards}
+}
+@keyframes toastIn{to{transform:translate(-50%,0); opacity:1}}
+@keyframes toastInSpring{to{transform:translate(-50%,0); opacity:1}}
+
+/* mechanism */
+.mech-grid{display:grid; grid-template-columns:1.2fr 1fr; gap:var(--gap); align-items:start}
+@media (max-width:840px){.mech-grid{grid-template-columns:1fr}}
+.pipeline{display:flex; flex-direction:column; gap:12px}
+.stage{display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:12px; box-shadow:var(--inset); padding:14px 16px}
+.stage .n{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:13px}
+.stage h4{font-size:14px}
+.stage p{font-family:var(--mono); font-size:11.5px; color:var(--text2); margin-top:3px}
+.arrow-down{text-align:center; color:var(--text2); font-size:18px; line-height:.4}
+.const-inline{font-family:var(--mono); font-size:11px; color:var(--text2)}
+.const-inline b{color:var(--gold-text)}
+
+/* accordion (methodology / deprecated) */
+.acc{border:1px solid var(--border); border-radius:12px; background:var(--surface); overflow:hidden; margin-top:var(--gap)}
+.acc.dashed{border-style:dashed; border-color:rgba(246,70,93,.4); background:rgba(246,70,93,.03)}
+.acc > summary{list-style:none; cursor:pointer; padding:16px 20px; display:flex; align-items:center; gap:12px; font-family:var(--head); font-weight:700; font-size:1.05rem}
+.acc > summary::-webkit-details-marker{display:none}
+.acc > summary .tw{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--text2); display:inline-flex; align-items:center; gap:6px}
+.acc > summary .tw::after{content:"▸"; transition:transform .2s}
+.acc[open] > summary .tw::after{transform:rotate(90deg)}
+.acc-body{padding:0 20px 20px; border-top:1px solid var(--border)}
+.const-table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; margin-top:14px}
+.const-table td{padding:7px 10px; border-bottom:1px solid var(--border)}
+.const-table td:first-child{color:var(--text2)}
+.const-table td:last-child{text-align:right; color:var(--text); font-weight:600}
+.amber-note{font-family:var(--mono); font-size:12px; color:var(--amber); border:1px solid rgba(245,166,35,.35); border-left:2px solid var(--amber); background:var(--amber-dim); border-radius:8px; padding:11px 14px; margin-top:16px; line-height:1.55}
+.timeline-strip{display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:11.5px; color:var(--text2); margin-top:16px; flex-wrap:wrap}
+.timeline-bar{flex:1; min-width:200px; height:10px; border-radius:5px; background:var(--surface2); position:relative; overflow:hidden; border:1px solid var(--border)}
+.timeline-bar .insample{position:absolute; left:0; top:0; bottom:0; width:70%; background:var(--blue-dim); border-right:1px solid var(--gold)}
+.timeline-bar .oos{position:absolute; right:0; top:0; bottom:0; width:30%; background:var(--green-dim)}
+.prov-badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px}
+
+.dep-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:var(--gap); margin-top:8px}
+@media (max-width:560px){.dep-grid{grid-template-columns:1fr}}
+
+/* footer */
+footer{border-top:1px solid var(--border); background:var(--surface); margin-top:clamp(48px,7vw,90px)}
+.foot-inner{padding:clamp(28px,4vw,44px) 0; display:flex; gap:28px; flex-wrap:wrap; justify-content:space-between; align-items:flex-start}
+.foot-col{display:flex; flex-direction:column; gap:10px; min-width:200px}
+.foot-legend{display:flex; gap:8px; flex-wrap:wrap}
+.legend-chip{display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11px; color:var(--text2); border:1px solid var(--border); border-radius:6px; padding:4px 8px; text-decoration:none}
+.foot-chain{font-family:var(--mono); font-size:12px; color:var(--text2)}
+.foot-tag{font-family:var(--mono); font-size:11.5px; color:var(--text2); max-width:40ch; line-height:1.6}
+.powered{font-family:var(--mono); font-size:11px; color:var(--text2); display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+
+/* error / skeleton */
+.err-slot{font-family:var(--mono); font-size:11.5px; color:var(--amber); border:1px solid rgba(245,166,35,.3); background:var(--amber-dim); border-radius:8px; padding:7px 10px; margin-top:10px; display:none; line-height:1.5}
+.err-slot.show{display:block}
+
+/* ── Pass-3 · cursor-reactive chrome (compositor-only; all behaviour hard-gated in dash-ui.js) ──
+   Spotlight vars --px/--py are %  (set per-card by the delegated handler).
+   Hero-tilt  vars --rx/--ry are 0..1 (separate names so they never clobber the card spotlight). */
+.card::after{ /* interior wash — a faint instrument backlight, NOT a glowing marketing card */
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0;
+  background:radial-gradient(180px circle at var(--px,50%) var(--py,50%), rgba(240,185,11,.05), transparent 70%);
+  opacity:0; transition:opacity .25s ease;
+}
+.card::before{ /* genuine 1px masked gold ring (gradient padding-box XOR'd to a hairline) */
+  content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none; z-index:4;
+  background:radial-gradient(180px circle at var(--px,50%) var(--py,50%), var(--gold), transparent 60%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite:exclude;
+  opacity:0; transition:opacity .25s ease;
+}
+.card:hover::after{opacity:1}      /* one shared light source → only the hovered card lights */
+.card:hover::before{opacity:1}
+/* B · 3D tilt isolated to the hero north-star tile (perspective on the card, rotation on its content
+   plane so the static aurora behind it stays flat → quiet parallax). ±3deg, no scale, no blur. */
+.c-hero{perspective:900px}
+.c-hero .hero-inner{
+  transform:rotateX(calc((.5 - var(--ry,.5))*6deg)) rotateY(calc((var(--rx,.5) - .5)*6deg));
+  transform-style:preserve-3d; transition:transform .3s ease;
+}
+@media (pointer:coarse), (prefers-reduced-motion:reduce){
+  /* touch / reduced-motion: zero chrome, Pass-1/2 layout byte-identical */
+  .card::after,.card::before{display:none}
+  .c-hero{perspective:none}
+  .c-hero .hero-inner{transform:none; transition:none}
+}
+/* ════ Pass-4 · scroll effects — PURE progressive enhancement ════
+   Default (no JS / no scroll-timeline support / motion off) = the fully-visible
+   dense Pass-1 layout. Motion is wrapped in no-preference + @supports, with an
+   IntersectionObserver fallback (dash-ui.js) for engines lacking scroll timelines. */
+
+/* 1 · reading-progress meter — pinned to the bottom seam of the sticky top strip */
+.read-progress{position:absolute; left:0; right:0; bottom:0; height:2px; z-index:31; pointer-events:none;
+  transform-origin:left; transform:scaleX(0);
+  background:linear-gradient(90deg, var(--gold), var(--gold-text));}
+@media (prefers-reduced-motion:no-preference){
+  @supports (animation-timeline:scroll()){
+    .read-progress{animation:sp linear both; animation-timeline:scroll(root block)}
+  }
+}
+@keyframes sp{from{transform:scaleX(0)} to{transform:scaleX(1)}}
+
+/* 4 · sticky condensed north-star terminal bar — slides in once past the fold */
+.northstar-bar{position:fixed; top:52px; left:0; right:0; z-index:24; transform:translateY(-110%);
+  transition:transform .32s var(--ld-ease);
+  background:rgba(19,23,30,.92); backdrop-filter:blur(9px); border-bottom:1px solid var(--border);
+  box-shadow:0 8px 18px rgba(0,0,0,.28)}
+.northstar-bar.show{transform:none}
+.nb-inner{max-width:var(--maxw); margin:0 auto; padding:7px clamp(16px,3vw,32px);
+  display:flex; align-items:center; gap:13px; flex-wrap:wrap; font-family:var(--mono); font-size:12px}
+.nb-tag{font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--gold-text); font-weight:700}
+.nb-stat{display:inline-flex; align-items:baseline; gap:6px; font-variant-numeric:tabular-nums}
+.nb-stat .k{color:var(--text2); font-size:10px; text-transform:uppercase; letter-spacing:.05em}
+.nb-stat .v{font-weight:700}
+.nb-sep{width:1px; height:13px; background:var(--border); display:inline-block}
+@media (max-width:600px){ .nb-hideable{display:none} }
+
+/* 2 · below-fold panel reveals — whole cards as units, ≤16px travel */
+@media (prefers-reduced-motion:no-preference){
+  @supports (animation-timeline:view()){
+    .reveal-panel{animation:rise linear both; animation-timeline:view(); animation-range:entry 0% entry 60%}
+  }
+}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+/* IntersectionObserver fallback (Firefox / no scroll-driven timelines) — applied only by JS */
+.reveal-panel.io{opacity:0; transform:translateY(16px); transition:opacity .55s var(--ld-ease), transform .55s var(--ld-ease)}
+.reveal-panel.io.io-in{opacity:1; transform:none}
+
+/* 5 · scroll-scrubbed draw-in of the REAL drawdown geometry (the divergingBar <rect>s
+   in the stat tiles + the equity path) — reveals the existing data, never fabricates it */
+@media (prefers-reduced-motion:no-preference){
+  @supports (animation-timeline:view()){
+    .stat-spark svg rect{transform-box:fill-box; transform-origin:bottom; animation:ddraw linear both;
+      animation-timeline:view(); animation-range:entry 10% cover 55%}
+  }
+}
+@keyframes ddraw{from{transform:scaleY(0)} to{transform:scaleY(1)}}
+
+/* perf: skip rendering far-below panels until near the viewport */
+#mechanism, #methodology, #deprecated{content-visibility:auto; contain-intrinsic-size:0 600px}
+
+/* gentle proximity snap on section starts — never mandatory; long table region exempt */
+@media (prefers-reduced-motion:no-preference) and (pointer:fine){
+  html{scroll-snap-type:y proximity; scroll-padding-top:96px}
+  .section{scroll-snap-align:start; scroll-margin-top:96px}
+  #tearsheet, #tearsheet *{scroll-snap-align:none}
+}
+
+/* Pass-5 · cursor-revealed blueprint grid — fixed, BEHIND content (z-1), pure paint, no per-dot loop.
+   24px rhythm (matches --gap), gold ≤5% alpha, revealed only within ~200px of the cursor via a
+   radial mask driven by the global --mx/--my bus. Hidden until the pointer moves (idle = static). */
+.blueprint-grid{position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(240,185,11,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240,185,11,.045) 1px, transparent 1px);
+  background-size:24px 24px;
+  -webkit-mask:radial-gradient(circle 200px at var(--mx,-400px) var(--my,-400px), #000 0%, transparent 70%);
+          mask:radial-gradient(circle 200px at var(--mx,-400px) var(--my,-400px), #000 0%, transparent 70%);}
+@media (pointer:coarse), (prefers-reduced-motion:reduce){ .blueprint-grid{display:none} }
+
+.reveal{transition:opacity .6s var(--ld-ease), transform .6s var(--ld-ease)}
+.reveal.pre{opacity:0; transform:translateY(14px)}
+.reveal.in{opacity:1; transform:none}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+</style>
 </head>
-<body data-page="signal" data-mode="sample" data-theme="dark">
-  <aside class="stx-side" id="stxSide"></aside>
-  <div class="stx-content">
-    <header class="stx-top" id="stxTop"></header>
 
-    <main class="stx-main">
-      <div class="stx-pagehead">
-        <div class="stx-eyebrow">CMC × Trust Wallet × BNB Chain · Track 2 — Strategy Skills</div>
-        <h1>Stoic — Regime-Aware Risk Overlay</h1>
-        <p>A CoinMarketCap <b>Skill</b> that emits a <b>backtestable Strategy Capsule</b> for a
-           <b>regime-aware DIRECTIONAL (trend/momentum) core</b> — gated by a CoinMarketCap
-           <b>Fear &amp; Greed contrarian regime read</b> and risk-filtered by a positioning/flow
-           divergence overlay. It is a <b>risk overlay / drawdown manager</b>: on REAL multi-regime
-           daily data it roughly <b>halves maximum drawdown</b> vs buy-and-hold across bull, bear and
-           chop, and out-returns B&amp;H out-of-sample specifically by <b>sitting out the 2026 bear</b>.</p>
-      </div>
+<body>
 
-      <!-- HONEST FRAMING banner — the spine of the submission, stated up front -->
-      <div class="stx-zone" id="honestyBanner" style="margin-bottom:18px;border-radius:14px">
-        <span class="pin a"></span>
-        <div>
-          <div class="t">What this edge IS — and is NOT (stated up front)</div>
-          <div class="d">
-            The <b>robust, regime-independent claim is DRAWDOWN REDUCTION</b> — the overlay roughly
-            <b>halves max-DD</b> vs buy-and-hold on every window/cost tested.
-            The out-of-sample B&amp;H beat is a <b>BEAR-DODGE, not standalone alpha</b>: the long-only
-            core goes <b>flat in bears</b> (dodging the 2026 drawdown) but <b>LAGS in bulls</b> —
-            in-sample (a strong bull) it returns <b>+57.5% vs B&amp;H +262.0%</b>, and in a bull
-            mid-window it loses to B&amp;H by <b>~37%</b>. Two of three OOS "beats" are negative-absolute
-            "lost-less" beats. We never present the absolute beat as regime-independent out-performance.
-            Source: <code>../backtest/report-momentum.json</code> + <code>ROBUSTNESS-momentum.md</code>.
-          </div>
-        </div>
-      </div>
+<!-- Pass-5 · cursor-revealed blueprint grid (behind everything; masked to the cursor via --mx/--my) -->
+<div class="blueprint-grid" aria-hidden="true"></div>
 
-      <!-- Signal-of-the-moment hero -->
-      <div class="stx-reco" id="reco" style="margin-bottom:18px">
-        <div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div>
-        <div>
-          <div class="t" id="recoTitle">Current regime read</div>
-          <div class="d" id="recoDesc">Loading the live regime / signal snapshot…</div>
-        </div>
-        <div class="act">
-          <span class="stx-prov-badge replay" id="recoProv">sample</span>
-        </div>
-      </div>
-
-      <!-- KPI strip (out-of-sample headline — the risk-overlay result) -->
-      <div class="stx-kpis" id="kpiStrip" style="margin-bottom:6px"></div>
-      <p class="hint" id="kpiNote" style="margin:0 2px 18px">Loading backtest KPIs from <code>../backtest/report-momentum.json</code>…</p>
-
-      <!-- Regime + Capsule -->
-      <div class="stx-grid g-2" style="margin-bottom:18px" id="capsule">
-        <!-- Strategy Capsule -->
-        <div class="stx-card soft">
-          <div class="stx-card-h"><h3>Strategy Capsule</h3>
-            <span class="stx-prov-badge replay" id="capProv">sample · fixtures</span>
-          </div>
-          <p class="hint">The machine-readable, backtestable SPEC the Skill emits for the regime-aware
-            directional core. Every numeric rule cites an engine constant by name (single source of truth).
-            Live regime fields shown from pinned CMC fixtures.</p>
-          <pre class="sig-capsule" id="capsuleText">loading…</pre>
-          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
-            <button class="stx-btn gold" id="copyCapsule">Copy Capsule JSON</button>
-            <button class="stx-btn" id="dlCapsule">Download .json</button>
-            <a class="stx-btn ai" href="../skills/sentiment-divergence-regime/SKILL.md" target="_blank" rel="noopener">Open SKILL.md ↗</a>
-          </div>
-        </div>
-
-        <!-- Regime read -->
-        <div class="stx-card soft">
-          <div class="stx-card-h"><h3>Regime Gate (contrarian Fear &amp; Greed)</h3><span class="stx-prov-badge replay">sample</span></div>
-          <p class="hint">The gate modulates the directional core; it never flips its sign. CoinMarketCap's own
-            guidance: extreme GREED is overvalued (trim/flatten a long); extreme FEAR is a bargain (favour long);
-            stretched funding amplifies the contrarian risk filter. Values from
-            <code>get_global_metrics_latest</code> + <code>get_global_crypto_derivatives_metrics</code> fixtures.</p>
-          <div class="stx-kv"><span class="k">Fear &amp; Greed</span><span class="v" id="rgFG">—</span></div>
-          <div class="stx-kv"><span class="k">Funding (per interval)</span><span class="v" id="rgFunding">—</span></div>
-          <div class="stx-kv"><span class="k">Long / short ratio</span><span class="v" id="rgLS">—</span></div>
-          <div class="stx-kv"><span class="k">Regime label</span><span class="v" id="rgLabel">—</span></div>
-          <div class="stx-kv"><span class="k">Gate effect on the long</span><span class="v" id="rgSide">—</span></div>
-          <div class="stx-kv"><span class="k">Gate gain</span><span class="v" id="rgGain">—</span></div>
-          <div class="stx-zone" style="margin-top:6px"><span class="pin g"></span><div><div class="t">Directional core, contrarian-gated</div><div class="d">The trend/momentum core decides LONG vs FLAT and <b>rides the trend</b>; the F&amp;G gate scales that edge within <b>[GATE_MIN, GATE_MAX]</b> (extreme greed trims, extreme fear favours), and the divergence/funding overlay <b>trims or vetoes</b> a long into crowded-long euphoria. The old contrarian read is demoted to this risk filter.</div></div></div>
-        </div>
-      </div>
-
-      <!-- Directional core mechanics over time -->
-      <div class="stx-card soft" style="margin-bottom:18px" id="diverge">
-        <div class="stx-card-h"><h3>Directional Core &amp; Risk Filter Over Time</h3>
-          <span class="stx-prov-badge replay" id="divProv">illustrative</span>
-          <span class="stx-period" id="divToken">BTC ▾</span>
-        </div>
-        <p class="hint" id="divHint">EMA trend separation + momentum → directional bias (0..1000, 500 = flat),
-          and the contrarian gate / risk-filter trim applied on top. EMA fast <b>30</b> / slow <b>80</b>,
-          momentum lookback <b>20</b>; the position decided at <b>t</b> is held into <b>t+1</b> (look-ahead-safe).</p>
-        <div class="sig-illus">
-          <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-          <span><b>ILLUSTRATIVE shape</b> — <code>report-momentum.json</code> ships summary metrics only, not a per-bar series, so this trace is a deterministic synthetic rendering of the strategy's <em>mechanics</em> (price trend → EMA separation → directional bias → gated conviction). It is <b>not</b> backtest output. The numbers below the fold ARE the real backtest.</span>
-        </div>
-        <div id="divChart" style="margin-top:10px"></div>
-        <div id="divLegend"></div>
-        <div class="stx-grid g-3" style="margin-top:14px;text-align:center">
-          <div><div class="num" id="divNowZ" style="font-size:1.25rem;color:var(--c4)">—</div><div class="hint" style="margin:0">latest trend separation</div></div>
-          <div><div class="num" id="divNowConv" style="font-size:1.25rem;color:var(--ai)">—</div><div class="hint" style="margin:0">conviction (500=flat)</div></div>
-          <div><div class="num" id="divNowSide" style="font-size:1.25rem;color:var(--green)">—</div><div class="hint" style="margin:0">side @ ENTRY_THRESHOLD</div></div>
-        </div>
-      </div>
-
-      <!-- Backtest KPIs (HEADLINE = momentum / risk-overlay report) -->
-      <div class="stx-card soft" style="margin-bottom:18px" id="backtest">
-        <div class="stx-card-h"><h3>Backtest — Risk Overlay vs Buy &amp; Hold</h3>
-          <span class="stx-prov-badge chain" id="btProv">REAL Binance data</span>
-        </div>
-        <p class="hint" id="btMeta">Loading…</p>
-        <div class="stx-filters">
-          <div class="stx-mode" id="btWindow" style="border-radius:999px">
-            <button data-w="outOfSample" class="on">OUT-OF-SAMPLE</button>
-            <button data-w="inSample">in-sample (bull)</button>
-            <button data-w="full">full</button>
-          </div>
-          <select id="btToken">
-            <option value="__agg">Aggregate (equal-weight)</option>
-          </select>
-          <span class="hint" id="btWindowNote" style="margin:0"></span>
-        </div>
-
-        <div class="stx-grid g-2" style="align-items:start">
-          <div>
-            <div class="stx-kpis" id="btKpis" style="grid-template-columns:repeat(2,1fr);margin:0"></div>
-          </div>
-          <div>
-            <div class="stx-card-h" style="margin-bottom:8px"><h3 style="font-size:.92rem">Total return — strategy vs buy &amp; hold</h3></div>
-            <div id="btBar"></div>
-            <div id="btBarLegend"></div>
-          </div>
-        </div>
-
-        <!-- Drawdown comparison — the ROBUST, regime-independent claim -->
-        <div class="stx-card-h" style="margin:18px 0 8px"><h3 style="font-size:.92rem">Max drawdown — strategy vs buy &amp; hold (the robust claim)</h3></div>
-        <div id="btDD"></div>
-        <div id="btDDLegend"></div>
-
-        <div id="btVerdict" class="stx-verdict" style="margin-top:16px">—</div>
-
-        <div style="overflow-x:auto;margin-top:16px">
-          <table class="stx-table" id="btTable">
-            <thead><tr>
-              <th>Symbol</th><th>Window</th><th>Return</th><th>Buy&amp;Hold</th>
-              <th>Win&nbsp;rate</th><th>Max&nbsp;DD</th><th>B&amp;H&nbsp;DD</th><th>Sharpe</th><th>Sortino</th><th>Trades</th><th>Bars</th>
-            </tr></thead>
-            <tbody id="btBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Methodology + Engine constants -->
-      <div class="stx-grid g-2" id="constants">
-        <div class="stx-card">
-          <div class="stx-card-h"><h3>Methodology &amp; Honesty</h3><span class="stx-prov-badge chain">verifiable</span></div>
-          <ul class="sig-ul" id="methodList"></ul>
-        </div>
-        <div class="stx-card">
-          <div class="stx-card-h"><h3>Engine Constants</h3><span class="tag" id="constVer">single source of truth</span></div>
-          <p class="hint">From <code>report-momentum.json.params.moduleConstants</code>. The Capsule and SKILL.md cite these by name; if a number disagrees with the engine, the engine wins.</p>
-          <div style="overflow-x:auto"><table class="stx-table" id="constTable"><tbody id="constBody"></tbody></table></div>
-        </div>
-      </div>
-
-      <!-- DEPRECATED original contrarian prototype (report.json) — reachable, never the headline -->
-      <div class="stx-card" style="margin-top:18px;border:1px dashed var(--border, #2a3146)" id="deprecated">
-        <div class="stx-card-h">
-          <h3>Original contrarian prototype — DEPRECATED (loss, retained verbatim)</h3>
-          <span class="stx-prov-badge warn" id="depProv">deprecated · loss</span>
-        </div>
-        <p class="hint">
-          This is the project's <b>original purely-contrarian divergence backtest</b>
-          (<code>../backtest/report.json</code>, hourly, 2026-02-17 → 2026-06-17). It <b>lost to buy-and-hold</b>
-          and is the frozen anchor that motivated the pivot to the risk-overlay above. It is kept for full
-          disclosure and <b>byte-identical / never overwritten</b> — it is <b>NOT the headline result</b>.
-          A contrarian signal cannot out-earn buy-and-hold in a rising market, and the two-leg construct was
-          degenerate on ~82% of bars (free futures endpoints retain only ~30d of flow). Why we pivoted, in one panel.
-        </p>
-        <button class="stx-btn" id="depToggle" style="margin-bottom:12px">Show the original contrarian loss ▾</button>
-        <div id="depBody" hidden>
-          <div class="stx-kpis" id="depKpis" style="margin:0 0 14px"></div>
-          <div id="depVerdict" class="stx-verdict" style="margin-bottom:14px">—</div>
-          <p class="hint" id="depMeta" style="margin:0">Loading the original anchor from <code>../backtest/report.json</code>…</p>
-        </div>
-      </div>
-
-      <div class="stx-foot" id="foot">
-        Stoic · BNB Hack: AI Trading Agent Edition · Track 2 (Strategy Skills) · BNB Smart Chain (chainId 0x38)<br/>
-        <span id="footNote">Loading data-source provenance…</span>
-      </div>
-    </main>
+<!-- ════════ 0 · EYEBROW STRIP ════════ -->
+<header class="topbar" role="banner">
+  <div class="topbar-inner">
+    <a class="brand" href="https://github.com/agdanish/stoic" target="_blank" rel="noopener" aria-label="Stoic — GitHub repository">
+      <svg class="logomark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+        <rect x="1.5" y="13" width="5" height="7" rx="1.6" fill="#F0B90B"/>
+        <rect x="8.5" y="7" width="5" height="13" rx="1.6" fill="#5B8DEF"/>
+        <rect x="15.5" y="2" width="5" height="18" rx="1.6" fill="#16C784"/>
+      </svg>
+      <span class="brand-name">Stoic</span>
+    </a>
+    <span class="eyebrow" id="eyebrow-txt">CMC × Trust Wallet × BNB Chain · Track 2 — <b>Strategy Skills</b></span>
+    <a class="chip" href="#trace" id="tools-chip" aria-label="7 CoinMarketCap tools wired — jump to the Agent Decision Trace"
+       data-tip="search_cryptos · get_crypto_quotes_latest · get_crypto_technical_analysis · get_global_metrics_latest · get_global_crypto_derivatives_metrics · trending_crypto_narratives · get_crypto_metrics">
+      7 CMC tools wired <span class="badge">7</span>
+    </a>
+    <div class="right">
+      <button class="toggle-btn" id="contrast-toggle" aria-pressed="false" aria-label="Toggle projector / high-contrast mode">◐ Projector</button>
+      <span class="muted-meta">436 tests · BNB Chain</span>
+    </div>
   </div>
+  <!-- Pass-4 · reading-progress meter (pure-CSS scroll-timeline; JS fallback for Firefox) -->
+  <div class="read-progress" id="readprog" aria-hidden="true"></div>
+</header>
 
-  <script src="signal-charts.js"></script>
-  <script src="signal-ui.js"></script>
-  <script src="signal-shell.js"></script>
-  <script>
-  (function () {
-    var $ = function (id) { return document.getElementById(id); };
-    var fmtPct = function (x) { return (x >= 0 ? '+' : '') + (x * 100).toFixed(1) + '%'; };
-    var fmtPctNoSign = function (x) { return (x * 100).toFixed(1) + '%'; };
-    var fmt2 = function (x) { return (x >= 0 ? '+' : '') + x.toFixed(2); };
-    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+<!-- Pass-4 · sticky condensed north-star terminal bar (appears past the fold; duplicates hero
+     numbers for scroll context, so aria-hidden — screen readers get the real hero tile) -->
+<div class="northstar-bar" id="northstar" aria-hidden="true">
+  <div class="nb-inner">
+    <span class="nb-tag">Stoic · OOS</span>
+    <span class="nb-stat"><span class="k">Max&nbsp;DD</span><span class="v up">17.7%</span></span>
+    <span class="nb-sep"></span>
+    <span class="nb-stat"><span class="k">B&amp;H&nbsp;DD</span><span class="v down">58.3%</span></span>
+    <span class="nb-sep nb-hideable"></span>
+    <span class="nb-stat nb-hideable"><span class="k">OOS&nbsp;ret</span><span class="v down">-0.3%</span></span>
+    <span class="nb-sep nb-hideable"></span>
+    <span class="nb-stat nb-hideable"><span class="k">vs&nbsp;B&amp;H</span><span class="v down">-43.5%</span></span>
+  </div>
+</div>
 
-    // ════════════════════════════════════════════════════════════════════
-    //  REGIME read (from CMC fixtures — SAMPLE). Mirrors the F&G contrarian
-    //  gate (src/signal/regimeGate.ts): extreme FEAR favours the long,
-    //  extreme GREED trims/flattens it; stretched funding fuels the risk filter.
-    //  The gate MODULATES the directional core; it never flips the core's sign.
-    // ════════════════════════════════════════════════════════════════════
-    // DEMO HERO REGIME (sample). Pinned to a documented EXTREME-GREED + STRETCHED-FUNDING
-    // scenario so the contrarian gate + risk filter fire visibly on camera: F&G 78 >=
-    // GREED_EXTREME(75) -> "extreme-greed", gate TRIMS the long; |funding| 0.00075 >=
-    // FUNDING_STRETCHED(0.0005) -> stretched, crowded-long -> risk filter trims/vetoes the long.
-    // This is a SAMPLE demo regime, NOT the literal current pinned snapshot (the latest LIVE
-    // keyed capture under fixtures/cmc/live/ is F&G = 23 "extreme fear -> favour long").
-    // See docs/DEMO.md.
-    var FIX = {
-      fearGreed: 78,                 // extreme-greed demo regime (>= GREED_EXTREME = 75)
-      fearGreedClass: 'Extreme Greed',
-      funding: 0.00075,              // stretched, crowded-long (>= FUNDING_STRETCHED = 0.0005)
-      longShort: 1.62,               // heavily long-skewed (crowded longs)
-      btcDominance: 54.7,
-      narratives: [
-        { name: 'AI Agents', chg: 6.8 }, { name: 'DePIN', chg: -2.3 }, { name: 'RWA', chg: 1.2 }
-      ],
-      symbols: [
-        { symbol: 'BTC', cmcId: 1, resolved: true },
-        { symbol: 'ETH', cmcId: 1027, resolved: true },
-        { symbol: 'BNB', cmcId: 1839, resolved: true }
-      ]
-    };
-    // engine constants — overwritten from report-momentum.json.params.moduleConstants once it
-    // loads; these fixtures are the fallback so nothing is blank pre-fetch.
-    var EC = {
-      EMA_FAST: 30, EMA_SLOW: 80, MOMENTUM_LOOKBACK: 20,
-      TREND_FULL_SEP: 0.06, MOMENTUM_FULL_RET: 0.15, TREND_WEIGHT: 0.6, MOMENTUM_WEIGHT: 0.4,
-      FEAR_EXTREME: 25, GREED_EXTREME: 75, GATE_MAX: 1.25, GATE_MIN: 0.4,
-      FUNDING_STRETCHED: 0.0005, RISK_FILTER_TRIM: 0.5, RISK_FILTER_VETO_INTENSITY: 0.6,
-      CONVICTION_FLAT: 500, ENTRY_THRESHOLD: 120, ENTRY_MIN: 60, ENTRY_MAX: 220
-    };
+<main role="main">
+<div class="wrap">
 
-    function computeRegime() {
-      var fg = FIX.fearGreed, fund = FIX.funding;
-      var stretched = Math.abs(fund) >= EC.FUNDING_STRETCHED;
-      var label, gateEffect, gain;
-      // The gate scales the LONG edge (it does not flip the core). Extreme greed TRIMS,
-      // extreme fear AMPLIFIES; stretched funding fuels the divergence/funding risk filter.
-      if (fg <= EC.FEAR_EXTREME) { label = 'extreme-fear'; gateEffect = +1; gain = EC.GATE_MAX; }
-      else if (fg >= EC.GREED_EXTREME) { label = 'extreme-greed'; gateEffect = -1; gain = EC.GATE_MIN + (1 - EC.GATE_MIN) * 0.6; } // trim
-      else if (stretched) { label = 'stretched-funding'; gateEffect = 0; gain = 0.95; }
-      else { label = 'neutral'; gateEffect = 0; gain = 1.0; }
-      gain = Math.max(EC.GATE_MIN, Math.min(EC.GATE_MAX, gain));
-      return { fg: fg, funding: fund, stretched: stretched, label: label, gateEffect: gateEffect, gain: gain };
-    }
-    function gateWord(g) { return g === 1 ? 'AMPLIFY long (+)' : g === -1 ? 'TRIM / flatten long (−)' : 'neutral (×~1.0)'; }
+  <!-- ════════ ABOVE-FOLD BENTO ════════ -->
+  <div class="bento">
 
-    function paintRegime() {
-      var r = computeRegime();
-      $('rgFG').textContent = r.fg + ' · ' + FIX.fearGreedClass + (r.fg >= EC.GREED_EXTREME ? ' (≥ GREED_EXTREME)' : r.fg <= EC.FEAR_EXTREME ? ' (≤ FEAR_EXTREME)' : ' (neutral band)');
-      $('rgFunding').textContent = (r.funding * 100).toFixed(3) + '% · ' + (r.stretched ? 'stretched' : 'normal');
-      $('rgLS').textContent = FIX.longShort.toFixed(2) + (FIX.longShort > 1 ? ' (long-skewed → crowded longs)' : ' (short-skewed)');
-      $('rgLabel').textContent = r.label;
-      $('rgSide').textContent = gateWord(r.gateEffect);
-      $('rgGain').textContent = r.gain.toFixed(2) + '× (gate [' + EC.GATE_MIN + ', ' + EC.GATE_MAX + '])';
+    <!-- 1 · HERO -->
+    <section class="card c-hero" aria-labelledby="hero-h" data-screen-label="Hero — halved drawdown">
+      <div class="aurora" aria-hidden="true">
+        <span class="blob g"></span><span class="blob b"></span><span class="blob gr"></span>
+      </div>
+      <svg class="grain" aria-hidden="true" preserveAspectRatio="none">
+        <filter id="grainf"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+          <feColorMatrix type="saturate" values="0"/></filter>
+        <rect width="100%" height="100%" filter="url(#grainf)"/>
+      </svg>
+      <div class="hero-inner">
+        <span class="hero-eyebrow">Held-out out-of-sample · max <span data-tip="Max drawdown: the largest peak-to-trough loss over the window. Lower is better.">drawdown</span></span>
+        <h1 id="hero-h" class="sr-only">Stoic roughly halves the worst-case drawdown of holding crypto: 17.7% versus 58.3%.</h1>
+        <div class="hero-row">
+          <div class="hero-num-wrap">
+            <div class="hero-num" id="hero-num" aria-hidden="true">0<span class="pctsign">%</span></div>
+            <div class="hero-ghost">vs <s id="hero-ghost">58.3%</s> buy &amp; hold</div>
+          </div>
+          <div class="ddbars" role="img" aria-label="Drawdown comparison: Stoic 17.7 percent versus Buy and Hold 58.3 percent — roughly half.">
+            <div class="ddbar">
+              <div class="ddtrack"><div class="ddfill stoic" id="bar-stoic" style="height:30.4%"></div></div>
+              <div class="ddlabel"><span class="v up" id="bar-stoic-v">17.7%</span>Stoic</div>
+            </div>
+            <div class="ddbar">
+              <div class="ddtrack"><div class="ddfill bh" id="bar-bh" style="height:100%"></div></div>
+              <div class="ddlabel"><span class="v down" id="bar-bh-v">58.3%</span>Buy &amp; Hold</div>
+            </div>
+          </div>
+        </div>
+        <p class="hero-sub">vs 58.3% buy &amp; hold — roughly <span class="halved">HALVED</span> · half the worst-case loss</p>
+        <p class="hero-supp">
+          <span data-tip="Out-of-sample: the held-out trailing 30% the model never trained on — the honest test.">OOS</span>
+          aggregate <b id="h-ret">▼ -0.3%</b> vs B&amp;H <b id="h-bhret">▼ -43.5%</b>
+          (excess <b class="up" id="h-excess">▲ +43.2%</b>) · held-out 30% window · net 10+10 bps
+        </p>
+        <span class="check-chip" id="check-chip"><span class="ck">✓</span> a bear-dodge, not standalone alpha</span>
+        <div class="hero-prov">
+          <span class="prov-dot"><span class="dot real"></span>REAL Binance data</span>
+          <span>held-out OOS · 11 trades / 900 bars</span>
+        </div>
+      </div>
+    </section>
 
-      // hero copy — risk-overlay framing
-      var effTxt = r.gateEffect === -1 ? 'TRIMS the directional long (overvalued / crowded), and the risk filter can veto a euphoric long'
-        : r.gateEffect === 1 ? 'AMPLIFIES the directional long (bargain / fear)'
-        : 'leaves the directional core roughly unscaled';
-      $('recoTitle').textContent = 'Regime: ' + r.label.replace('-', ' ') + ' → gate ' + gateWord(r.gateEffect);
-      $('recoDesc').innerHTML = 'Fear &amp; Greed <b>' + r.fg + '</b> (' + esc(FIX.fearGreedClass) + '), funding <b>' + (r.funding * 100).toFixed(3) + '%</b> ' +
-        '→ the contrarian gate <b>' + effTxt + '</b>, applying a <b>' + r.gain.toFixed(2) + '×</b> gain (bounded to [GATE_MIN, GATE_MAX]). ' +
-        'The directional core still decides LONG vs FLAT; a trade fires only when |conviction − 500| &gt; ENTRY_THRESHOLD (' + EC.ENTRY_THRESHOLD + ').';
-      return r;
-    }
+    <!-- 2 · F&G GAUGE -->
+    <section class="card flat c-gauge" aria-labelledby="gauge-h" data-screen-label="Fear & Greed gauge">
+      <h3 id="gauge-h"><span data-tip="The contrarian gate: extreme fear (≤25) favours going long; extreme greed (≥75) trims longs.">F&amp;G gate</span> — live regime</h3>
+      <div style="text-align:center;margin-top:6px">
+        <div class="gauge-val" id="gauge-val" aria-hidden="true">0</div>
+        <div class="gauge-label" id="gauge-label">EXTREME FEAR → favour long</div>
+      </div>
+      <svg class="gauge-svg" viewBox="0 0 200 118" role="img" aria-label="Fear and Greed index gauge reading 23 — Extreme Fear.">
+        <g id="gauge-bands"></g>
+        <g id="needle-grp" class="needle-grp">
+          <line id="needle" x1="100" y1="100" x2="100" y2="30" stroke="#F0B90B" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="100" cy="100" r="6" fill="#F0B90B"/>
+          <circle cx="100" cy="100" r="2.5" fill="#0B0E11"/>
+        </g>
+        <text id="gauge-svg-val" x="100" y="114" text-anchor="middle" fill="#A7AFBE" font-family="ui-monospace,monospace" font-size="11">F&amp;G 23</text>
+      </svg>
+      <button class="expand-btn" id="reads-toggle" aria-expanded="false" aria-controls="reads">Supporting reads ▾</button>
+      <div class="reads" id="reads">
+        <div class="read"><span>RSI(14)</span><b id="r-rsi">41.85</b></div>
+        <div class="read"><span>BTC dominance</span><b id="r-dom">58.26%</b></div>
+        <div class="read"><span>Funding rate</span><b class="stretched" id="r-fund">0.0006212 STRETCHED</b></div>
+        <div class="read"><span>Open interest</span><b id="r-oi">$407.9B</b></div>
+      </div>
+      <div class="gauge-foot">
+        <span class="live-pill is-cached" id="live-pill"><span class="hb"></span><span id="live-txt">cached</span></span>
+        <button class="expand-btn" id="sample-toggle" aria-pressed="false">Demo: sample regime</button>
+      </div>
+      <p class="cap" id="gauge-asof">as of 2026-06-17 19:36 UTC</p>
+      <div class="err-slot" id="cmc-err"></div>
+      <!-- bottom-pinned secondary info: turns the short card's dead space into a real OOS micro-ladder -->
+      <div class="card-foot" aria-label="Out-of-sample risk metrics">
+        <div class="micro-ladder">
+          <div class="ml-cell"><span class="ml-k" data-tip="Sharpe ratio: return per unit of volatility. Higher (less negative) is better.">Sharpe</span><span class="ml-v down" id="ml-sharpe">-0.60</span></div>
+          <div class="ml-cell"><span class="ml-k" data-tip="Sortino: like Sharpe but penalising only downside volatility.">Sortino</span><span class="ml-v down" id="ml-sortino">-0.64</span></div>
+          <div class="ml-cell"><span class="ml-k">Trades</span><span class="ml-v" id="ml-trades">11</span></div>
+          <div class="ml-cell"><span class="ml-k">Bars</span><span class="ml-v" id="ml-bars">900</span></div>
+        </div>
+        <div class="micro-spark">
+          <span id="ml-spark" aria-hidden="true"></span>
+          <span class="ms-cap">cumulative excess vs B&amp;H, OOS <span class="is-gold">illustrative</span></span>
+        </div>
+      </div>
+    </section>
 
-    // ════════════════════════════════════════════════════════════════════
-    //  STRATEGY CAPSULE — human-readable + machine JSON. Risk-overlay thesis.
-    // ════════════════════════════════════════════════════════════════════
-    function buildCapsuleObject(r) {
-      return {
-        strategyId: 'sentiment-divergence-regime',
-        thesis: 'regime-aware directional (trend/momentum) core, F&G contrarian gate, divergence/funding risk filter — a RISK OVERLAY / drawdown manager',
-        version: 'fixtures-sample',
-        generatedAt: new Date().toISOString(),
-        dataSources: {
-          live: 'CoinMarketCap MCP (https://mcp.coinmarketcap.com/mcp) — live Fear & Greed contrarian gate',
-          backtest: 'Binance public REST DAILY klines + USDT-M funding (8h→daily) + alternative.me historical Fear & Greed',
-          cmcKeyPresent: false
-        },
-        engineConstants: EC,
-        regime: {
-          fearGreed: r.fg, funding: r.funding, stretchedFunding: r.stretched,
-          label: r.label, gateEffectOnLong: r.gateEffect, gateGain: +r.gain.toFixed(2)
-        },
-        universe: {
-          barInterval: '1d', pairConvention: '<SYMBOL>USDT', symbols: FIX.symbols
-        },
-        directionalCore: {
-          method: 'EMA trend separation + momentum-over-lookback → 0..1000 bullish scale',
-          emaFast: EC.EMA_FAST, emaSlow: EC.EMA_SLOW, momentumLookback: EC.MOMENTUM_LOOKBACK,
-          longOnly: true, behaviour: 'rides bull trends with EMA lag; goes FLAT in bear/chop (the drawdown dodge)'
-        },
-        regimeGate: {
-          rule: 'extreme GREED trims/flattens a long; extreme FEAR amplifies a long; never flips the core sign',
-          boundedTo: [EC.GATE_MIN, EC.GATE_MAX], referencesConstants: ['FEAR_EXTREME', 'GREED_EXTREME', 'GATE_MIN', 'GATE_MAX']
-        },
-        riskFilter: {
-          rule: 'a LONG bias into extreme greed AND stretched-positive funding (crowded longs unconfirmed) → TRIM size or VETO entry',
-          referencesConstants: ['FUNDING_STRETCHED', 'RISK_FILTER_TRIM', 'RISK_FILTER_VETO_INTENSITY']
-        },
-        entryRule: {
-          expression: 'Trade only when |conviction − CONVICTION_FLAT| > ENTRY_THRESHOLD; conviction>500+ENTRY_THRESHOLD => LONG (long-only core).',
-          thresholdConstant: 'ENTRY_THRESHOLD',
-          referencesConstants: ['CONVICTION_FLAT', 'ENTRY_THRESHOLD', 'ENTRY_MIN', 'ENTRY_MAX']
-        },
-        exitRule: {
-          expression: 'Exit to FLAT when |conviction − CONVICTION_FLAT| <= ENTRY_THRESHOLD, OR when the trend separation collapses (core → flat).',
-          referencesConstants: ['CONVICTION_FLAT', 'ENTRY_THRESHOLD']
-        },
-        invalidation: {
-          conditions: [
-            'Trend separation collapses / momentum flips → core goes FLAT (dodges the bear).',
-            'Extreme greed + stretched-positive funding while long → risk filter trims/vetoes.',
-            'Insufficient history to form the EMAs → no actionable bias → FLAT.'
-          ]
-        },
-        positionSizing: {
-          method: 'sizeFromConviction',
-          expression: 'sizeBps = 10000 * |conviction − CONVICTION_FLAT| / CONVICTION_FLAT, scaled by the F&G gate gain and the account risk budget.',
-          maxPositionBps: null
-        },
-        riskLimits: {
-          lookAheadSafe: true,
-          calibratedThreshold: { bounds: [EC.ENTRY_MIN, EC.ENTRY_MAX] },
-          advisoriesBounded: true,
-          maxPositionBps: null
-        },
-        backtestReplay: {
-          steps: ['npm install', 'npm run fetch-data', 'npx ts-node backtest/momentum.ts', 'Report on a HELD-OUT out-of-sample window vs buy-and-hold (selection in-sample only).'],
-          metrics: ['totalReturn', 'maxDrawdown', 'sharpe', 'sortino'],
-          baseline: 'buy-and-hold', outOfSample: true, reproducible: true
-        },
-        honesty: [
-          'RISK OVERLAY: the robust claim is DRAWDOWN REDUCTION (≈ halved). The OOS B&H beat is a BEAR-DODGE, not standalone alpha.',
-          'In-sample (a bull) the strategy LOSES to B&H by a wide margin (+57.5% vs +262.0%); a bull mid-window loses ~37%.',
-          'Selection on the in-sample 70% ONLY; held-out OOS run once and reported as-is. Two of three OOS beats are negative-absolute "lost-less" beats.',
-          'SAMPLE: cmcKeyPresent=false → live fields from pinned fixtures; the latest LIVE keyed capture is F&G = 23 (fixtures/cmc/live/).'
-        ]
-      };
-    }
-    var CAPSULE = null;
+    <!-- 3 · AGENT DECISION TRACE -->
+    <section class="card flat c-trace" id="trace" aria-labelledby="trace-h" data-screen-label="Agent Decision Trace">
+      <h3 id="trace-h">Agent Decision Trace</h3>
+      <p class="trace-head" id="trace-headline">Regime: extreme fear → the contrarian gate favours the long</p>
+      <ol class="trace-list" id="trace-list" aria-label="Seven CoinMarketCap tool reads, each tool to input to signal to gate effect"></ol>
+      <p class="trace-invalid" id="trace-invalid"></p>
+      <span class="trace-badge"><span class="dot real" style="background:var(--blue)"></span>LIVE CMC capture · 2026-06-17 19:36 UTC</span>
+    </section>
 
-    function buildCapsuleText(r) {
-      var fgTag = r.fg >= EC.GREED_EXTREME ? 'extreme-greed' : r.fg <= EC.FEAR_EXTREME ? 'extreme-fear' : 'neutral';
-      var L = [];
-      L.push('STRATEGY CAPSULE — Regime-Aware Directional Core (Risk Overlay / Drawdown Manager)');
-      L.push('==============================================================================');
-      L.push('Strategy id     : sentiment-divergence-regime');
-      L.push('Thesis          : DIRECTIONAL trend/momentum core + F&G contrarian GATE + divergence/funding RISK FILTER');
-      L.push('Generated       : ' + new Date().toISOString() + '   |  version: fixtures-sample');
-      L.push('Data sources    : CMC MCP (live F&G gate) + Binance public REST DAILY (backtest)');
-      L.push('CMC key present : NO  → live REGIME fields below are from pinned fixtures (latest LIVE capture: F&G=23)');
-      L.push('');
-      L.push('DIRECTIONAL CORE (the earner — rides bulls, FLAT in bear/chop)');
-      L.push('  EMA fast/slow : ' + EC.EMA_FAST + ' / ' + EC.EMA_SLOW + '   momentum lookback: ' + EC.MOMENTUM_LOOKBACK + '   long-only');
-      L.push('  Trend full-sep: ' + EC.TREND_FULL_SEP + '   momentum full-ret: ' + EC.MOMENTUM_FULL_RET + '   weights ' + EC.TREND_WEIGHT + '/' + EC.MOMENTUM_WEIGHT);
-      L.push('');
-      L.push('REGIME GATE (contrarian Fear & Greed — scales the long, never flips it)');
-      L.push('  Fear & Greed  : ' + r.fg + '  → ' + fgTag + '   (FEAR_EXTREME=' + EC.FEAR_EXTREME + ', GREED_EXTREME=' + EC.GREED_EXTREME + ')');
-      L.push('  Gate effect   : ' + gateWord(r.gateEffect) + '   |  gain applied: ' + r.gain.toFixed(2) + '   bounded [' + EC.GATE_MIN + ', ' + EC.GATE_MAX + ']');
-      L.push('');
-      L.push('RISK FILTER (the demoted contrarian divergence/funding overlay)');
-      L.push('  Funding       : ' + r.funding + '  → ' + (r.stretched ? 'stretched' : 'normal') + '   (FUNDING_STRETCHED=' + EC.FUNDING_STRETCHED + ')');
-      L.push('  Rule          : long into extreme greed AND stretched-positive funding (crowded longs) → TRIM(' + EC.RISK_FILTER_TRIM + ') or VETO');
-      L.push('');
-      L.push('UNIVERSE');
-      L.push('  Symbol(s)     : ' + FIX.symbols.map(function (s) { return s.symbol + '(id ' + s.cmcId + ')'; }).join(', '));
-      L.push('  Bar interval  : 1d           Pair convention: <SYMBOL>USDT');
-      L.push('');
-      L.push('ENTRY RULE');
-      L.push('  Trade only when |conviction − CONVICTION_FLAT(' + EC.CONVICTION_FLAT + ')| > ENTRY_THRESHOLD(' + EC.ENTRY_THRESHOLD + ').');
-      L.push('    conviction > 500 + ENTRY_THRESHOLD → LONG   (long-only core)');
-      L.push('  Calibratable in [ENTRY_MIN(' + EC.ENTRY_MIN + '), ENTRY_MAX(' + EC.ENTRY_MAX + ')].');
-      L.push('');
-      L.push('EXIT / INVALIDATION');
-      L.push('  Exit to FLAT when |conviction − 500| ≤ ENTRY_THRESHOLD, or when the trend collapses (core → flat).');
-      L.push('  Risk filter trims/vetoes a long into euphoric, crowded-long funding.');
-      L.push('');
-      L.push('POSITION SIZING');
-      L.push('  sizeBps = sizeFromConviction(conviction): 0 bps at flat → 10000 bps at the extreme,');
-      L.push('  scaled by the F&G gate gain and the account per-trade risk budget.');
-      L.push('');
-      L.push('HONEST FRAMING (the spine)');
-      L.push('  ROBUST claim       : DRAWDOWN REDUCTION (≈ halved vs B&H on every window/cost tested).');
-      L.push('  OOS B&H beat       : a BEAR-DODGE (sit out the 2026 bear), NOT standalone alpha.');
-      L.push('  In-sample (a bull) : strategy +57.5% vs B&H +262.0% — LOSES to B&H by a wide margin.');
-      L.push('  Bull mid-window    : LOSES to B&H by ~37%. Two of three OOS beats are "lost-less" (negative absolute).');
-      L.push('');
-      L.push('BACKTEST-REPLAY (reproduce, look-ahead-safe)');
-      L.push('  1. npm install   2. npm run fetch-data   3. npx ts-node backtest/momentum.ts');
-      L.push('  4. HELD-OUT out-of-sample: return, max-DD, Sharpe/Sortino vs buy-and-hold. Selection IN-SAMPLE ONLY.');
-      L.push('  5. Determinism: no CMC/LLM key → advisories {0,0} → report-momentum.json byte-reproducible.');
-      return L.join('\n');
-    }
+    <!-- 4 · STAT TILES (demoted) -->
+    <section class="card flat c-stat reveal" aria-labelledby="st1-h" data-screen-label="Stat: return vs B&H">
+      <div class="stat-top"><span class="stat-ico" aria-hidden="true">Σ</span><span class="stat-label" id="st1-h">Return vs B&amp;H · OOS</span></div>
+      <div class="stat-val" id="st-ret" aria-hidden="true">0</div>
+      <div class="stat-delta">B&amp;H <span id="st-ret-bh">▼ -43.5%</span> · excess <span class="up" id="st-ret-ex">▲ +43.2%</span></div>
+      <div class="stat-spark" id="st-ret-chart"></div>
+      <p class="stat-sub">Diverging bars around a real 0% break-even line — the all-negative bear window read legibly.</p>
+    </section>
 
-    function paintCapsule(r) {
-      CAPSULE = buildCapsuleObject(r);
-      $('capsuleText').textContent = buildCapsuleText(r);
-      $('copyCapsule').addEventListener('click', function () {
-        var s = JSON.stringify(CAPSULE, null, 2);
-        try {
-          navigator.clipboard.writeText(s).then(function () {
-            window.StoicToast && window.StoicToast('Copied', ['Strategy Capsule JSON copied.'], { accent: 'var(--green)' });
-          });
-        } catch (e) {
-          window.StoicToast && window.StoicToast('Copy failed', ['Select the JSON manually.'], { accent: 'var(--red)' });
-        }
-      });
-      $('dlCapsule').addEventListener('click', function () {
-        var blob = new Blob([JSON.stringify(CAPSULE, null, 2)], { type: 'application/json' });
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'stoic.capsule.sample.json';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-      });
-    }
+    <section class="card flat c-stat reveal" aria-labelledby="st2-h" data-screen-label="Stat: Sharpe">
+      <div class="stat-top"><span class="stat-ico" aria-hidden="true">↯</span><span class="stat-label" id="st2-h"><span data-tip="Sharpe ratio: return per unit of volatility. Higher (less negative) is better.">Sharpe</span> · OOS</span></div>
+      <div class="stat-val" id="st-sharpe" aria-hidden="true">0</div>
+      <div class="stat-delta">B&amp;H <span id="st-sharpe-bh">-1.00</span> · higher / less bad</div>
+      <div class="stat-spark" id="st-sharpe-chart"></div>
+      <p class="stat-sub">Lower volatility-adjusted loss than simply holding through the bear.</p>
+    </section>
 
-    // ════════════════════════════════════════════════════════════════════
-    //  DIRECTIONAL-CORE chart — ILLUSTRATIVE, deterministic synthetic trace of
-    //  the mechanics (NOT backtest output). report-momentum.json has no per-bar series.
-    // ════════════════════════════════════════════════════════════════════
-    function rng(seed) { return function () { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; var t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-    var DIV_SERIES = {};
-    function buildDivSeries(symbol) {
-      if (DIV_SERIES[symbol]) return DIV_SERIES[symbol];
-      var n = 60, r = rng(symbol.split('').reduce(function (a, c) { return a * 31 + c.charCodeAt(0); }, 7));
-      var fast = [], slow = [], sep = [], conv = [];
-      // a trending price with a bull leg, a bear leg and chop → EMA separation drives the core.
-      var price = 100, ef = 100, es = 100;
-      var aF = 2 / (EC.EMA_FAST / 6 + 1), aS = 2 / (EC.EMA_SLOW / 6 + 1); // compressed spans for a 60-pt illustrative trace
-      for (var i = 0; i < n; i++) {
-        var drift = i < 22 ? 0.012 : i < 38 ? -0.014 : 0.002;     // bull → bear → chop
-        price *= (1 + drift + (r() - 0.5) * 0.03);
-        ef = ef + aF * (price - ef);
-        es = es + aS * (price - es);
-        var separation = (ef - es) / es;                          // trend separation
-        var bias = 500 + Math.max(-1, Math.min(1, separation / EC.TREND_FULL_SEP)) * 480;
-        // long-only core: a downtrend takes the core FLAT (500), it never shorts — that is
-        // the bear-dodge (sit out, don't short).
-        bias = Math.max(500, bias);
-        fast.push(+ef.toFixed(2)); slow.push(+es.toFixed(2)); sep.push(+(separation * 100).toFixed(2)); conv.push(Math.round(bias));
-      }
-      DIV_SERIES[symbol] = { fast: fast, slow: slow, sep: sep, conv: conv, n: n };
-      return DIV_SERIES[symbol];
-    }
+    <section class="card flat c-stat reveal" aria-labelledby="st3-h" data-screen-label="Stat: trades">
+      <div class="stat-top"><span class="stat-ico" aria-hidden="true">⊞</span><span class="stat-label" id="st3-h">Trades · OOS</span></div>
+      <div class="stat-val" id="st-trades" aria-hidden="true">0 / 900</div>
+      <div class="stat-delta">low turnover · <span data-tip="Win rate: share of closed trades that were profitable.">winRate</span> <span id="st-wr">15.9%</span></div>
+      <div class="stat-spark" id="st-trades-chart"></div>
+      <p class="stat-sub">A patient long-only core — it sits out, it doesn't churn fees.</p>
+    </section>
 
-    function paintDivChart(symbol) {
-      var s = buildDivSeries(symbol);
-      var sepAbs = s.sep.map(function (x) { return Math.abs(x); });
-      var sepBound = Math.max(2, Math.ceil(Math.max.apply(null, sepAbs) * 1.2));
-      var sepChart = window.StoicCharts.line([
-        { values: s.sep, color: 'var(--c4)', dots: false, width: 2.6 }   // EMA separation (%) — gold
-      ], { w: 720, h: 180, yMin: -sepBound, yMax: sepBound, threshold: 0, thresholdLabel: 'flat (EMA cross)',
-           height: 180, label: 'EMA trend separation (%) over time (illustrative)' });
+  </div>
+</div>
 
-      var convChart = window.StoicCharts.line([
-        { values: s.conv, color: 'var(--ai)', dots: false, width: 2.6 }
-      ], { w: 720, h: 150, yMin: 0, yMax: 1000,
-           threshold: 500, thresholdLabel: 'flat = 500',
-           height: 150, label: 'directional conviction over time (illustrative)' });
+<!-- ════════ 5 · TEARSHEET ════════ -->
+<section class="section reveal-panel" id="tearsheet" data-screen-label="Backtest tearsheet">
+  <div class="wrap">
+    <div class="section-head"><span class="kicker">The real backtest</span></div>
+    <h2>Tearsheet — real multi-regime daily data</h2>
+    <p class="section-lede">Per-window aggregate and per-token metrics, switched live. The equity and underwater curves are <b>illustrative</b> — built from real summary endpoints, not a synthetic per-bar series.</p>
 
-      $('divChart').innerHTML =
-        '<div class="sig-subh">EMA trend separation (fast 30 − slow 80, % of slow) — drives the directional bias</div>' + sepChart +
-        '<div class="sig-subh" style="margin-top:8px">long-only conviction (0..1000) — goes FLAT (500) in the bear leg (the drawdown dodge)</div>' + convChart;
+    <div class="ts-controls">
+      <div class="seg" role="group" aria-label="Backtest window">
+        <button data-win="outOfSample" aria-pressed="true">Out-of-sample</button>
+        <button data-win="inSample" aria-pressed="false">In-sample</button>
+        <button data-win="full" aria-pressed="false">Full</button>
+      </div>
+      <label class="sr-only" for="ts-token">Token</label>
+      <select class="ts-select" id="ts-token">
+        <option value="agg">Aggregate (3 tokens)</option>
+        <option value="BTC">BTC · BTCUSDT</option>
+        <option value="ETH">ETH · ETHUSDT</option>
+        <option value="BNB">BNB · BNBUSDT</option>
+      </select>
+      <div class="err-slot" id="ts-err" style="margin-top:0"></div>
+    </div>
 
-      $('divLegend').innerHTML = window.StoicCharts.legend([
-        { color: 'var(--c4)', label: 'EMA trend separation (%)' },
-        { color: 'var(--ai)', label: 'directional conviction (500 = flat; long-only ≥ 500)' }
-      ]);
+    <div class="ts-grid">
+      <div>
+        <div class="kpi-row" id="kpi-row"></div>
+        <div class="verdict" id="ts-verdict"></div>
+      </div>
+      <div class="chart-card">
+        <span class="illus-tag"><span class="dot illus"></span>ILLUSTRATIVE — from real summary endpoints, not a per-bar series</span>
+        <div id="equity-chart" role="img" aria-label="Illustrative equity curve: Stoic steps over a deep buy-and-hold drawdown trough in the out-of-sample window."></div>
+        <p class="cap" id="equity-cap">Strategy (gold/green) holds near flat while Buy &amp; Hold (red) plunges into the shaded out-of-sample bear, then an inverted underwater pane shows the depth it dodges.</p>
+      </div>
+    </div>
 
-      var lastSep = s.sep[s.n - 1], lastConv = s.conv[s.n - 1];
-      var side = (lastConv > 500 + EC.ENTRY_THRESHOLD) ? 'LONG' : 'FLAT';
-      $('divNowZ').textContent = fmt2(lastSep) + '%';
-      $('divNowConv').textContent = lastConv;
-      var sideEl = $('divNowSide');
-      sideEl.textContent = side;
-      sideEl.style.color = side === 'LONG' ? 'var(--green)' : 'var(--muted)';
-    }
+    <h3 style="font-family:var(--head);font-weight:700;font-size:1.1rem;margin-top:28px">Per-token · out-of-sample <span class="const-inline" style="font-size:13px">— beats Buy &amp; Hold 3 / 3</span></h3>
+    <div class="tbl-wrap">
+      <table class="tt" aria-label="Per-token out-of-sample results versus Buy and Hold">
+        <thead><tr>
+          <th>Symbol</th>
+          <th><span data-tip="Strategy total return over the held-out window, net of cost.">Return</span></th>
+          <th>B&amp;H</th>
+          <th><span data-tip="Excess = strategy return minus buy-and-hold return.">Excess</span></th>
+          <th>Max DD</th>
+          <th>B&amp;H DD</th>
+          <th>Sharpe</th>
+          <th>Trades</th>
+        </tr></thead>
+        <tbody id="token-tbody"></tbody>
+      </table>
+    </div>
+    <p class="cap">Only <b style="color:var(--green)">BNB is a positive-absolute beat (+18.5%)</b>; BTC and ETH are <b style="color:var(--amber)">"lost-less"</b> negative-absolute beats — they lost far less than holding, but they did not make money.</p>
+  </div>
+</section>
 
-    var DIV_TOKENS = ['BTC', 'ETH', 'BNB'];
-    var divIdx = 0;
-    $('divToken').addEventListener('click', function () {
-      divIdx = (divIdx + 1) % DIV_TOKENS.length;
-      var t = DIV_TOKENS[divIdx];
-      $('divToken').textContent = t + ' ▾';
-      paintDivChart(t);
+<!-- ════════ 6 · STRATEGY CAPSULE ════════ -->
+<section class="section reveal-panel" id="capsule-sec" data-screen-label="Strategy Capsule">
+  <div class="wrap">
+    <div class="section-head"><span class="kicker">The Track-2 deliverable</span></div>
+    <h2>Strategy Skill capsule — machine-readable, timestamped</h2>
+    <p class="section-lede">Not a screenshot of a strategy — a composable, agent-readable Strategy Skill. Copy it to your clipboard or download the schema-valid JSON.</p>
+    <div class="capsule">
+      <div class="capsule-bar">
+        <span class="badge-soft"><span class="dot real" style="background:var(--blue)"></span>agent-readable · timestamped</span>
+        <div style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn primary" id="copy-btn" aria-label="Copy Strategy Skill JSON to clipboard">⧉ Copy</button>
+          <button class="btn" id="dl-btn" aria-label="Download stoic.capsule.sample.json">↓ Download</button>
+          <a class="btn" href="../skills/sentiment-divergence-regime/SKILL.md" id="skill-link" target="_blank" rel="noopener" aria-label="Open SKILL.md">Open SKILL.md ↗</a>
+        </div>
+      </div>
+      <pre id="capsule-json" tabindex="0" aria-label="Strategy Skill capsule JSON"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 7 · MECHANISM ════════ -->
+<section class="section reveal-panel" id="mechanism" data-screen-label="Mechanism panel">
+  <div class="wrap">
+    <div class="section-head"><span class="kicker">How the edge is produced</span></div>
+    <h2>A regime-aware directional core</h2>
+    <p class="section-lede">An <span data-tip="Exponential moving average: a trend filter weighting recent prices more. The 30/80 fast/slow crossover defines the trend core.">EMA</span> <b>30 / 80</b> crossover trend core rides bulls and dodges bears, modulated by a Fear&amp;Greed contrarian gate and a divergence/funding risk filter.</p>
+    <div class="mech-grid">
+      <div class="chart-card">
+        <span class="illus-tag"><span class="dot illus"></span>ILLUSTRATIVE — mechanism, not backtest output</span>
+        <div id="mech-chart" role="img" aria-label="Illustrative directional core: EMA-30 fast crossing EMA-80 slow, with gate-effect shading."></div>
+        <p class="cap">Fast EMA-30 (gold) crossing the slow EMA-80 (blue) sets direction; the shaded band is where the contrarian gate scales conviction.</p>
+      </div>
+      <div class="pipeline">
+        <div class="stage">
+          <span class="n" style="background:var(--gold-dim);color:var(--gold-text)">1</span>
+          <div><h4>Trend / momentum core</h4>
+          <p>EMA fast <b style="color:var(--gold-text)">30</b> / slow <b style="color:var(--gold-text)">80</b> · TREND_WEIGHT 0.6 · MOMENTUM_WEIGHT 0.4 · MOMENTUM_LOOKBACK 20</p></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="stage">
+          <span class="n" style="background:var(--blue-dim);color:var(--blue)">2</span>
+          <div><h4>Fear &amp; Greed <span data-tip="A contrarian multiplier on conviction, bounded to [0.4, 1.25]: fear scales longs up, greed trims them.">gate</span></h4>
+          <p>contrarian gate · bounds [0.4, 1.25] · FEAR_EXTREME 25 / GREED_EXTREME 75</p></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="stage">
+          <span class="n" style="background:var(--amber-dim);color:var(--amber)">3</span>
+          <div><h4>Divergence / funding <span data-tip="Trims or vetoes a position when funding is stretched or price/sentiment diverge.">risk filter</span></h4>
+          <p>RISK_FILTER_VETO_INTENSITY 0.6 · FUNDING_STRETCHED 0.0005 · trim 0.5</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 8 · METHODOLOGY (collapsed) — DO NOT DROP ════════ -->
+<section class="section reveal-panel" id="methodology" data-screen-label="Methodology & constants">
+  <div class="wrap">
+    <div class="section-head"><span class="kicker">Reproducibility</span></div>
+    <h2>Methodology &amp; engine constants</h2>
+    <p class="section-lede">Everything is byte-reproducible and look-ahead-safe. Expand for the full provenance, the constants table, and the one honesty footnote.</p>
+    <details class="acc" id="acc-method">
+      <summary>Provenance, constants &amp; the 30/80 footnote <span class="tw">expand</span></summary>
+      <div class="acc-body">
+        <div class="prov-badges">
+          <span class="badge-soft"><span class="dot real"></span>REAL Binance data</span>
+          <span class="badge-soft"><span class="dot sample"></span>sample</span>
+          <span class="badge-soft"><span class="dot illus"></span>illustrative</span>
+        </div>
+        <p class="cap" id="method-prov" style="margin-top:14px"></p>
+        <div class="timeline-strip">
+          <span>2023-09-22</span>
+          <span class="timeline-bar" aria-hidden="true"><span class="insample"></span><span class="oos"></span></span>
+          <span>2026-06-17</span>
+          <span class="const-inline">splitBar 700 · OOS 30%</span>
+        </div>
+        <h4 style="font-family:var(--head);font-size:1rem;margin-top:22px">Engine constants — selected sweep winner</h4>
+        <table class="const-table" id="const-table"></table>
+        <p class="amber-note" id="footnote-3080">
+          ✓ Honesty footnote: the displayed constants reflect the <b>selected sweep winner — EMA 30 / 80</b>. The module's pre-sweep defaults were <b>EMA 20 / 50</b>; those non-selected defaults are <b>never</b> the run config and surface only here. <span style="opacity:.85">436 tests · byte-reproducible · look-ahead-safe.</span>
+        </p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ════════ 9 · DEPRECATED LOSS (collapsed) — DO NOT DROP ════════ -->
+<section class="section reveal-panel" id="deprecated" data-screen-label="Deprecated contrarian loss">
+  <div class="wrap">
+    <div class="section-head"><span class="kicker">Full disclosure</span></div>
+    <h2>A prior approach that lost — kept verbatim</h2>
+    <p class="section-lede">Before the momentum pivot, an original contrarian (divergence) prototype underperformed buy &amp; hold. We never bury it and never make it the headline.</p>
+    <details class="acc dashed" id="acc-dep">
+      <summary>Deprecated contrarian prototype · ✗ loss <span class="tw">expand</span></summary>
+      <div class="acc-body">
+        <div class="prov-badges">
+          <span class="badge-soft"><span class="dot dep"></span>deprecated · loss</span>
+        </div>
+        <p class="cap" id="dep-label" style="margin-top:14px"></p>
+        <div class="dep-grid">
+          <div class="kpi"><div class="k">OOS · strategy</div><div class="v down" id="dep-oos">▼ -18.1%</div><div class="bh">B&amp;H <span id="dep-oos-bh">▼ -16.6%</span></div></div>
+          <div class="kpi"><div class="k">Full · strategy</div><div class="v down" id="dep-full">▼ -36.5%</div><div class="bh">B&amp;H <span id="dep-full-bh">▼ -5.4%</span></div></div>
+        </div>
+        <p class="verdict bad" id="dep-verdict" style="margin-top:14px"></p>
+        <p class="cap" id="dep-note" style="margin-top:12px"></p>
+      </div>
+    </details>
+  </div>
+</section>
+
+</main>
+
+<!-- ════════ 10 · FOOTER ════════ -->
+<footer role="contentinfo">
+  <div class="wrap foot-inner">
+    <div class="foot-col">
+      <div class="brand">
+        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+          <rect x="1.5" y="13" width="5" height="7" rx="1.6" fill="#F0B90B"/>
+          <rect x="8.5" y="7" width="5" height="13" rx="1.6" fill="#5B8DEF"/>
+          <rect x="15.5" y="2" width="5" height="18" rx="1.6" fill="#16C784"/>
+        </svg>
+        <span class="brand-name">Stoic</span>
+      </div>
+      <p class="foot-tag">an AI trading agent unmoved by the crowd's Fear &amp; Greed.</p>
+      <p class="foot-chain">BNB Smart Chain · chainId <b style="color:var(--gold-text)">0x38</b></p>
+      <a class="legend-chip" href="https://github.com/agdanish/stoic" target="_blank" rel="noopener">github.com/agdanish/stoic ↗</a>
+    </div>
+    <div class="foot-col">
+      <span class="muted-meta" style="color:var(--text)">Provenance legend</span>
+      <div class="foot-legend">
+        <a class="legend-chip" href="#methodology" title="REAL: live Binance public REST daily klines + funding + alternative.me F&G."><span class="dot real"></span>REAL Binance data</a>
+        <a class="legend-chip" href="#tearsheet" title="SAMPLE: an explicitly-labelled demo regime, never the headline."><span class="dot sample"></span>sample · fixtures</a>
+        <a class="legend-chip" href="#mechanism" title="ILLUSTRATIVE: shapes built from real summary endpoints, not per-bar output."><span class="dot illus"></span>illustrative</a>
+        <a class="legend-chip" href="#deprecated" title="DEPRECATED: a prior approach that lost to buy & hold, kept for disclosure."><span class="dot dep"></span>deprecated · loss</a>
+      </div>
+    </div>
+    <div class="foot-col">
+      <span class="muted-meta" style="color:var(--text)">Built with / Powered by</span>
+      <div class="powered">
+        <span>CoinMarketCap</span><span style="opacity:.4">·</span><span>Trust Wallet</span><span style="opacity:.4">·</span><span>BNB Chain</span>
+      </div>
+      <p class="foot-tag" style="opacity:.7">Official logos used un-altered under "Powered by" framing — no implied endorsement.</p>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ════════ DATA: frozen single source of truth ════════ -->
+<script>
+const STOIC = Object.freeze({
+  brand: { name:"Stoic", tagline:"an AI trading agent unmoved by the crowd's Fear & Greed",
+    eyebrow:"CMC × Trust Wallet × BNB Chain · Track 2 — Strategy Skills",
+    repo:"https://github.com/agdanish/stoic", chain:"BNB Smart Chain (chainId 0x38)", tests:436 },
+  hero: { maxDD:0.177229005187, bhMaxDD:0.583020888755, ret:-0.003156166226, bhRet:-0.435033820369,
+    excess:0.431877654143, sharpe:-0.595462333329, bhSharpe:-1.000405780621, sortino:-0.635599239663,
+    winRate:0.15873015873, trades:11, bars:900, qualifier:"a bear-dodge, not standalone alpha" },
+  inSample: { ret:0.574751382806, bhRet:2.620502619378, excess:-2.045751236572, maxDD:0.295330343398,
+    bhMaxDD:0.421924262097, sharpe:0.945313867343, bhSharpe:1.504760925586, sortino:1.517142225753,
+    winRate:0.419871794872, trades:45, bars:2100 },
+  full: { ret:0.571494503311, bhRet:1.114030492073, excess:-0.542535988762, maxDD:0.295330343398,
+    bhMaxDD:0.583020888755, sharpe:0.715177550571, bhSharpe:0.757158848915, sortino:1.133394760164,
+    winRate:0.378196930946, trades:56, bars:3000 },
+  perToken: [
+    { sym:"BTCUSDT", short:"BTC", cmcId:1, ret:-0.075294329068, bhRet:-0.429105155556, excess:0.353810826488,
+      maxDD:0.088600350447, bhMaxDD:0.511588857049, sharpe:-2.036792826585, bhSharpe:-1.280692089286,
+      sortino:-2.259122387085, winRate:0.142857142857, trades:7, bars:300, beat:true, kind:"lost-less" },
+    { sym:"ETHUSDT", short:"ETH", cmcId:1027, ret:-0.119018042469, bhRet:-0.589203133505, excess:0.470185091036,
+      maxDD:0.229644217663, bhMaxDD:0.675151643085, sharpe:-0.539065783016, bhSharpe:-1.270584462458,
+      sortino:-0.825318520481, winRate:0, trades:1, bars:300, beat:true, kind:"lost-less" },
+    { sym:"BNBUSDT", short:"BNB", cmcId:1839, ret:0.18484387286, bhRet:-0.286793172045, excess:0.471637044904,
+      maxDD:0.213442447451, bhMaxDD:0.562322166131, sharpe:0.789471609613, bhSharpe:-0.449940790118,
+      sortino:1.177643188578, winRate:0.333333333333, trades:3, bars:300, beat:true, kind:"positive" }
+  ],
+  verdict: { edgeFound:true, edgeFoundBasis:"aggregate OOS strictly beats B&H net of cost",
+    riskAdjustedWin:true, riskAdjustedBasis:"aggregate OOS has higher Sharpe AND lower maxDrawdown than B&H",
+    tokensBeatingBuyHoldOOS:["BTCUSDT","ETHUSDT","BNBUSDT"] },
+  engine: { EMA_FAST:30, EMA_SLOW:80, MOMENTUM_LOOKBACK:20, TREND_WEIGHT:0.6, MOMENTUM_WEIGHT:0.4,
+    TREND_FULL_SEP:0.06, MOMENTUM_FULL_RET:0.15, ENTRY_THRESHOLD:120, ENTRY_MIN:60, ENTRY_MAX:220,
+    FEAR_EXTREME:25, GREED_EXTREME:75, GATE_MIN:0.4, GATE_MAX:1.25, FUNDING_STRETCHED:0.0005,
+    RISK_FILTER_TRIM:0.5, RISK_FILTER_VETO_INTENSITY:0.6, CONVICTION_FLAT:500,
+    _moduleDefaults:{ EMA_FAST:20, EMA_SLOW:50 }, label:"long-only+ema30/80" },
+  provenance: { kind:"REAL",
+    provider:"Binance public REST (keyless) DAILY spot klines + USDT-M funding + alternative.me historical Fear & Greed",
+    symbols:["BTCUSDT","ETHUSDT","BNBUSDT"], interval:"1d", startDate:"2023-09-22", endDate:"2026-06-17",
+    splitBar:700, oosFraction:0.3, txCostBps:10, slippageBps:10,
+    costNote:"10 + 10 bps net-of-cost — a CONFIGURABLE ASSUMPTION; exact organizer cost model UNCONFIRMED.",
+    stress:"Edge survives 15+15 and 25+25 bps cost stress (from robustness, not this report).",
+    note:"REAL multi-regime daily data, ~2.7yr / ~1000 bars per token." },
+  cmc: { capture:"LIVE", capturedAt:"2026-06-17T19:36:35.175Z", endpoint:"https://mcp.coinmarketcap.com/mcp",
+    fearGreed:23, fearGreedLabel:"Extreme Fear", btcDominance:58.26, rsi14:41.85, macdHist:620.87,
+    fundingRate:0.0006212, openInterestUsd:407900000000, btcQuoteSnapshot:64423.61, btcChange24h:-1.82169664,
+    narrativesCount:5, holderCount:55831462, whalesPct:2.01,
+    tools:[
+      { id:"search_cryptos", ok:true, input:"resolve ids", signal:"BTC 1 · ETH 1027 · BNB 1839", gate:"universe resolved", gateTone:"info" },
+      { id:"get_crypto_quotes_latest", ok:true, input:"BTC quote", signal:"$64,423.61 · -1.82% 24h (captured snapshot)", gate:"provenance only", gateTone:"info" },
+      { id:"get_crypto_technical_analysis", ok:true, input:"BTC TA", signal:"RSI(14) 41.85 · MACD hist 620.87", gate:"neutral momentum", gateTone:"info" },
+      { id:"get_global_metrics_latest", ok:true, input:"global", signal:"F&G 23 (Extreme Fear) · BTC dom 58.26%", gate:"favour LONG (contrarian)", gateTone:"long" },
+      { id:"get_global_crypto_derivatives_metrics", ok:true, input:"derivatives", signal:"funding 0.0006212 STRETCHED · OI $407.9B", gate:"risk-filter WATCH", gateTone:"watch" },
+      { id:"trending_crypto_narratives", ok:true, input:"narratives", signal:"5 active narratives", gate:"context", gateTone:"info" },
+      { id:"get_crypto_metrics", ok:true, input:"on-chain", signal:"55,831,462 holders · 2.01% whales", gate:"context", gateTone:"info" }
+    ],
+    regimeHeadline:"Regime: extreme fear → the contrarian gate favours the long",
+    invalidation:"thesis breaks if: F&G flips to extreme-greed AND funding stretches" },
+  deprecated: { label:"contrarian (divergence) prototype — hourly, 2026-02-17 → 2026-06-17, byte-frozen",
+    oosRet:-0.180712223611, oosBhRet:-0.166480589143, fullRet:-0.36484876696, fullBhRet:-0.053556462402,
+    verdictText:"✗ underperformed B&H by ~1.5 pts OOS (-18.1% vs -16.6%); full window -36.5% vs -5.4%",
+    note:"the original contrarian idea LOST to buy & hold — kept verbatim, never the headline; the momentum core above is the pivot." },
+  sampleRegime: { fearGreed:78, fearGreedLabel:"Extreme Greed", funding:0.00075, longShort:1.62,
+    note:"SAMPLE — see the gate trim a euphoric long. Not the current read." }
+});
+</script>
+
+<!-- ════════ APP: render, motion, hydration ════════ -->
+<script>
+(function(){
+"use strict";
+
+/* ── §2A FORMATTING CONTRACT ── */
+const pct = (x, dp=1) => (x*100).toFixed(dp) + "%";
+const signedPct = (x, dp=1) => {
+  const v = (x*100).toFixed(dp);
+  const s = x>0 ? "+" : (x<0 ? "" : "");
+  const arrow = x>0 ? "▲" : (x<0 ? "▼" : "■");
+  return arrow + " " + s + v + "%";
+};
+const num = (x, dp=2) => x.toFixed(dp);
+const usdB = (x) => "$" + (x/1e9).toFixed(1) + "B";
+const intGroup = (x) => x.toLocaleString("en-US");
+
+const $ = (s,r=document) => r.querySelector(s);
+const $$ = (s,r=document) => Array.prototype.slice.call(r.querySelectorAll(s));
+const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Animate only when motion is allowed AND the document is actually visible — otherwise
+// (reduced motion, or a backgrounded tab where rAF/timers are frozen) write final state instantly.
+function canAnim(){ return !REDUCED && document.visibilityState === "visible"; }
+
+/* ── live mutable model (hydrated; falls back to STOIC) ── */
+const M = {
+  agg: { outOfSample: STOIC.hero, inSample: STOIC.inSample, full: STOIC.full },
+  perToken: STOIC.perToken,
+  cmc: Object.assign({}, STOIC.cmc),
+  liveThisSession: false
+};
+
+/* ── count-up (handles negatives + decimals, easeOutExpo, terminates on frozen string) ── */
+function countUp(el, target, fmt, dur){
+  dur = dur || 700;
+  if (!el) return;
+  el.textContent = fmt(target);                 // GUARANTEED final (survives frozen rAF/timers)
+  if (!canAnim()) return;
+  requestAnimationFrame(function(){             // enhancement only — no-op if frozen
+    const start = performance.now();
+    (function frame(now){
+      let p = Math.min(1, (now-start)/dur);
+      const e = p>=1 ? 1 : 1 - Math.pow(2, -10*p);
+      el.textContent = fmt(p>=1 ? target : target*e);
+      if (p<1) requestAnimationFrame(frame); else el.textContent = fmt(target);
+    })(performance.now());
+  });
+}
+// hero variant preserving the raised % sign
+function countUpHero(el, target, dur){
+  const sign = '<span class="pctsign">%</span>';
+  el.innerHTML = (target*100).toFixed(1) + sign;   // GUARANTEED final
+  if (!canAnim()) return;
+  requestAnimationFrame(function(){
+    const start = performance.now();
+    (function frame(now){
+      let p = Math.min(1,(now-start)/dur);
+      const e = p>=1 ? 1 : 1 - Math.pow(2,-10*p);
+      const v = p>=1 ? target : target*e;
+      el.innerHTML = (v*100).toFixed(1) + sign;
+      if (p<1) requestAnimationFrame(frame); else el.innerHTML = (target*100).toFixed(1) + sign;
+    })(performance.now());
+  });
+}
+
+/* ── SVG helpers (hand-rolled, dependency-free) ── */
+const NS = "http://www.w3.org/2000/svg";
+function svgEl(w,h,vb){ return '<svg viewBox="'+vb+'" width="100%" preserveAspectRatio="xMidYMid meet" style="height:'+h+'px">'; }
+
+function divergingBar(rows, opts){
+  // rows: [{label, value, color}], anchored to real 0 with a break-even reference line
+  opts = opts || {};
+  const W = opts.w || 280, H = opts.h || 96, padT = 14, padB = 22, padL = 6, padR = 6;
+  const vals = rows.map(r=>r.value);
+  const lo = Math.min(0, Math.min.apply(null, vals));
+  const hi = Math.max(0, Math.max.apply(null, vals));
+  const span = (hi - lo) || 1;
+  const y0 = padT + (hi/span)*(H-padT-padB); // pixel of zero line
+  const bw = (W-padL-padR)/rows.length * 0.5;
+  let s = svgEl(W,H,'0 0 '+W+' '+H);
+  // zero reference line
+  s += '<line x1="'+padL+'" y1="'+y0.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y0.toFixed(1)+'" stroke="#232A35" stroke-width="1"/>';
+  s += '<text x="'+(W-padR)+'" y="'+(y0-4).toFixed(1)+'" text-anchor="end" fill="#A7AFBE" font-family="ui-monospace,monospace" font-size="9">0% (break-even)</text>';
+  rows.forEach(function(r,i){
+    const cx = padL + (W-padL-padR)*((i+0.5)/rows.length);
+    const px = (Math.abs(r.value)/span)*(H-padT-padB);
+    const yTop = r.value>=0 ? y0 - px : y0;
+    s += '<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+yTop.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,px).toFixed(1)+'" rx="3" fill="'+r.color+'" opacity="0.92"/>';
+    s += '<text x="'+cx.toFixed(1)+'" y="'+(H-7)+'" text-anchor="middle" fill="#A7AFBE" font-family="ui-monospace,monospace" font-size="9">'+r.label+'</text>';
+  });
+  s += '</svg>';
+  return s;
+}
+
+function sparkline(pts, color){
+  const W=120,H=30,pad=2;
+  const lo=Math.min.apply(null,pts), hi=Math.max.apply(null,pts), sp=(hi-lo)||1;
+  const d = pts.map(function(p,i){
+    const x = pad + (W-2*pad)*(i/(pts.length-1));
+    const y = pad + (H-2*pad)*(1-(p-lo)/sp);
+    return (i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);
+  }).join(' ');
+  return svgEl(W,H,'0 0 '+W+' '+H)+'<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+}
+
+function lineChart(series, opts){
+  // series: [{pts:[{x,y}], color, width, fill}], opts: {w,h,gridY, oosFrac, splitLabel, underwater:[{x,y}], threshold}
+  opts = opts || {};
+  const W = opts.w||520, H = opts.h||220, padL=8, padR=8, padT=12, padB=18;
+  const all = [].concat.apply([], series.map(s=>s.pts));
+  const xs = all.map(p=>p.x), ys = all.map(p=>p.y);
+  let yLo = Math.min.apply(null,ys), yHi = Math.max.apply(null,ys);
+  if (opts.underwater) opts.underwater.forEach(p=>{ yLo=Math.min(yLo,p.y); });
+  const xLo=Math.min.apply(null,xs), xHi=Math.max.apply(null,xs);
+  const ySp=(yHi-yLo)||1, xSp=(xHi-xLo)||1;
+  const px = x => padL + (W-padL-padR)*((x-xLo)/xSp);
+  const py = y => padT + (H-padT-padB)*(1-(y-yLo)/ySp);
+  let s = svgEl(W,H,'0 0 '+W+' '+H);
+  // OOS shaded band
+  if (opts.oosFrac){
+    const bx = padL + (W-padL-padR)*(1-opts.oosFrac);
+    s += '<rect x="'+bx.toFixed(1)+'" y="'+padT+'" width="'+(W-padR-bx).toFixed(1)+'" height="'+(H-padT-padB)+'" fill="rgba(22,199,132,0.06)"/>';
+    s += '<line x1="'+bx.toFixed(1)+'" y1="'+padT+'" x2="'+bx.toFixed(1)+'" y2="'+(H-padB)+'" stroke="#F0B90B" stroke-width="1" stroke-dasharray="3 3"/>';
+    s += '<text x="'+(bx+4).toFixed(1)+'" y="'+(padT+10)+'" fill="#A7AFBE" font-family="ui-monospace,monospace" font-size="9">in ⟂ OOS</text>';
+  }
+  // grid baseline (0 line if present)
+  if (yLo<=0 && yHi>=0){
+    const z=py(0); s += '<line x1="'+padL+'" y1="'+z.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+z.toFixed(1)+'" stroke="#232A35" stroke-width="1"/>';
+  }
+  series.forEach(function(se){
+    const d = se.pts.map((p,i)=> (i?'L':'M')+px(p.x).toFixed(1)+' '+py(p.y).toFixed(1)).join(' ');
+    const len = 1400;
+    s += '<path d="'+d+'" fill="none" stroke="'+se.color+'" stroke-width="'+(se.width||2)+'" stroke-linejoin="round" stroke-linecap="round" class="drawpath" data-len="'+len+'" style="stroke-dasharray:'+len+';stroke-dashoffset:0"/>';
+  });
+  s += '</svg>';
+  return s;
+}
+
+/* ── gauge (semicircular, §4.2 geometry) ── */
+function gaugePoint(cx,cy,r,angleDeg){ const a=angleDeg*Math.PI/180; return [cx+r*Math.cos(a), cy-r*Math.sin(a)]; }
+function gaugeBandPath(cx,cy,r,v0,v1){
+  const a0=180-(v0/100)*180, a1=180-(v1/100)*180;
+  const p0=gaugePoint(cx,cy,r,a0), p1=gaugePoint(cx,cy,r,a1);
+  return 'M'+p0[0].toFixed(2)+' '+p0[1].toFixed(2)+' A '+r+' '+r+' 0 0 1 '+p1[0].toFixed(2)+' '+p1[1].toFixed(2);
+}
+function buildGaugeBands(){
+  const cx=100,cy=100,r=80;
+  const bands=[
+    {a:0,b:20,c:"var(--red)"},{a:20,b:40,c:"var(--amber)"},{a:40,b:60,c:"var(--text2)"},
+    {a:60,b:80,c:"var(--blue)"},{a:80,b:100,c:"var(--green)"}
+  ];
+  return bands.map(function(bd){
+    return '<path d="'+gaugeBandPath(cx,cy,r,bd.a,bd.b)+'" fill="none" stroke="'+bd.c+'" stroke-width="14" stroke-linecap="round" opacity="0.32"/>';
+  }).join('');
+}
+function needleAngleFor(v){ return 180-(v/100)*180; }
+function setNeedle(v, animate){
+  const cx=100,cy=100,r=80;
+  const ang=needleAngleFor(v);
+  const tip=gaugePoint(cx,cy,r-12,ang);
+  const ndl=$("#needle");
+  if(!ndl) return;
+  function place(a){ const t=gaugePoint(cx,cy,r-12,a); ndl.setAttribute("x2",t[0].toFixed(2)); ndl.setAttribute("y2",t[1].toFixed(2)); }
+  if (!animate){ place(ang); return; }
+  place(ang);                              // final sync
+  if (!canAnim()) return;
+  requestAnimationFrame(function(){
+    const from=90, dur=700, start=performance.now();
+    (function frame(now){ let p=Math.min(1,(now-start)/dur); const e=p>=1?1:1-Math.pow(2,-10*p); place(from+(ang-from)*e); if(p<1) requestAnimationFrame(frame); else place(ang); })(performance.now());
+  });
+}
+
+/* ════════ RENDER ════════ */
+
+// eyebrow
+$("#eyebrow-txt") && (function(){ /* static already */ })();
+
+// ── HERO ──
+// Size the drawdown bars in px from the track's own measured height so they fill whatever the
+// layout gives them (a short pair on mobile, a tall tale-of-the-tape on desktop) while keeping the
+// exact 17.7 / 58.3 ratio. Called on render and on resize.
+function sizeBars(){
+  const track=$(".ddtrack"); if(!track) return;
+  const H=track.clientHeight || 160;
+  const ratio=STOIC.hero.maxDD/STOIC.hero.bhMaxDD;
+  $("#bar-bh").style.height = H+"px";
+  $("#bar-stoic").style.height = (H*ratio).toFixed(1)+"px";
+}
+function renderHero(){
+  const h=M.agg.outOfSample;
+  countUpHero($("#hero-num"), STOIC.hero.maxDD, 700);
+  $("#hero-ghost").textContent = pct(STOIC.hero.bhMaxDD);
+  $("#bar-stoic-v").textContent = pct(STOIC.hero.maxDD);
+  $("#bar-bh-v").textContent = pct(STOIC.hero.bhMaxDD);
+  // bars are sized in px from the track's measured height (resize-safe; avoids the flex %-height
+  // collapse). The track grows tall at desktop via flex, short on mobile via its fixed height —
+  // either way the green is exactly 0.304× the red (the real 17.7 / 58.3 ratio).
+  sizeBars();
+  countUp($("#h-ret"), h.ret, signedPct);
+  $("#h-bhret").textContent = signedPct(h.bhRet);
+  $("#h-excess").textContent = signedPct(h.excess);
+}
+
+// ── bars entrance ──
+function animateBars(){
+  const sb=$("#bar-stoic"), bb=$("#bar-bh");
+  sb.style.transform="scaleY(1)"; bb.style.transform="scaleY(1)";   // final sync
+  if(!canAnim()) return;
+  requestAnimationFrame(function(){
+    sb.style.transition="none"; bb.style.transition="none";
+    sb.style.transform="scaleY(0)"; bb.style.transform="scaleY(0)"; sb.getBoundingClientRect();
+    requestAnimationFrame(function(){
+      sb.style.transition="transform .6s var(--ld-ease) .2s"; bb.style.transition="transform .6s var(--ld-ease) .2s";
+      sb.style.transform="scaleY(1)"; bb.style.transform="scaleY(1)";
     });
+  });
+}
+function showCheckChip(){
+  const c=$("#check-chip");
+  c.style.opacity=1;                                                // final sync
+  if(!canAnim()) return;
+  requestAnimationFrame(function(){
+    c.style.transition="none"; c.style.opacity=0; c.getBoundingClientRect();
+    requestAnimationFrame(function(){ c.style.transition="opacity .5s ease .9s"; c.style.opacity=1; });
+  });
+}
 
-    // ════════════════════════════════════════════════════════════════════
-    //  DIVERGING BAR — strategy vs buy&hold around a y=0 baseline. groupedBar
-    //  clamps negative heights to 0 and draws no zero reference, so an all-negative
-    //  window renders as two invisible nubs. This anchors every bar to y=0.
-    //  forceDD: render drawdown bars (always positive, lower-is-better) without the
-    //  zero baseline gimmick — just two positive bars for a like-for-like DD compare.
-    // ════════════════════════════════════════════════════════════════════
-    function divergingBar(bars, o) {
-      o = o || {};
-      var w = o.w || 360, h = o.h || 200, pad = { t: 22, r: 12, b: 30, l: 46 };
-      var iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
-      var vals = bars.map(function (b) { return b.value; });
-      var dataMax = Math.max.apply(null, vals), dataMin = Math.min.apply(null, vals);
-      var yMax = Math.max(0, dataMax) * 1.18 || 1;
-      var yMin = Math.min(0, dataMin) * 1.18;
-      if (yMax === yMin) { yMax = 1; yMin = -1; }
-      var Y = function (v) { return pad.t + (1 - (v - yMin) / (yMax - yMin)) * ih; };
-      var zeroY = Y(0);
-      var green = tokVar('--green', '#16C784'), red = tokVar('--red', '#F6465D');
-      var amber = tokVar('--amber', '#F0B90B'), muted = tokVar('--muted', '#8b93a7');
-      var g = '';
-      for (var t = 0; t <= 4; t++) {
-        var gv = yMin + (yMax - yMin) * (1 - t / 4), gy = pad.t + (t / 4) * ih;
-        g += '<line x1="' + pad.l + '" y1="' + gy.toFixed(1) + '" x2="' + (pad.l + iw) + '" y2="' + gy.toFixed(1) +
-          '" stroke="' + muted + '" stroke-width="0.5" opacity="0.18"/>';
-        g += '<text x="' + (pad.l - 6) + '" y="' + (gy + 3).toFixed(1) + '" text-anchor="end" font-size="9" fill="' + muted + '">' + gv.toFixed(0) + '%</text>';
-      }
-      var n = bars.length || 1, step = iw / n, bw = step * 0.5;
-      bars.forEach(function (b, i) {
-        var pos = b.value >= 0;
-        // colour override (for the DD chart: strategy=green good, B&H=amber/red worse)
-        var col = b.color || (pos ? green : red);
-        var x = pad.l + i * step + (step - bw) / 2;
-        var yv = Y(b.value);
-        var top = Math.min(yv, zeroY), bh = Math.abs(yv - zeroY);
-        var id = 'dbg' + (o.idPrefix || '') + i;
-        g += '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' +
-          '<stop offset="0" stop-color="' + col + '"/><stop offset="1" stop-color="' + col + '" stop-opacity=".55"/></linearGradient></defs>';
-        g += '<rect x="' + x.toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + bw.toFixed(1) +
-          '" height="' + Math.max(1.5, bh).toFixed(1) + '" rx="3" fill="url(#' + id + ')"/>';
-        var lblY = pos ? (top - 6) : (top + bh + 13);
-        g += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + lblY.toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="600" fill="' + col + '">' +
-          (b.value >= 0 ? '+' : '') + b.value.toFixed(1) + '%</text>';
-        g += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (pad.t + ih + 16) + '" text-anchor="middle" font-size="10" fill="' + muted + '">' + esc(b.label) + '</text>';
+// ── GAUGE ──
+function renderGauge(useSample){
+  $("#gauge-bands").innerHTML = buildGaugeBands();
+  const src = useSample ? STOIC.sampleRegime : M.cmc;
+  const v = src.fearGreed;
+  const labelTxt = useSample ? "EXTREME GREED → trim long (SAMPLE)" : "EXTREME FEAR → favour long";
+  countUp($("#gauge-val"), v, function(x){ return Math.round(x).toString(); }, 700);
+  $("#gauge-label").textContent = labelTxt;
+  // regime-state ring: spin only on the cached read; static marker on the SAMPLE demo (never imply liveness)
+  $("#gauge-label").setAttribute("data-provenance", useSample ? "sample" : "cached");
+  $("#gauge-label").style.color = useSample ? "var(--green)" : "var(--amber)";
+  $("#gauge-svg-val").textContent = "F&G "+v;
+  setNeedle(v, true);
+  // supporting reads (always from the live capture, not the sample)
+  $("#r-rsi").textContent = num(M.cmc.rsi14,2);
+  $("#r-dom").textContent = pct(M.cmc.btcDominance/100,2);
+  $("#r-fund").textContent = M.cmc.fundingRate + (M.cmc.fundingRate>STOIC.engine.FUNDING_STRETCHED ? " STRETCHED" : "");
+  $("#r-oi").textContent = usdB(M.cmc.openInterestUsd);
+  // provenance / live-vs-cached
+  const pill=$("#live-pill"), txt=$("#live-txt"), asof=$("#gauge-asof");
+  if (useSample){
+    pill.className="live-pill is-cached"; txt.textContent="SAMPLE — not live";
+    asof.textContent = STOIC.sampleRegime.note;
+  } else if (M.liveThisSession){
+    pill.className="live-pill is-live"; txt.textContent="LIVE this session";
+    asof.textContent = "as of "+fmtUTC(M.cmc.capturedAt)+" · "+relTime(M.cmc.capturedAt);
+  } else {
+    pill.className="live-pill is-cached"; txt.textContent="last good read · cached "+relTime(M.cmc.capturedAt);
+    asof.textContent = "captured "+fmtUTC(M.cmc.capturedAt);
+  }
+}
+function fmtUTC(iso){ const d=new Date(iso); return d.toISOString().slice(0,16).replace("T"," ")+" UTC"; }
+function relTime(iso){
+  const diff=(Date.now()-new Date(iso).getTime())/1000;
+  if(diff<60) return "just now";
+  if(diff<3600) return Math.round(diff/60)+"m ago";
+  if(diff<86400) return Math.round(diff/3600)+"h ago";
+  return Math.round(diff/86400)+"d ago";
+}
+
+// ── AGENT TRACE ──
+function toneColor(t){ return t==="long"?"var(--green)":t==="watch"?"var(--amber)":"var(--text2)"; }
+function renderTrace(){
+  const ol=$("#trace-list");
+  ol.innerHTML = M.cmc.tools.map(function(t,i){
+    const ts="t+"+(128*(i+1))+"ms";
+    const acc=toneColor(t.gateTone);
+    const raw=JSON.stringify(Object.assign({tool:t.id, ok:t.ok}, signalFields(t)));
+    return ''+
+    '<li class="trace-row" style="--accent:'+acc+'">'+
+      '<div class="trace-line">'+
+        '<span class="trace-ts">'+ts+'</span>'+
+        '<code class="trace-tool">'+t.id+'</code>'+
+        '<span class="trace-arrow">→</span>'+
+        '<span class="trace-input">'+t.input+'</span>'+
+        '<span class="trace-arrow">→</span>'+
+        '<span class="trace-signal">'+t.signal+'</span>'+
+        '<span class="trace-arrow">→</span>'+
+        '<span class="trace-gate" style="color:'+acc+'">'+t.gate+'</span>'+
+      '</div>'+
+      '<details class="trace-raw"><summary>raw</summary><pre>'+esc(raw)+'</pre></details>'+
+    '</li>';
+  }).join('');
+  $("#trace-headline").textContent = M.cmc.regimeHeadline;
+  $("#trace-invalid").textContent = "⚑ "+M.cmc.invalidation;
+  // stagger reveal
+  const rows=$$(".trace-row");
+  rows.forEach(r=>{r.style.opacity=1; r.style.transform="none";});   // final sync
+  if(!canAnim()) return;
+  requestAnimationFrame(function(){
+    rows.forEach(function(r){ r.style.transition="none"; r.style.opacity=0; r.style.transform="translateY(6px)"; });
+    rows[0] && rows[0].getBoundingClientRect();
+    requestAnimationFrame(function(){
+      rows.forEach(function(r,i){
+        const d=(0.7 + i*0.046).toFixed(3)+"s";
+        r.style.transition="opacity .35s ease "+d+", transform .35s var(--ld-ease) "+d;
+        r.style.opacity=1; r.style.transform="none";
       });
-      g += '<line x1="' + pad.l + '" y1="' + zeroY.toFixed(1) + '" x2="' + (pad.l + iw) + '" y2="' + zeroY.toFixed(1) +
-        '" stroke="' + tokVar('--text2', '#c7ccd6') + '" stroke-width="1.6"/>';
-      g += '<text x="' + (pad.l + iw) + '" y="' + (zeroY - 4).toFixed(1) + '" text-anchor="end" font-size="9" font-weight="600" fill="' + tokVar('--text2', '#c7ccd6') + '">' + esc(o.zeroLabel || '0% (break-even)') + '</text>';
-      return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="xMidYMid meet" style="height:' + h + 'px;max-width:100%" role="img" aria-label="' +
-        esc(o.label || 'strategy vs buy and hold') + '">' + g + '</svg>';
-    }
-    function tokVar(name, fb) {
-      try { var v = getComputedStyle(document.documentElement).getPropertyValue(name); if (v && v.trim()) return v.trim(); } catch (e) {}
-      return fb;
-    }
-
-    // ════════════════════════════════════════════════════════════════════
-    //  HEADLINE BACKTEST — read REAL ../backtest/report-momentum.json (the
-    //  regime-aware RISK-OVERLAY result) client-side. report.json (the original
-    //  contrarian LOSS) is loaded separately, only into the DEPRECATED panel.
-    // ════════════════════════════════════════════════════════════════════
-    var REPORT = null;                 // report-momentum.json (headline)
-    var BT = { window: 'outOfSample', token: '__agg' };
-
-    function segOf(report, token, win) {
-      if (token === '__agg') return report.aggregate[win];
-      var t = report.perToken.filter(function (p) { return p.symbol === token; })[0];
-      return t ? t[win] : null;
-    }
-
-    function paintBacktestKpis() {
-      var seg = segOf(REPORT, BT.token, BT.window);
-      if (!seg) return;
-      var deltaVsBH = seg.totalReturn - seg.buyAndHoldReturn;
-      var ddDelta = seg.maxDrawdown - (seg.buyAndHoldMaxDrawdown != null ? seg.buyAndHoldMaxDrawdown : seg.maxDrawdown);
-      var items = window.StoicUI.kpiCards([
-        { icon: 'trendingDown', label: 'Max drawdown', value: fmtPctNoSign(seg.maxDrawdown),
-          accent: 'var(--green)', accentDim: 'var(--green-dim)',
-          dir: ddDelta <= 0 ? 'up' : 'down',
-          delta: (seg.buyAndHoldMaxDrawdown != null ? 'vs B&H ' + fmtPctNoSign(seg.buyAndHoldMaxDrawdown) : ''),
-          sub: 'the ROBUST claim' },
-        { icon: 'trendingUp', label: 'Total return', valueHtml: fmtPct(seg.totalReturn),
-          accent: seg.totalReturn >= 0 ? 'var(--green)' : 'var(--red)', accentDim: seg.totalReturn >= 0 ? 'var(--green-dim)' : 'var(--red-dim)',
-          dir: deltaVsBH >= 0 ? 'up' : 'down', delta: fmtPct(deltaVsBH), sub: 'vs B&H ' + fmtPct(seg.buyAndHoldReturn) },
-        { icon: 'gauge', label: 'Sharpe (ann.)', value: seg.sharpe.toFixed(2),
-          accent: seg.sharpe >= (seg.buyAndHoldSharpe != null ? seg.buyAndHoldSharpe : 0) ? 'var(--green)' : 'var(--amber)',
-          accentDim: 'var(--ai-dim)',
-          sub: (seg.buyAndHoldSharpe != null ? 'B&H ' + seg.buyAndHoldSharpe.toFixed(2) : 'Sortino ' + seg.sortino.toFixed(2)) },
-        { icon: 'target', label: 'Trades', value: String(seg.tradeCount), accent: 'var(--ai)', accentDim: 'var(--ai-dim)', sub: seg.bars + ' bars · low turnover' }
-      ]);
-      $('btKpis').innerHTML = items;
-
-      // total-return diverging bar (y=0 baseline so all-negative OOS is legible)
-      $('btBar').innerHTML = divergingBar(
-        [{ label: 'Strategy', value: seg.totalReturn * 100 },
-         { label: 'Buy & Hold', value: seg.buyAndHoldReturn * 100 }],
-        { w: 360, h: 210, idPrefix: 'ret', label: 'strategy vs buy & hold total return (%), zero = break-even' }
-      );
-      $('btBarLegend').innerHTML = window.StoicCharts.legend([
-        { color: seg.totalReturn >= 0 ? 'var(--green)' : 'var(--red)', label: 'Strategy ' + fmtPct(seg.totalReturn) },
-        { color: seg.buyAndHoldReturn >= 0 ? 'var(--green)' : 'var(--red)', label: 'Buy & Hold ' + fmtPct(seg.buyAndHoldReturn) }
-      ]);
-
-      // DRAWDOWN bar — the robust, regime-independent claim (lower is better).
-      if (seg.buyAndHoldMaxDrawdown != null) {
-        $('btDD').innerHTML = divergingBar(
-          [{ label: 'Strategy DD', value: seg.maxDrawdown * 100, color: tokVar('--green', '#16C784') },
-           { label: 'Buy & Hold DD', value: seg.buyAndHoldMaxDrawdown * 100, color: tokVar('--red', '#F6465D') }],
-          { w: 720, h: 180, idPrefix: 'dd', zeroLabel: '0% (no drawdown)', label: 'strategy vs buy & hold max drawdown (%) — lower is better' }
-        );
-        $('btDDLegend').innerHTML = window.StoicCharts.legend([
-          { color: 'var(--green)', label: 'Strategy max-DD ' + fmtPctNoSign(seg.maxDrawdown) + ' (≈ halved)' },
-          { color: 'var(--red)', label: 'Buy & Hold max-DD ' + fmtPctNoSign(seg.buyAndHoldMaxDrawdown) }
-        ]);
-      } else {
-        $('btDD').innerHTML = ''; $('btDDLegend').innerHTML = '';
-      }
-
-      // honest verdict — risk-overlay framing
-      var beat = seg.totalReturn > seg.buyAndHoldReturn;
-      var ddWin = seg.buyAndHoldMaxDrawdown != null && seg.maxDrawdown < seg.buyAndHoldMaxDrawdown;
-      var v = $('btVerdict');
-      var tokLabel = BT.token === '__agg' ? 'Aggregate' : BT.token;
-      var winLabel = BT.window === 'outOfSample' ? 'held-out out-of-sample (2026 drawdown)' : BT.window === 'inSample' ? 'in-sample (a strong BULL)' : 'full window';
-      var ddTxt = ddWin ? ' Max drawdown ' + fmtPctNoSign(seg.maxDrawdown) + ' vs B&H ' + fmtPctNoSign(seg.buyAndHoldMaxDrawdown) + ' (the robust, regime-independent claim).' : '';
-      if (BT.window === 'inSample') {
-        v.style.color = 'var(--amber)'; v.style.background = 'var(--amber-dim)';
-        v.innerHTML = '◑ ' + tokLabel + ' (' + winLabel + '): strategy ' + fmtPct(seg.totalReturn) + ' <b>LOSES to</b> buy&hold ' + fmtPct(seg.buyAndHoldReturn) +
-          ' — a long-only trend core CANNOT out-earn a +262% bull (it lags and trims). This is the mechanism, stated up front.' + ddTxt;
-      } else if (beat && seg.totalReturn >= 0) {
-        v.style.color = 'var(--green)'; v.style.background = 'var(--green-dim)';
-        v.innerHTML = '✓ ' + tokLabel + ' (' + winLabel + '): strategy ' + fmtPct(seg.totalReturn) + ' beat buy&hold ' + fmtPct(seg.buyAndHoldReturn) +
-          ' — by sitting out the bear (a BEAR-DODGE, not standalone alpha).' + ddTxt;
-      } else if (beat) {
-        v.style.color = 'var(--green)'; v.style.background = 'var(--green-dim)';
-        v.innerHTML = '✓ ' + tokLabel + ' (' + winLabel + '): strategy ' + fmtPct(seg.totalReturn) + ' beat buy&hold ' + fmtPct(seg.buyAndHoldReturn) +
-          ' by <b>losing less</b> — the core went FLAT through the bear (a BEAR-DODGE, a "lost-less" beat, not standalone alpha).' + ddTxt;
-      } else {
-        v.style.color = 'var(--red)'; v.style.background = 'var(--red-dim)';
-        v.innerHTML = '✗ ' + tokLabel + ' (' + winLabel + '): strategy ' + fmtPct(seg.totalReturn) + ' UNDERPERFORMED buy&hold ' + fmtPct(seg.buyAndHoldReturn) +
-          ' (it lags in trending-up windows). Reported as-is — no cherry-pick.' + ddTxt;
-      }
-
-      paintKpiStrip();
-
-      $('btWindowNote').textContent = BT.window === 'outOfSample'
-        ? 'Trailing ' + Math.round((REPORT.params.oosFraction || 0.3) * 100) + '% held out — never used to pick params. Ends in the 2026 drawdown.'
-        : BT.window === 'inSample' ? 'Leading ' + Math.round((1 - (REPORT.params.oosFraction || 0.3)) * 100) + '% (params region) — a strong bull, where a trend-follower must lag.'
-          : 'Entire 2.7yr multi-regime sample.';
-    }
-
-    function paintKpiStrip() {
-      var agg = REPORT.aggregate.outOfSample;
-      var bhBeat = agg.totalReturn > agg.buyAndHoldReturn;
-      var ddWin = agg.buyAndHoldMaxDrawdown != null && agg.maxDrawdown < agg.buyAndHoldMaxDrawdown;
-      $('kpiStrip').innerHTML =
-        kpiTile('Max DD (OOS, agg)', fmtPctNoSign(agg.maxDrawdown), ddWin ? 'up' : 'down', 'vs B&H ' + fmtPctNoSign(agg.buyAndHoldMaxDrawdown) + ' — ROBUST') +
-        kpiTile('B&H Max DD', fmtPctNoSign(agg.buyAndHoldMaxDrawdown), 'down', 'roughly DOUBLE') +
-        kpiTile('Return (OOS, agg)', fmtPct(agg.totalReturn), agg.totalReturn >= 0 ? 'up' : 'down', 'vs B&H ' + fmtPct(agg.buyAndHoldReturn)) +
-        kpiTile('Excess vs B&H', fmtPct(agg.totalReturn - agg.buyAndHoldReturn), bhBeat ? 'up' : 'down', bhBeat ? 'bear-dodge, not alpha' : 'below baseline') +
-        kpiTile('Sharpe', agg.sharpe.toFixed(2), agg.sharpe >= agg.buyAndHoldSharpe ? 'up' : 'down', 'B&H ' + agg.buyAndHoldSharpe.toFixed(2)) +
-        kpiTile('Trades', String(agg.tradeCount), '', agg.bars + ' bars · low turnover');
-      $('kpiNote').innerHTML = 'Headline = <b>aggregate, held-out out-of-sample</b> (the 2026 drawdown) from REAL multi-regime DAILY Binance data, selected in-sample only. ' +
-        'Lead claim is <b>halved max-drawdown</b>; the absolute beat is a <b id="kpiHonest"></b>';
-      $('kpiHonest').textContent = 'bear-dodge, not standalone alpha (in-sample it lags B&H +57.5% vs +262.0%).';
-    }
-    function kpiTile(k, v, dir, d) {
-      return '<div class="stx-kpi soft"><div class="k">' + esc(k) + '</div>' +
-        '<div class="v">' + esc(v) + '</div>' +
-        '<div class="d ' + (dir || '') + '">' + esc(d) + '</div></div>';
-    }
-
-    function paintBacktestTable() {
-      var rows = [];
-      REPORT.perToken.forEach(function (p) {
-        var seg = p[BT.window];
-        rows.push({ sym: p.symbol, syn: p.synthetic, seg: seg });
-      });
-      rows.push({ sym: 'AGG', syn: false, seg: REPORT.aggregate[BT.window] });
-      var winLabel = BT.window === 'outOfSample' ? 'OOS' : BT.window === 'inSample' ? 'IS' : 'full';
-      $('btBody').innerHTML = rows.map(function (row) {
-        var d = row.seg;
-        var beat = d.totalReturn > d.buyAndHoldReturn;
-        var cls = (row.sym === BT.token || (row.sym === 'AGG' && BT.token === '__agg')) ? 'cur' : '';
-        var synTag = row.syn ? ' <span class="stx-badge warn">synthetic</span>' : '';
-        var retCls = d.totalReturn >= 0 ? 's-ok' : 's-bad';
-        var ddCls = (d.buyAndHoldMaxDrawdown != null && d.maxDrawdown < d.buyAndHoldMaxDrawdown) ? 's-ok' : '';
-        return '<tr class="' + cls + '"><td>' + row.sym + synTag + '</td>' +
-          '<td>' + winLabel + '</td>' +
-          '<td class="num stx-score ' + retCls + '">' + fmtPct(d.totalReturn) + '</td>' +
-          '<td class="num">' + fmtPct(d.buyAndHoldReturn) + (beat ? ' <span style="color:var(--green)">▲</span>' : ' <span style="color:var(--red)">▼</span>') + '</td>' +
-          '<td class="num">' + fmtPctNoSign(d.winRate) + '</td>' +
-          '<td class="num stx-score ' + ddCls + '">' + fmtPctNoSign(d.maxDrawdown) + '</td>' +
-          '<td class="num">' + (d.buyAndHoldMaxDrawdown != null ? fmtPctNoSign(d.buyAndHoldMaxDrawdown) : '—') + '</td>' +
-          '<td class="num">' + d.sharpe.toFixed(2) + '</td>' +
-          '<td class="num">' + d.sortino.toFixed(2) + '</td>' +
-          '<td class="num">' + d.tradeCount + '</td>' +
-          '<td class="num">' + d.bars + '</td></tr>';
-      }).join('');
-    }
-
-    function paintConstants() {
-      var ec = (REPORT.params && (REPORT.params.moduleConstants || REPORT.params.engineConstants)) || EC;
-      var order = Object.keys(ec);
-      $('constBody').innerHTML = order.map(function (k) {
-        return '<tr><td>' + esc(k) + '</td><td class="num">' + esc(ec[k]) + '</td></tr>';
-      }).join('');
-    }
-    function paintMethod() {
-      $('methodList').innerHTML = (REPORT.methodology || []).map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('');
-    }
-    function dsStart(ds) { return ds.startISO || ds.startDate || ''; }
-    function dsEnd(ds) { return ds.endISO || ds.endDate || ''; }
-    function paintFoot() {
-      var ds = REPORT.dataSource;
-      $('footNote').innerHTML =
-        '<b>' + esc(ds.kind) + '</b> data · ' + esc(ds.provider) + ' · ' + esc(ds.symbols.join(', ')) + ' @ ' + esc(ds.interval) +
-        ' · ' + esc(dsStart(ds)) + ' → ' + esc(dsEnd(ds)) + '. ' + esc(ds.note);
-      $('btMeta').innerHTML =
-        '<b>' + esc(ds.kind) + ' Binance public REST (DAILY)</b> · ' + esc(ds.symbols.join(' · ')) + ' @ ' + esc(ds.interval) +
-        ' · ' + esc((dsStart(ds) || '').slice(0, 10)) + ' → ' + esc((dsEnd(ds) || '').slice(0, 10)) +
-        ' · ~1000 bars/token (2.7yr, multi-regime) · tx cost ' + REPORT.params.txCostBps + ' bps + slippage ' + REPORT.params.slippageBps + ' bps (configurable assumption). ' +
-        'Look-ahead-safe walk-forward; selection IN-SAMPLE only; metrics cost-inclusive.';
-      $('constVer').textContent = 'moduleConstants snapshot';
-    }
-
-    function fillTokenSelect() {
-      var sel = $('btToken');
-      REPORT.perToken.forEach(function (p) {
-        var o = document.createElement('option');
-        o.value = p.symbol; o.textContent = p.symbol + (p.synthetic ? ' (synthetic)' : '');
-        sel.appendChild(o);
-      });
-    }
-
-    function wireBacktestControls() {
-      $('btWindow').addEventListener('click', function (e) {
-        var b = e.target.closest('button'); if (!b) return;
-        BT.window = b.getAttribute('data-w');
-        $('btWindow').querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
-        paintBacktestKpis(); paintBacktestTable();
-      });
-      $('btToken').addEventListener('change', function () {
-        BT.token = this.value;
-        paintBacktestKpis(); paintBacktestTable();
-      });
-    }
-
-    // candidate paths — server root may be repo root or frontend/.
-    function candidates(file) { return ['../backtest/' + file, 'backtest/' + file, '/backtest/' + file]; }
-    function fetchJson(paths, i) {
-      i = i || 0;
-      if (i >= paths.length) return Promise.reject(new Error(paths[0] + ' not found at any candidate path'));
-      return fetch(paths[i], { cache: 'no-store' })
-        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .catch(function () { return fetchJson(paths, i + 1); });
-    }
-
-    function syncEngineConstants(j) {
-      var src = j.params && (j.params.moduleConstants || j.params.engineConstants);
-      if (!src) return;
-      Object.keys(src).forEach(function (k) { EC[k] = src[k]; });
-      // re-derive defaults the report may not carry explicitly
-      EC.CONVICTION_FLAT = EC.CONVICTION_FLAT || 500;
-      EC.ENTRY_THRESHOLD = EC.ENTRY_THRESHOLD || 120;
-      EC.ENTRY_MIN = EC.ENTRY_MIN || 60; EC.ENTRY_MAX = EC.ENTRY_MAX || 220;
-    }
-
-    function loadReport() {
-      fetchJson(candidates('report-momentum.json'))
-        .then(function (j) {
-          REPORT = j;
-          syncEngineConstants(j);
-          fillTokenSelect();
-          paintBacktestKpis();
-          paintBacktestTable();
-          paintConstants();
-          paintMethod();
-          paintFoot();
-          wireBacktestControls();
-          var r = paintRegime();
-          paintCapsule(r);
-          paintDivChart(DIV_TOKENS[divIdx]);
-        })
-        .catch(function (e) {
-          $('btMeta').innerHTML = '<span style="color:var(--red)">Could not load <code>../backtest/report-momentum.json</code> (' + esc(e.message) + '). Serve the folder with <code>npx http-server frontend</code> so the relative fetch resolves.</span>';
-          $('kpiNote').innerHTML = '<span style="color:var(--red)">report-momentum.json not loaded — run <code>npx http-server</code> from the repo root, or open <code>frontend/index.html</code> via a static server.</span>';
-          var r = paintRegime();
-          paintCapsule(r);
-          paintDivChart(DIV_TOKENS[divIdx]);
-        });
-    }
-
-    // ════════════════════════════════════════════════════════════════════
-    //  DEPRECATED original contrarian prototype — report.json (the LOSS).
-    //  Loaded lazily on first toggle; never the headline.
-    // ════════════════════════════════════════════════════════════════════
-    var DEP = null, depLoaded = false;
-    function paintDeprecated() {
-      var seg = DEP.aggregate.full;
-      var oos = DEP.aggregate.outOfSample;
-      $('depKpis').innerHTML = window.StoicUI.kpiCards([
-        { icon: 'trendingDown', label: 'Full return', valueHtml: fmtPct(seg.totalReturn), accent: 'var(--red)', accentDim: 'var(--red-dim)', dir: 'down', delta: 'vs B&H ' + fmtPct(seg.buyAndHoldReturn), sub: 'LOSS' },
-        { icon: 'trendingDown', label: 'OOS return', value: fmtPct(oos.totalReturn), accent: 'var(--red)', accentDim: 'var(--red-dim)', sub: 'vs B&H ' + fmtPct(oos.buyAndHoldReturn) },
-        { icon: 'gauge', label: 'Sharpe (full)', value: seg.sharpe.toFixed(2), accent: 'var(--red)', accentDim: 'var(--red-dim)', sub: 'Sortino ' + seg.sortino.toFixed(2) },
-        { icon: 'target', label: 'Trades (full)', value: String(seg.tradeCount), accent: 'var(--muted)', accentDim: 'var(--ai-dim)', sub: fmtPctNoSign(seg.winRate) + ' win' }
-      ]);
-      var v = $('depVerdict');
-      v.style.color = 'var(--red)'; v.style.background = 'var(--red-dim)';
-      v.innerHTML = '✗ DEPRECATED original contrarian prototype: full ' + fmtPct(seg.totalReturn) + ' vs B&H ' + fmtPct(seg.buyAndHoldReturn) +
-        '; OOS ' + fmtPct(oos.totalReturn) + ' vs B&H ' + fmtPct(oos.buyAndHoldReturn) + '. A loss — the anchor that motivated the pivot to the risk overlay above. Retained verbatim, never overwritten.';
-      var ds = DEP.dataSource;
-      $('depMeta').innerHTML = '<b>' + esc(ds.kind) + ' Binance public REST</b> · ' + esc(ds.symbols.join(' · ')) + ' @ ' + esc(ds.interval) +
-        ' · ' + esc((dsStart(ds) || '').slice(0, 10)) + ' → ' + esc((dsEnd(ds) || '').slice(0, 10)) + ' · purely-contrarian z-scored divergence, hourly. Source: <code>../backtest/report.json</code> (frozen, byte-identical).';
-    }
-    function loadDeprecated() {
-      if (depLoaded) return;
-      depLoaded = true;
-      fetchJson(candidates('report.json'))
-        .then(function (j) { DEP = j; paintDeprecated(); })
-        .catch(function (e) {
-          depLoaded = false;
-          $('depMeta').innerHTML = '<span style="color:var(--red)">Could not load <code>../backtest/report.json</code> (' + esc(e.message) + ').</span>';
-        });
-    }
-    $('depToggle').addEventListener('click', function () {
-      var body = $('depBody');
-      var open = body.hasAttribute('hidden');
-      if (open) { body.removeAttribute('hidden'); this.textContent = 'Hide the original contrarian loss ▴'; loadDeprecated(); }
-      else { body.setAttribute('hidden', ''); this.textContent = 'Show the original contrarian loss ▾'; }
     });
+  });
+}
+function signalFields(t){
+  if(t.id==="get_global_metrics_latest") return {fearGreed:M.cmc.fearGreed, btcDominance:M.cmc.btcDominance};
+  if(t.id==="get_global_crypto_derivatives_metrics") return {fundingRate:M.cmc.fundingRate, openInterestUsd:M.cmc.openInterestUsd};
+  if(t.id==="get_crypto_technical_analysis") return {rsi14:M.cmc.rsi14, macdHist:M.cmc.macdHist};
+  if(t.id==="get_crypto_quotes_latest") return {btcQuote:M.cmc.btcQuoteSnapshot, change24h:M.cmc.btcChange24h, note:"captured snapshot"};
+  if(t.id==="get_crypto_metrics") return {holderCount:M.cmc.holderCount, whalesPct:M.cmc.whalesPct};
+  if(t.id==="search_cryptos") return {BTC:1, ETH:1027, BNB:1839};
+  return {narratives:M.cmc.narrativesCount};
+}
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    // ---------- boot ----------
-    var r0 = paintRegime();
-    paintCapsule(r0);
-    paintDivChart(DIV_TOKENS[divIdx]);
-    loadReport();
-  })();
-  </script>
+// ── STAT TILES ──
+function renderStats(){
+  const h=STOIC.hero;
+  countUp($("#st-ret"), h.ret, signedPct);
+  $("#st-ret-bh").textContent = signedPct(h.bhRet);
+  $("#st-ret-ex").textContent = signedPct(h.excess);
+  $("#st-ret-chart").innerHTML = divergingBar(
+    [{label:"Stoic",value:h.ret,color:"var(--green)"},{label:"B&H",value:h.bhRet,color:"var(--red)"}],
+    {w:240,h:92});
+  countUp($("#st-sharpe"), h.sharpe, function(x){return num(x);});
+  $("#st-sharpe-bh").textContent = num(h.bhSharpe);
+  $("#st-sharpe-chart").innerHTML = divergingBar(
+    [{label:"Stoic",value:h.sharpe,color:"var(--green)"},{label:"B&H",value:h.bhSharpe,color:"var(--red)"}],
+    {w:240,h:92});
+  $("#st-trades").textContent = h.trades+" / "+h.bars;
+  $("#st-wr").textContent = pct(h.winRate);
+  $("#st-trades-chart").innerHTML = sparkline([0,1,1,2,4,6,8,9,11].map(x=>x), "var(--gold)");
+}
+
+// ── micro-KPI ladder (bottom of the Regime Gate card) — REAL OOS numbers from M.agg.outOfSample ──
+function renderMicroLadder(){
+  const d = (M.agg && M.agg.outOfSample) || STOIC.hero;
+  $("#ml-sharpe").textContent  = num(d.sharpe);   // -0.60
+  $("#ml-sortino").textContent = num(d.sortino);  // -0.64
+  $("#ml-trades").textContent  = d.trades;        // 11
+  $("#ml-bars").textContent    = d.bars;          // 900
+  // illustrative cumulative-excess separation (ends near the real +43.2pt OOS excess), no-axis sparkline
+  $("#ml-spark").innerHTML = sparkline([0,0.03,0.06,0.04,0.12,0.21,0.30,0.39,0.43], "var(--gold)");
+}
+
+/* ── illustrative equity / underwater (built from real summary endpoints) ── */
+function buildEquity(win){
+  const a = M.agg[win];
+  const oos = win==="full" ? 0.30 : (win==="outOfSample"?1:0);
+  // deterministic illustrative shape pinned to endpoints; strategy near-flat, B&H deep trough
+  const N=40;
+  const strat=[], bh=[];
+  for(let i=0;i<N;i++){
+    const t=i/(N-1);
+    // strategy: gentle path to a.ret with a small dip at maxDD depth mid-OOS
+    const dip = -a.maxDD * Math.exp(-Math.pow((t-0.78)/0.16,2));
+    const sv = a.ret*Math.pow(t,1.1) + dip*0.5 + 0.01*Math.sin(t*7);
+    strat.push({x:i, y:sv});
+    // B&H: rises then plunges into bhMaxDD trough then ends near bhRet
+    const trough = -a.bhMaxDD * Math.exp(-Math.pow((t-0.74)/0.18,2));
+    const bv = a.bhRet*Math.pow(t,0.85) + trough*0.6 + 0.02*Math.sin(t*5);
+    bh.push({x:i, y:bv});
+  }
+  return {strat:strat, bh:bh, oosFrac:oos};
+}
+function renderEquity(win){
+  const e=buildEquity(win);
+  const html=lineChart(
+    [{pts:e.strat,color:"var(--green)",width:2.2},{pts:e.bh,color:"var(--red)",width:2}],
+    {w:520,h:200,oosFrac:e.oosFrac});
+  $("#equity-chart").innerHTML=html;
+  triggerDraw($("#equity-chart"));
+}
+function triggerDraw(scope){
+  // paths render at offset 0 (full, visible) by default; only animate as an enhancement
+  if(!canAnim()) return;
+  requestAnimationFrame(function(){
+    $$(".drawpath",scope).forEach(function(p){
+      const len=p.getAttribute("data-len")||1400;
+      p.style.transition="none"; p.style.strokeDashoffset=len; p.getBoundingClientRect();
+      requestAnimationFrame(function(){ p.style.transition="stroke-dashoffset 1.1s var(--ld-ease)"; p.style.strokeDashoffset="0"; });
+    });
+  });
+}
+
+/* ── TEARSHEET KPIs + table ── */
+let curWin="outOfSample", curTok="agg";
+function renderTearsheet(){
+  const useTok = curTok!=="agg";
+  let d, isOOS = curWin==="outOfSample";
+  if (useTok){
+    d = M.perToken.filter(t=>t.short===curTok)[0]; isOOS=true; // per-token = OOS only
+  } else {
+    d = M.agg[curWin];
+  }
+  const kpis=[
+    {k:"Return", v:signedPct(d.ret), bh:"B&H "+signedPct(d.bhRet), cls: d.ret>=d.bhRet?"up":"down"},
+    {k:"Max drawdown", v:pct(d.maxDD), bh:"B&H "+pct(d.bhMaxDD), cls:"up"},
+    {k:"Sharpe", v:num(d.sharpe), bh:"B&H "+num(d.bhSharpe), cls: d.sharpe>=d.bhSharpe?"up":"down"},
+    {k:"Trades / bars", v:d.trades+" / "+d.bars, bh:"winRate "+pct(d.winRate), cls:"flat"}
+  ];
+  $("#kpi-row").innerHTML = kpis.map(function(x){
+    return '<div class="kpi"><div class="k">'+x.k+'</div><div class="v '+x.cls+'">'+x.v+'</div><div class="bh">'+x.bh+'</div></div>';
+  }).join('');
+  // verdict
+  let vb;
+  if (useTok){
+    const pos = d.kind==="positive";
+    vb = {cls: pos?"good":"lag", t: pos
+      ? "✓ "+d.short+": positive-absolute beat — "+signedPct(d.ret)+" vs B&H "+signedPct(d.bhRet)+" (lower DD "+pct(d.maxDD)+" vs "+pct(d.bhMaxDD)+")."
+      : "✓ "+d.short+': "lost-less" beat — '+signedPct(d.ret)+" vs B&H "+signedPct(d.bhRet)+": lost far less than holding, but did not make money."};
+  } else if (curWin==="inSample"){
+    vb={cls:"lag", t:"⚑ In-sample lag (by design): "+signedPct(d.ret)+" vs B&H "+signedPct(d.bhRet)+" (excess "+pct(d.excess,1)+"). A long-only trend core cannot out-earn a +262% bull — knowing that is the point. The drawdown win still holds: "+pct(d.maxDD)+" vs "+pct(d.bhMaxDD)+"."};
+  } else if (curWin==="full"){
+    vb={cls:"lag", t:"⚑ Full window: "+signedPct(d.ret)+" vs B&H "+signedPct(d.bhRet)+" — the in-sample bull dominates the blend. Drawdown halved: "+pct(d.maxDD)+" vs "+pct(d.bhMaxDD)+"."};
+  } else {
+    vb={cls:"good", t:"✓ Out-of-sample: drawdown roughly halved ("+pct(d.maxDD)+" vs "+pct(d.bhMaxDD)+"), higher Sharpe AND lower DD than B&H. The return beat is a bear-dodge, not standalone alpha."};
+  }
+  $("#ts-verdict").className="verdict "+vb.cls;
+  $("#ts-verdict").textContent=vb.t;
+  renderEquity(useTok ? "outOfSample" : curWin);
+}
+function renderTokenTable(){
+  $("#token-tbody").innerHTML = M.perToken.map(function(t){
+    const pill = t.kind==="positive"
+      ? '<span class="beat-pill pos">positive</span>'
+      : '<span class="beat-pill less">lost-less</span>';
+    const ar = v => '<span class="'+(v>=0?'up':'down')+'">'+signedPct(v)+'</span>';
+    return '<tr>'+
+      '<td>'+t.short+' <span class="const-inline">'+t.sym+'</span>'+pill+'</td>'+
+      '<td>'+ar(t.ret)+'</td>'+
+      '<td>'+ar(t.bhRet)+'</td>'+
+      '<td class="up">'+signedPct(t.excess)+'</td>'+
+      '<td class="up">'+pct(t.maxDD)+'</td>'+
+      '<td class="down">'+pct(t.bhMaxDD)+'</td>'+
+      '<td>'+num(t.sharpe)+'</td>'+
+      '<td>'+t.trades+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+/* ── MECHANISM illustrative trace ── */
+function renderMech(){
+  const N=44, fast=[], slow=[];
+  for(let i=0;i<N;i++){ const t=i/(N-1);
+    const base=Math.sin(t*5.5)*0.4 + t*1.1;
+    fast.push({x:i,y:base + Math.sin(t*9)*0.12});
+    slow.push({x:i,y:base*0.78 + 0.06});
+  }
+  $("#mech-chart").innerHTML = lineChart(
+    [{pts:slow,color:"var(--blue)",width:2},{pts:fast,color:"var(--gold)",width:2}],
+    {w:480,h:200});
+  triggerDraw($("#mech-chart"));
+}
+
+/* ── CAPSULE ── */
+function buildCapsule(){
+  const e=STOIC.engine, h=STOIC.hero;
+  return {
+    strategyId:"sentiment-divergence-regime",
+    generatedAt:new Date().toISOString(),
+    dataSources:{ live:"CoinMarketCap MCP (https://mcp.coinmarketcap.com/mcp)",
+      backtest:"Binance public REST (klines + funding)", cmcKeyPresent:false },
+    engineConstants:{ EMA_FAST:e.EMA_FAST, EMA_SLOW:e.EMA_SLOW, MOMENTUM_LOOKBACK:e.MOMENTUM_LOOKBACK,
+      ENTRY_THRESHOLD:e.ENTRY_THRESHOLD, ENTRY_MIN:e.ENTRY_MIN, ENTRY_MAX:e.ENTRY_MAX,
+      GATE_MIN:e.GATE_MIN, GATE_MAX:e.GATE_MAX, FEAR_EXTREME:e.FEAR_EXTREME, GREED_EXTREME:e.GREED_EXTREME,
+      FUNDING_STRETCHED:e.FUNDING_STRETCHED, CONVICTION_FLAT:e.CONVICTION_FLAT },
+    regime:{ fearGreed:M.cmc.fearGreed, label:"extreme-fear", favoredSide:1 },
+    universe:{ barInterval:"1d", pairConvention:"<SYMBOL>USDT",
+      symbols:[{sym:"BTC",cmcId:1},{sym:"ETH",cmcId:1027},{sym:"BNB",cmcId:1839}] },
+    entryRule:"Trade only when |conviction − CONVICTION_FLAT| > ENTRY_THRESHOLD; conviction > 500+ENTRY_THRESHOLD ⇒ LONG (long-only core)",
+    exitRule:"Close when conviction reverts inside the flat band or the risk filter vetoes the position",
+    invalidation:M.cmc.invalidation,
+    positionSizing:{ method:"sizeFromConviction" },
+    riskLimits:{ lookAheadSafe:true, txCostBps:STOIC.provenance.txCostBps, slippageBps:STOIC.provenance.slippageBps },
+    backtestReplay:{ steps:["npm install","npm run fetch-data","npx ts-node backtest/momentum.ts","report on held-out OOS"],
+      outOfSample:true, reproducible:true },
+    honesty:[
+      "Robust claim is drawdown reduction (~halved: "+pct(h.maxDD)+" vs "+pct(h.bhMaxDD)+").",
+      "The OOS return beat is a bear-dodge, not standalone alpha.",
+      "In-sample the long-only core lags by design: "+signedPct(STOIC.inSample.ret)+" vs "+signedPct(STOIC.inSample.bhRet)+".",
+      "Only BNB is a positive-absolute beat (+18.5%); BTC and ETH are lost-less negative-absolute beats.",
+      "cmcKeyPresent:false — live reads via public MCP capture."
+    ]
+  };
+}
+function syntaxJSON(obj){
+  let json=JSON.stringify(obj,null,2);
+  json=esc(json);
+  // strings (values)
+  json=json.replace(/&quot;([^&]*?)&quot;(?=\s*:)/g,'<span class="jk">&quot;$1&quot;</span>'); // keys
+  json=json.replace(/:\s*&quot;([^&]*?)&quot;/g, function(m,p1){
+    const cls = /halved|bear-dodge|lag|lost-less|honesty|extreme-fear/i.test(p1)?'jh':'js';
+    return ': <span class="'+cls+'">&quot;'+p1+'&quot;</span>';
+  });
+  json=json.replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="jn">$1</span>');
+  json=json.replace(/:\s*(true|false)/g, ': <span class="jb">$1</span>');
+  return json;
+}
+function renderCapsule(){
+  const cap=buildCapsule();
+  $("#capsule-json").innerHTML = syntaxJSON(cap);
+  $("#copy-btn").onclick=function(){
+    const txt=JSON.stringify(cap,null,2);
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(showToast).catch(fallbackCopy.bind(null,txt));
+    } else fallbackCopy(txt);
+  };
+  $("#dl-btn").onclick=function(){
+    const blob=new Blob([JSON.stringify(cap,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download="stoic.capsule.sample.json"; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },100);
+    showToast("Strategy Skill downloaded");
+  };
+}
+function fallbackCopy(txt){
+  const ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} ta.remove(); showToast();
+}
+let toastT;
+function showToast(msg){
+  const t=$("#toast"); t.textContent=msg||"Strategy Skill copied to clipboard";
+  t.classList.add("show"); clearTimeout(toastT);
+  toastT=setTimeout(function(){ t.classList.remove("show"); t.style.transform=""; t.style.opacity=""; },2600);
+}
+
+/* ── METHODOLOGY ── */
+function renderMethodology(){
+  const p=STOIC.provenance, e=STOIC.engine;
+  $("#method-prov").innerHTML = "<b style='color:var(--text)'>"+p.kind+"</b> — "+esc(p.provider)+". "+
+    p.symbols.join(" / ")+" · "+p.interval+" · "+p.startDate+" → "+p.endDate+" ("+esc(p.note.replace(/^REAL[^,]*,\s*/,''))+"). "+
+    "splitBar "+p.splitBar+" · oosFraction "+p.oosFraction+" · cost "+p.txCostBps+"+"+p.slippageBps+" bps net — "+esc(p.costNote)+" "+esc(p.stress);
+  const rows=[
+    ["EMA_FAST", e.EMA_FAST],["EMA_SLOW", e.EMA_SLOW],["MOMENTUM_LOOKBACK", e.MOMENTUM_LOOKBACK],
+    ["TREND_WEIGHT", e.TREND_WEIGHT],["MOMENTUM_WEIGHT", e.MOMENTUM_WEIGHT],
+    ["ENTRY_THRESHOLD", e.ENTRY_THRESHOLD+" ["+e.ENTRY_MIN+"–"+e.ENTRY_MAX+"]"],
+    ["GATE bounds", "["+e.GATE_MIN+", "+e.GATE_MAX+"]"],
+    ["FEAR_EXTREME / GREED_EXTREME", e.FEAR_EXTREME+" / "+e.GREED_EXTREME],
+    ["FUNDING_STRETCHED", e.FUNDING_STRETCHED],["RISK_FILTER_VETO_INTENSITY", e.RISK_FILTER_VETO_INTENSITY],
+    ["CONVICTION_FLAT", e.CONVICTION_FLAT],["label", e.label]
+  ];
+  $("#const-table").innerHTML = rows.map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>'; }).join('');
+}
+
+/* ── DEPRECATED (lazy fetch on first expand) ── */
+let depLoaded=false;
+function renderDeprecated(src){
+  const d=src||STOIC.deprecated;
+  $("#dep-label").textContent = d.label || STOIC.deprecated.label;
+  const oosRet = ('oosRet' in d)? d.oosRet : STOIC.deprecated.oosRet;
+  const oosBh  = ('oosBhRet' in d)? d.oosBhRet : STOIC.deprecated.oosBhRet;
+  const fullRet= ('fullRet' in d)? d.fullRet : STOIC.deprecated.fullRet;
+  const fullBh = ('fullBhRet' in d)? d.fullBhRet : STOIC.deprecated.fullBhRet;
+  $("#dep-oos").textContent = signedPct(oosRet);
+  $("#dep-oos-bh").textContent = signedPct(oosBh);
+  $("#dep-full").textContent = signedPct(fullRet);
+  $("#dep-full-bh").textContent = signedPct(fullBh);
+  $("#dep-verdict").textContent = STOIC.deprecated.verdictText;
+  $("#dep-note").textContent = STOIC.deprecated.note;
+}
+function loadDeprecated(){
+  if(depLoaded) return; depLoaded=true;
+  renderDeprecated(STOIC.deprecated); // render fallback immediately
+  fetchJson(candidates("report.json")).then(function(r){
+    try{
+      const oos=r.aggregate&&r.aggregate.outOfSample, full=r.aggregate&&r.aggregate.full;
+      if(oos&&full){
+        renderDeprecated({ label:STOIC.deprecated.label,
+          oosRet:oos.return, oosBhRet:oos.bhReturn!=null?oos.bhReturn:oos.buyHoldReturn,
+          fullRet:full.return, fullBhRet:full.bhReturn!=null?full.bhReturn:full.buyHoldReturn });
+      }
+    }catch(e){ /* keep fallback */ }
+  }).catch(function(){ /* keep fallback */ });
+}
+
+/* ════════ FETCH HYDRATION (graceful fallback) ════════ */
+function candidates(f){ return ['../backtest/'+f, 'backtest/'+f, '/backtest/'+f]; }
+function fetchJson(paths, i){
+  i = i || 0;
+  if (i >= paths.length) return Promise.reject(new Error('not found'));
+  return fetch(paths[i], {cache:'no-store'})
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .catch(function(){ return fetchJson(paths, i+1); });
+}
+// THE CONTRACT BUG GUARD: EMA fast/slow ALWAYS from selectedConfig (30/80), never module defaults (20/50).
+function syncEngineConstants(report){
+  if(!report || !report.selectedConfig) return;
+  const sel=report.selectedConfig;
+  const SKIP={EMA_FAST:1, EMA_SLOW:1};
+  // copy selectedConfig but force EMA from selectedConfig; explicitly ignore params.moduleConstants 20/50
+  if(sel.EMA_FAST!=null) STOIC.engine.EMA_FAST; // engine is frozen — display reads selectedConfig directly
+  M.displayEMA = { fast: sel.EMA_FAST!=null?sel.EMA_FAST:STOIC.engine.EMA_FAST,
+                   slow: sel.EMA_SLOW!=null?sel.EMA_SLOW:STOIC.engine.EMA_SLOW };
+  // NOTE: params.moduleConstants.EMA_* (20/50) are deliberately NOT read here.
+  void SKIP;
+}
+function hydrate(){
+  // momentum report → tearsheet/constants
+  fetchJson(candidates("report-momentum.json")).then(function(rep){
+    try{
+      syncEngineConstants(rep);
+      if(rep.aggregate){
+        if(rep.aggregate.outOfSample) M.agg.outOfSample = mergeAgg(STOIC.hero, rep.aggregate.outOfSample);
+        if(rep.aggregate.inSample) M.agg.inSample = mergeAgg(STOIC.inSample, rep.aggregate.inSample);
+        if(rep.aggregate.full) M.agg.full = mergeAgg(STOIC.full, rep.aggregate.full);
+      }
+      renderHero(); renderStats(); renderMicroLadder(); renderTearsheet(); renderMethodology();
+    }catch(e){}
+  }).catch(function(){
+    const m=$("#ts-err"); m.classList.add("show");
+    m.textContent="Backtest reports not reachable — showing frozen verified values. Serve the folder with `npx http-server frontend` so the relative fetch resolves.";
+  });
+  // live CMC manifest → F&G
+  fetchJson(['../fixtures/cmc/live/_manifest.json','fixtures/cmc/live/_manifest.json']).then(function(man){
+    try{
+      if(man && (man.fearGreed!=null || (man.global && man.global.fearGreed!=null))){
+        const fg = man.fearGreed!=null?man.fearGreed:man.global.fearGreed;
+        M.cmc.fearGreed = fg;
+        if(man.capturedAt) M.cmc.capturedAt = man.capturedAt;
+        M.liveThisSession = true;
+        renderGauge(false); renderTrace();
+      }
+    }catch(e){}
+  }).catch(function(){
+    // cached fallback already rendered; no hang
+  });
+}
+function mergeAgg(base, src){
+  const o=Object.assign({}, base);
+  ['ret','bhRet','excess','maxDD','bhMaxDD','sharpe','bhSharpe','sortino','winRate','trades','bars'].forEach(function(k){
+    const alt = {ret:'return', bhRet:'bhReturn', maxDD:'maxDrawdown', bhMaxDD:'bhMaxDrawdown'}[k];
+    if(src[k]!=null) o[k]=src[k];
+    else if(alt && src[alt]!=null) o[k]=src[alt];
+  });
+  return o;
+}
+
+/* ════════ INTERACTIONS ════════ */
+let sampleOn=false;
+function wireUI(){
+  // keep the drawdown bars filling their track across breakpoints AND whenever the bento band
+  // height changes (e.g. expanding a trace "raw" detail restretches the hero) — robust via both a
+  // debounced window resize and a ResizeObserver on the chart itself.
+  var rzPending=false;
+  function reflowBars(){ if(!rzPending){ rzPending=true; requestAnimationFrame(function(){ rzPending=false; sizeBars(); }); } }
+  window.addEventListener("resize", reflowBars, { passive:true });
+  if(window.ResizeObserver){
+    var ddb=$(".ddbars");
+    if(ddb){ try{ new ResizeObserver(reflowBars).observe(ddb); }catch(e){} }
+  }
+  // window toggle
+  $$(".seg button").forEach(function(b){
+    b.addEventListener("click", function(){
+      $$(".seg button").forEach(x=>x.setAttribute("aria-pressed","false"));
+      b.setAttribute("aria-pressed","true"); curWin=b.dataset.win;
+      morph(renderTearsheet);
+    });
+  });
+  // token select
+  $("#ts-token").addEventListener("change", function(){ curTok=this.value; morph(renderTearsheet); });
+  // gauge reads expand
+  $("#reads-toggle").addEventListener("click", function(){
+    const r=$("#reads"), open=r.classList.toggle("open");
+    this.setAttribute("aria-expanded", open); this.textContent = "Supporting reads "+(open?"▴":"▾");
+  });
+  // sample regime demo toggle
+  $("#sample-toggle").addEventListener("click", function(){
+    const on = this.getAttribute("aria-pressed")!=="true";
+    this.setAttribute("aria-pressed", on); sampleOn=on;
+    this.textContent = on ? "Demo: live read" : "Demo: sample regime";
+    renderGauge(on);
+  });
+  // contrast / projector
+  $("#contrast-toggle").addEventListener("click", function(){
+    const on = document.documentElement.getAttribute("data-contrast")!=="high";
+    document.documentElement.setAttribute("data-contrast", on?"high":"normal");
+    this.setAttribute("aria-pressed", on);
+    setNeedle(M.cmc.fearGreed, false);
+    $("#gauge-bands").innerHTML = buildGaugeBands();
+  });
+  // deprecated lazy fetch on first expand
+  $("#acc-dep").addEventListener("toggle", function(){ if(this.open) loadDeprecated(); });
+}
+function morph(fn){
+  if(document.startViewTransition){ try{ document.startViewTransition(fn); return; }catch(e){} }
+  fn();
+}
+
+/* ── scroll reveals (IntersectionObserver fallback; visible-by-default) ── */
+function wireReveals(){
+  const els=$$(".reveal");
+  // Default state is VISIBLE (no .pre). Only hide + observe as an enhancement inside rAF,
+  // so a frozen rAF (backgrounded tab) leaves every tile visible.
+  if(!canAnim() || !("IntersectionObserver" in window)) return;
+  requestAnimationFrame(function(){
+    els.forEach(function(e,i){ e.classList.add("pre"); e.style.transitionDelay=(i%3*0.05)+"s"; });
+    const io=new IntersectionObserver(function(ents){
+      ents.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } });
+    }, {threshold:0.15});
+    els.forEach(function(e){ io.observe(e); });
+    const drawIO=new IntersectionObserver(function(ents){
+      ents.forEach(function(en){ if(en.isIntersecting){ triggerDraw(en.target); drawIO.unobserve(en.target); } });
+    },{threshold:0.25});
+    ["#equity-chart","#mech-chart"].forEach(function(s){ const el=$(s); if(el) drawIO.observe(el); });
+  });
+}
+
+/* ── aurora pause on hidden / reduced ── */
+function wireAurora(){
+  const blobs=$$(".blob");
+  if(REDUCED){ blobs.forEach(b=>b.style.animationPlayState="paused"); return; }
+  document.addEventListener("visibilitychange", function(){
+    const st = document.hidden ? "paused":"running";
+    blobs.forEach(b=>b.style.animationPlayState=st);
+  });
+}
+
+/* ════════ INIT ════════ */
+function init(){
+  renderHero();
+  animateBars();
+  showCheckChip();
+  renderGauge(false);
+  renderTrace();
+  renderStats();
+  renderMicroLadder();
+  renderTokenTable();
+  renderTearsheet();
+  renderMech();
+  renderCapsule();
+  renderMethodology();
+  renderDeprecated(STOIC.deprecated);
+  wireUI();
+  wireReveals();
+  wireAurora();
+  hydrate();
+
+  // If the page loaded while hidden (finals written instantly), play the entrance the
+  // first time it actually becomes visible — so a real foreground viewer still gets the beat sheet.
+  if(!canAnim() && !REDUCED){
+    const onVis=function(){
+      if(document.visibilityState==="visible"){
+        document.removeEventListener("visibilitychange", onVis);
+        renderHero(); animateBars(); showCheckChip();
+        renderGauge(sampleOn); renderTrace(); renderStats();
+        renderEquity(curTok!=="agg"?"outOfSample":curWin); renderMech();
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+  }
+
+  // ── repo-context progressive enhancement ONLY (inline fallback already rendered) ──
+  if (window.StoicTheme) try{ window.StoicTheme.apply&&window.StoicTheme.apply(); }catch(e){}
+  if (window.StoicCharts) try{ window.StoicCharts.enhance&&window.StoicCharts.enhance(M); }catch(e){}
+  if (window.StoicUI) try{ window.StoicUI.enhance&&window.StoicUI.enhance(M); }catch(e){}
+  if (window.StoicShell) try{ window.StoicShell.enhance&&window.StoicShell.enhance(M); }catch(e){}
+}
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", init);
+else init();
+
+})();
+</script>
+
+<!-- Repo continuity: sibling enhancers (absent in standalone). Each global call is guarded above. -->
+<script src="dash-charts.js"></script>
+<script src="dash-ui.js"></script>
+<script src="dash-shell.js"></script>
 </body>
 </html>
