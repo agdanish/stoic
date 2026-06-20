@@ -2,7 +2,7 @@
 <html lang="en" data-contrast="normal">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Stoic — an AI trading agent unmoved by the crowd's Fear &amp; Greed</title>
 <meta name="description" content="Stoic roughly halves the worst-case drawdown of holding crypto (17.7% vs 58.3%) on real held-out data, and is honest about exactly what its edge is and isn't. CoinMarketCap × Trust Wallet × BNB Chain, Track 2 — Strategy Skills." />
 
@@ -36,6 +36,18 @@
   --ring: 0 0 0 3px rgba(240,185,11,.55);
   --shadow: 0 1px 0 rgba(0,0,0,.4), 0 6px 16px rgba(0,0,0,.35), 0 18px 40px rgba(0,0,0,.30);
   --inset: inset 0 0 0 1px rgba(255,255,255,.06);
+  /* §1 fluid type/space scale + container knobs — anchored 360px→1320px (vi = inline-axis vw) */
+  --step--1: clamp(0.78rem, 0.74rem + 0.18vi, 0.88rem);
+  --step-0:  clamp(0.95rem, 0.91rem + 0.22vi, 1.10rem);
+  --step-1:  clamp(1.15rem, 1.07rem + 0.40vi, 1.45rem);
+  --step-2:  clamp(1.45rem, 1.30rem + 0.75vi, 2.00rem);  /* .section h2 */
+  --step-3:  clamp(2.0rem,  1.55rem + 2.2vi, 3.4rem);    /* .stat-val + .gauge-val */
+  --s1:4px; --s2:8px; --s3:12px;                         /* 8pt quantization for ad-hoc margins */
+  --space-s: clamp(0.75rem, 0.68rem + 0.36vi, 1.00rem);
+  --space-m: clamp(1.00rem, 0.86rem + 0.70vi, 1.50rem);
+  --space-l: clamp(1.50rem, 1.20rem + 1.50vi, 2.50rem);
+  --col-min: 18rem;                                      /* RAM auto-fit column floor */
+  --gutter: clamp(16px, 3vw, 32px);                      /* shared page gutter */
 }
 html[data-contrast="high"]{
   --gold:#FFD54A; --gold-dim:rgba(255,213,74,.22);
@@ -43,6 +55,8 @@ html[data-contrast="high"]{
   --border:#3A4555; --text:#FFFFFF; --text2:#C7CEDB;
   --green:#27E29A; --red:#FF6075; --blue:#7DA6FF; --amber:#FFB94A;
 }
+/* §11 ultrawide — raise the centered measure so 2560px screens don't letterbox (non-optional) */
+@media (min-width:1700px){ :root{ --maxw:clamp(1320px, 90vw, 1560px); } }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
@@ -58,6 +72,10 @@ a{color:inherit}
 button{font-family:var(--main); cursor:pointer; color:inherit}
 :focus{outline:none}
 :focus-visible{outline:none; box-shadow:var(--ring); border-radius:8px}
+/* QA-2 · keep the gold focus ring visible on pressed toggles/segments (higher specificity than
+   the pressed-state inset shadows below, so focus + pressed coexist — WCAG 2.4.7) */
+.toggle-btn[aria-pressed="true"]:focus-visible,
+.seg button[aria-pressed="true"]:focus-visible{box-shadow:var(--ring), inset 0 0 0 1px var(--gold)}
 ::selection{background:rgba(240,185,11,.28); color:#fff}
 
 /* Layer 1 reduced-motion CSS reset */
@@ -68,7 +86,7 @@ button{font-family:var(--main); cursor:pointer; color:inherit}
   }
 }
 
-.wrap{max-width:var(--maxw); margin:0 auto; padding:0 clamp(16px,3vw,32px)}
+.wrap{ width:min(100% - 2*var(--gutter), var(--maxw)); margin-inline:auto; }
 
 /* ── status / dual-encode ── */
 .up{color:var(--green)} .down{color:var(--red)} .flat{color:var(--text2)}
@@ -89,17 +107,20 @@ button{font-family:var(--main); cursor:pointer; color:inherit}
 
 /* ── eyebrow strip ── */
 .topbar{background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:30; backdrop-filter:blur(6px)}
-.topbar-inner{display:flex; align-items:center; gap:16px; min-height:52px; padding:8px clamp(16px,3vw,32px); max-width:var(--maxw); margin:0 auto}
+.topbar-inner{display:flex; align-items:center; gap:8px 16px; row-gap:6px; min-height:52px; padding-block:8px;
+  flex-wrap:wrap; min-width:0;
+  width:min(100% - 2*var(--gutter), var(--maxw)); margin-inline:auto}
 .brand{display:flex; align-items:center; gap:9px}
 .logomark{display:block}
 .brand-name{font-family:var(--head); font-weight:800; font-size:17px; letter-spacing:-.02em}
-.eyebrow{font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.14em; color:var(--text2)}
+.eyebrow{font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.14em; color:var(--text2);
+  flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .eyebrow b{color:var(--gold-text); font-weight:600}
 .chip{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11.5px;
   border:1px solid var(--border); background:var(--surface2); border-radius:8px; padding:5px 9px; color:var(--text); text-decoration:none}
 .chip .badge{display:inline-grid; place-items:center; min-width:16px; height:16px; padding:0 4px;
   background:var(--gold-dim); color:var(--gold-text); border-radius:5px; font-size:10.5px; font-weight:700}
-.topbar .right{margin-left:auto; display:flex; align-items:center; gap:12px}
+.topbar .right{margin-left:auto; display:flex; align-items:center; gap:12px; flex-wrap:nowrap; flex-shrink:0}
 .toggle-btn{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11.5px;
   border:1px solid var(--border); background:var(--surface2); border-radius:8px; padding:6px 10px; min-height:32px}
 .toggle-btn[aria-pressed="true"]{border-color:var(--gold); color:var(--gold-text); box-shadow:inset 0 0 0 1px var(--gold)}
@@ -107,14 +128,20 @@ button{font-family:var(--main); cursor:pointer; color:inherit}
 
 /* ── bento grid ── */
 main{display:block}
-.bento{display:grid; grid-template-columns:repeat(12,1fr); gap:var(--gap); padding:var(--gap) 0;
+.bento{display:grid; gap:var(--gap); padding:var(--gap) 0;
+  grid-template-columns:repeat(auto-fit, minmax(min(100%, var(--col-min)), 1fr));
   grid-auto-rows:minmax(108px,auto); align-items:stretch}
-.card{background:var(--surface); border-radius:var(--rad); box-shadow:var(--shadow),var(--inset); padding:clamp(16px,2vw,24px); position:relative; min-width:0; display:flex; flex-direction:column}
+.card{background:var(--surface); border-radius:var(--rad); box-shadow:var(--shadow),var(--inset); padding:clamp(16px,2vw,24px); position:relative; min-width:0; display:flex; flex-direction:column; container-type:inline-size}
+/* §5 each card reflows to ITS cell, not the viewport (inline-size adds no block containment → §4 growth preserved) */
+.c-hero{ container:hero  / inline-size; }
+.c-gauge{ container:gauge / inline-size; }
+.c-trace{ container:trace / inline-size; }
+.c-stat{ container:stat  / inline-size; }
 .card.flat{background:var(--surface)}
 .num,.kpi .v,.stat-val,.stat-delta,.ml-v,table.tt td,table.tt th{font-variant-numeric:tabular-nums}
 /* bottom-pinned footer strip that turns a short card's dead space into information */
 .card-foot{margin-top:auto; padding-top:13px; border-top:1px solid var(--border)}
-.micro-ladder{display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
+.micro-ladder{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
 .micro-ladder .ml-cell{display:flex; flex-direction:column; gap:2px; min-width:0}
 .micro-ladder .ml-k{font-family:var(--mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .micro-ladder .ml-v{font-family:var(--mono); font-weight:700; font-size:15px; line-height:1.1; letter-spacing:-.01em}
@@ -124,40 +151,68 @@ main{display:block}
 .card h3{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--text2); font-family:var(--mono); font-weight:600}
 .cap{font-size:12.5px; color:var(--text2); line-height:1.5; margin-top:10px}
 
-.c-hero{grid-column:span 6; grid-row:span 2}
-.c-gauge{grid-column:span 3; grid-row:span 2}
-.c-trace{grid-column:span 3; grid-row:span 2}
-.c-stat{grid-column:span 4}
-
-@media (max-width:959px) and (min-width:640px){
-  .bento{grid-template-columns:repeat(6,1fr)}
-  .c-hero{grid-column:span 6; grid-row:auto}
+/* §3 macro reflow — the ONE structural breakpoint that re-creates the intended 12-col bento */
+@media (min-width:960px){
+  .bento{ grid-template-columns:repeat(12, minmax(0,1fr)); }
+  .c-hero{grid-column:span 6; grid-row:span 2}
+  .c-gauge{grid-column:span 3; grid-row:span 2}
+  .c-trace{grid-column:span 3; grid-row:span 2}
+  .c-stat{grid-column:span 4}
+}
+@media (min-width:640px) and (max-width:959px){
+  .bento{ grid-template-columns:repeat(6, minmax(0,1fr)); }
+  .c-hero{grid-column:span 6; grid-row:auto}     /* keep grid-row:auto defensively */
   .c-gauge{grid-column:span 3; grid-row:auto}
   .c-trace{grid-column:span 3; grid-row:auto}
   .c-stat{grid-column:span 2}
 }
+/* KEEP the small-viewport single-column rule (auto-fit packs 2-up at 360–639px otherwise) */
 @media (max-width:639px){
-  .bento{grid-template-columns:1fr}
-  .c-hero,.c-gauge,.c-trace,.c-stat{grid-column:span 1; grid-row:auto}
+  .bento{ grid-template-columns:1fr; }
+  .c-hero,.c-gauge,.c-trace,.c-stat{ grid-column:span 1; grid-row:auto; }
+  /* §7 keep the phone eyebrow hide; the topbar wrap is now default, not scoped here */
+  .eyebrow{ display:none; }
 }
 /* Desktop (12-col): the Agent Trace is a long feed — cap ONLY it and let it scroll INSIDE its
    card (trading-terminal style), so it no longer drags the whole row to ~850px. The hero and gauge
    size naturally; whichever is tallest sets a neat, bounded band height. The hero centres its
    compact composition in that band (never clipped — it defines the band when it's the tallest). */
 @media (min-width:960px){
-  /* Explicit, bounded band height for the top row (≥ the gauge's ~536px natural height, so the
-     gauge fills it with no void and the compact hero — kept from wrapping tall by the trimmed
-     number size — fits without clipping). The Agent Trace fills the band and scrolls its long feed
-     INTERNALLY (trading-terminal style), so the 7 reads can't drag the above-fold tall. */
-  .c-hero,.c-gauge,.c-trace{height:clamp(540px,58vh,564px)}
-  .c-trace{overflow:hidden}
-  .c-trace .trace-list{flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+  /* §4 KILL the dead hero band: min-block-size (not fixed height) grows with content + a child that
+     GROWS to fill the stretched cell. 52svh = no jump on mobile-chrome toggle. The hero uses its
+     global .hero-prov{margin-top:auto} to pin provenance to the bottom and .ddbars{flex:1 1 auto}
+     grows to consume the cell; sizeBars() re-measures .ddtrack so green stays 0.304× red. */
+  .c-hero,.c-gauge,.c-trace{ min-block-size:clamp(460px, 52svh, 560px); height:auto; }
+  /* §4 the Agent Trace is a LONG feed → cap the LIST (not the card) so the feed can never drag the
+     row tall and scrolls INTERNALLY (trading-terminal style), while the card still STRETCHES to the
+     band (align-items:stretch) so no void opens below it. The hero/gauge keep only min-block-size and
+     GROW to fill the band; whichever is tallest sets the bounded height, and the trace fills it. */
+  .c-trace .trace-list{ flex:1 1 auto; min-height:0; max-block-size:clamp(300px, 40svh, 460px);
+    overflow-y:auto; overscroll-behavior:contain;
     scrollbar-width:thin; scrollbar-color:var(--border) transparent;
-    -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
-            mask-image:linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);}
-  .c-hero .hero-inner{justify-content:center}
-  .c-hero .hero-prov{margin-top:0}
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 16px,#000 calc(100% - 16px),transparent 100%);
+            mask-image:linear-gradient(180deg,transparent 0,#000 16px,#000 calc(100% - 16px),transparent 100%); }
 }
+
+/* §5 container-driven card internals — each tile reflows to ITS cell. Default = the safe stacked
+   layout; @container/@supports are purely additive so older engines + the landing never break. */
+@supports (font-size:1cqi){
+  .hero-num{ font-size:clamp(3rem, 9cqi + 1rem, 7rem); }   /* sizes to the HERO tile; +1rem = WCAG 1.4.4 zoom-safe */
+}
+@container gauge (min-width:340px){ .micro-ladder{ grid-template-columns:repeat(4, minmax(0,1fr)); } }
+@container hero  (min-width:460px){ .hero-row{ flex-wrap:nowrap; align-items:flex-end; } }
+
+/* §6 free the min-content floor at every nesting level that can hold mono tokens */
+.bento>*, .ts-grid>*, .mech-grid>*, .micro-ladder>*, .kpi-row>*, .dep-grid>*{ min-width:0; }
+.hero-row, .hero-row>*, .hero-num-wrap{ min-width:0; }
+.trace-list, .trace-row, .trace-line, .trace-line>*{ min-width:0; }
+.gauge-foot, .reads, .read, .capsule, .capsule-bar, .topbar-inner{ min-width:0; }
+/* long unbreakable ids/values wrap INSIDE the card (anywhere lowers min-content; word-break alone does not) */
+.trace-tool, .mono, .read, .read b, .stat-val{ overflow-wrap:anywhere; word-break:break-word; }
+/* §6 Switcher (no media query) — collapses ts/mech/dep to one column below ~34rem available width */
+.ts-grid, .mech-grid, .dep-grid{ display:flex; flex-wrap:wrap; gap:var(--gap); align-items:flex-start; }
+.ts-grid>*, .mech-grid>*, .dep-grid>*{ flex-grow:1; flex-basis:calc((34rem - 100%) * 999); min-width:0; }
+.ts-grid>.chart-card, .mech-grid>.chart-card{ flex-grow:1.3; }   /* keep the chart the wider pane */
 
 
 /* ── hero (the ONE glass surface) ── */
@@ -180,15 +235,26 @@ main{display:block}
 .hero-eyebrow{font-family:var(--mono); font-size:11.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold-text); font-weight:600}
 .hero-row{display:flex; gap:clamp(20px,3vw,44px); align-items:flex-end; align-content:flex-start; flex-wrap:wrap; margin-top:6px}
 .hero-num-wrap{display:flex; flex-direction:column; gap:0}
+/* QA-8 · persistent, readable tag so the giant gold figure can't be misread as a +return win.
+   The number stays gold (brand identity); the label, not a colour flip, carries the disambiguation. */
+.hero-ddtag{font-family:var(--mono); font-size:13.5px; font-weight:600; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--gold-text); margin-bottom:4px}
 .hero-num{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700;
   font-size:clamp(4rem,10vw,8rem); letter-spacing:-.03em; line-height:.92; color:var(--gold)}
 .hero-num .pctsign{font-size:.55em; color:var(--text2); vertical-align:.42em; margin-left:.02em}
+/* QA nit · ghost raised 0.4→0.65 for WCAG 1.4.3 AA; the red <s> relies on var(--red)+line-through (no opacity) */
 .hero-ghost{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700;
-  font-size:clamp(.9rem,2.2vw,1.6rem); opacity:.4; letter-spacing:-.02em; margin-top:2px}
-.hero-ghost s{text-decoration:none; color:var(--red)}
-.ddbars{display:flex; align-items:flex-end; gap:18px; height:168px; padding-bottom:2px}
+  font-size:clamp(.9rem,2.2vw,1.6rem); opacity:.65; letter-spacing:-.02em; margin-top:2px}
+.hero-ghost s{text-decoration:line-through; color:var(--red); opacity:1}
+/* QA-7 · the drawdown track grows to a dominant 300px+ tale-of-the-tape; sizeBars() measures
+   track.clientHeight at runtime and fills the green at the exact 0.304× (17.7/58.3) ratio.
+   §10 NOTE: under min-block-size + flex:1 1 auto, height:clamp(168px,38svh,320px) is now a flex
+   BASIS/FLOOR, not a cap — flex grows the track past 320px to fill the stretched cell, and
+   sizeBars() writes px from the measured .ddtrack height. Do NOT revert .ddbars to a fixed height
+   (it would reintroduce the void). svh (not vh) = no jump when the mobile URL bar toggles. */
+.ddbars{display:flex; align-items:stretch; gap:18px; height:clamp(168px,38svh,320px); padding-bottom:2px; flex:1 1 auto; min-height:168px}
 .ddbar{display:flex; flex-direction:column; align-items:center; gap:8px; justify-content:flex-end}
-.ddtrack{width:48px; height:158px; display:flex; align-items:flex-end; border-bottom:1px solid var(--border)}
+.ddtrack{width:48px; flex:1 1 auto; min-height:158px; display:flex; align-items:flex-end; border-bottom:1px solid var(--border)}
 .ddfill{width:100%; border-radius:6px 6px 0 0; transform-origin:bottom; transform:scaleY(0)}
 .ddfill.stoic{background:linear-gradient(180deg,var(--green),rgba(22,199,132,.55)); box-shadow:0 0 18px rgba(22,199,132,.25)}
 .ddfill.bh{background:linear-gradient(180deg,var(--red),rgba(246,70,93,.5))}
@@ -196,7 +262,7 @@ main{display:block}
 .ddlabel .v{display:block; font-size:14px; font-weight:700; font-variant-numeric:tabular-nums}
 .hero-sub{font-family:var(--head); font-weight:700; font-size:clamp(1rem,2.1vw,1.35rem); letter-spacing:-.02em; margin-top:16px; text-wrap:pretty}
 .hero-sub .halved{color:var(--green)}
-.hero-supp{font-family:var(--mono); font-size:12.5px; color:var(--text2); margin-top:8px; line-height:1.6}
+.hero-supp{font-family:var(--mono); font-size:12.5px; color:var(--text2); margin-top:8px; line-height:1.6; max-width:60ch}
 .hero-supp b{color:var(--text)}
 .hero-prov{font-family:var(--mono); font-size:11.5px; color:var(--text2); margin-top:auto; padding-top:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 .check-chip{display:inline-flex; align-items:center; gap:9px; align-self:flex-start; margin-top:14px;
@@ -210,7 +276,7 @@ main{display:block}
 .dot.real{background:var(--green)} .dot.illus{background:var(--blue)} .dot.sample{background:var(--amber)} .dot.dep{background:var(--red)}
 
 /* ── gauge ── */
-.gauge-val{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700; font-size:2.6rem; line-height:1; color:var(--gold)}
+.gauge-val{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700; font-size:var(--step-3); line-height:1; color:var(--gold)}
 .gauge-label{position:relative; display:inline-flex; align-items:center; gap:7px;
   font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--amber); margin-top:8px; font-weight:600;
   padding:6px 13px; border:1px solid var(--border); border-radius:999px; background:rgba(255,255,255,.015)}
@@ -230,7 +296,10 @@ main{display:block}
 /* sample/replay demo OR reduced-motion → static ring (still marks the element, no implied liveness) */
 .gauge-label[data-provenance="sample"]::before{animation:none; opacity:.3}
 @keyframes ringspin{to{--a:1turn}}
-.gauge-svg{display:block; width:100%; max-width:280px; margin:8px auto 0}
+/* §16 gauge-card grower: margin-block:auto lets the SVG absorb extra vertical space between the
+   reads/label cluster and the bottom-pinned .card-foot, so no void opens when the gauge is the
+   shorter tile in the ≥960 band (align-items:stretch). */
+.gauge-svg{display:block; width:100%; max-width:280px; margin:8px auto; margin-block:auto}
 .needle-grp{transform-box:fill-box}
 .reads{margin-top:14px; border-top:1px solid var(--border); padding-top:12px; display:none}
 .reads.open{display:block}
@@ -246,14 +315,15 @@ main{display:block}
 @keyframes heartbeat{0%,100%{transform:scale(1);opacity:1}14%{transform:scale(1.5);opacity:.7}28%{transform:scale(1)}42%{transform:scale(1.4);opacity:.75}}
 
 /* ── agent trace ── */
-.c-trace{display:flex; flex-direction:column}
+/* QA-4 · clip any residual spill to the rounded card at ALL widths (not just ≥960px) */
+.c-trace{display:flex; flex-direction:column; overflow:hidden}
 .trace-head{font-family:var(--mono); font-size:12.5px; color:var(--text); line-height:1.5; margin-top:8px}
 .trace-list{list-style:none; margin:14px 0 0; padding:0 0 0 16px; border-left:3px solid var(--gold); display:flex; flex-direction:column; gap:0; flex:1}
 .trace-row{position:relative; padding:9px 0 9px 4px; border-bottom:1px solid rgba(35,42,53,.6); opacity:0; transform:translateY(6px); --accent:var(--text2)}
 .trace-row::before{content:""; position:absolute; left:-22px; top:14px; width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px var(--bg)}
-.trace-line{display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; font-family:var(--mono); font-size:12px; line-height:1.5}
+.trace-line{display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; font-family:var(--mono); font-size:12px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word}
 .trace-ts{color:var(--text2); font-size:10.5px; min-width:54px}
-.trace-tool{color:var(--gold-text); opacity:.92; font-weight:600}
+.trace-tool{color:var(--gold-text); opacity:.92; font-weight:600; overflow-wrap:anywhere; word-break:break-word}
 .trace-arrow{color:var(--text2); opacity:.55}
 .trace-input{color:var(--text2)}
 .trace-signal{color:var(--text)}
@@ -272,7 +342,7 @@ main{display:block}
 .stat-top{display:flex; align-items:center; gap:8px}
 .stat-ico{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:var(--surface2);border:1px solid var(--border)}
 .stat-label{font-family:var(--mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--text2)}
-.stat-val{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700; font-size:2rem; line-height:1.05; margin-top:10px; letter-spacing:-.01em}
+.stat-val{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700; font-size:var(--step-3); line-height:1.05; margin-top:10px; letter-spacing:-.01em}
 .stat-delta{font-family:var(--mono); font-size:12px; margin-top:4px; color:var(--text2)}
 .stat-spark{margin-top:auto; padding-top:8px}
 .stat-sub{font-family:var(--mono); font-size:11.5px; color:var(--text2); margin-top:9px; padding-top:9px; border-top:1px solid var(--border)}
@@ -281,7 +351,7 @@ main{display:block}
 .section{padding:clamp(40px,6vw,72px) 0 0}
 .section-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:6px}
 .kicker{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-text); font-weight:600}
-.section h2{font-size:clamp(1.5rem,3.4vw,2.3rem)}
+.section h2{font-size:var(--step-2)}
 .section-lede{color:var(--text2); font-size:15px; max-width:64ch; margin-top:10px; line-height:1.6; text-wrap:pretty}
 
 /* tearsheet */
@@ -290,10 +360,8 @@ main{display:block}
 .seg button{font-family:var(--mono); font-size:12px; border:none; background:transparent; color:var(--text2); border-radius:7px; padding:7px 13px; min-height:34px}
 .seg button[aria-pressed="true"]{background:var(--surface); color:var(--text); box-shadow:var(--inset)}
 .ts-select{font-family:var(--mono); font-size:12px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:8px 11px; min-height:38px}
-.ts-grid{display:grid; grid-template-columns:1.3fr 1fr; gap:var(--gap)}
-@media (max-width:840px){.ts-grid{grid-template-columns:1fr}}
-.kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap); margin-bottom:var(--gap)}
-@media (max-width:560px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+.kpi-row{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--gap); margin-bottom:var(--gap)}
+@media (max-width:560px){.kpi-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .kpi{background:var(--surface); border-radius:12px; box-shadow:var(--inset); padding:14px}
 .kpi .k{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text2)}
 .kpi .v{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:700; font-size:1.35rem; margin-top:6px}
@@ -305,7 +373,8 @@ main{display:block}
 .illus-tag{display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; color:var(--blue); border:1px solid rgba(91,141,239,.35); background:var(--blue-dim); border-radius:6px; padding:3px 8px; margin-bottom:10px}
 .chart-card{background:var(--surface); border-radius:12px; box-shadow:var(--inset); padding:16px}
 .chart-card svg{display:block; width:100%; height:auto}
-.tbl-wrap{overflow-x:auto; border-radius:12px; box-shadow:var(--inset); margin-top:var(--gap)}
+/* §8 only harden the scroll container — table.tt{min-width:560px} UNCHANGED (table scrolls inside .tbl-wrap, never page-wide) */
+.tbl-wrap{overflow-x:auto; overscroll-behavior-x:contain; scrollbar-gutter:stable; border-radius:12px; box-shadow:var(--inset); margin-top:var(--gap)}
 table.tt{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:560px; background:var(--surface)}
 table.tt th,table.tt td{padding:11px 14px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--border)}
 table.tt thead th{position:sticky; top:0; background:var(--surface2); color:var(--text2); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.05em; z-index:2}
@@ -341,8 +410,7 @@ table.tt td .num{font-variant-numeric:tabular-nums}
 @keyframes toastInSpring{to{transform:translate(-50%,0); opacity:1}}
 
 /* mechanism */
-.mech-grid{display:grid; grid-template-columns:1.2fr 1fr; gap:var(--gap); align-items:start}
-@media (max-width:840px){.mech-grid{grid-template-columns:1fr}}
+/* §6 .mech-grid is a Switcher below (replaces the bespoke 840px breakpoint) */
 .pipeline{display:flex; flex-direction:column; gap:12px}
 .stage{display:flex; align-items:center; gap:12px; background:var(--surface); border-radius:12px; box-shadow:var(--inset); padding:14px 16px}
 .stage .n{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:13px}
@@ -372,8 +440,8 @@ table.tt td .num{font-variant-numeric:tabular-nums}
 .timeline-bar .oos{position:absolute; right:0; top:0; bottom:0; width:30%; background:var(--green-dim)}
 .prov-badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px}
 
-.dep-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:var(--gap); margin-top:8px}
-@media (max-width:560px){.dep-grid{grid-template-columns:1fr}}
+/* §6 .dep-grid is a Switcher below (replaces the bespoke 560px breakpoint); margin-top kept */
+.dep-grid{margin-top:8px}
 
 /* footer */
 footer{border-top:1px solid var(--border); background:var(--surface); margin-top:clamp(48px,7vw,90px)}
@@ -442,8 +510,9 @@ footer{border-top:1px solid var(--border); background:var(--surface); margin-top
   background:rgba(19,23,30,.92); backdrop-filter:blur(9px); border-bottom:1px solid var(--border);
   box-shadow:0 8px 18px rgba(0,0,0,.28)}
 .northstar-bar.show{transform:none}
-.nb-inner{max-width:var(--maxw); margin:0 auto; padding:7px clamp(16px,3vw,32px);
-  display:flex; align-items:center; gap:13px; flex-wrap:wrap; font-family:var(--mono); font-size:12px}
+.nb-inner{display:flex; align-items:center; gap:13px; flex-wrap:wrap;
+  font-family:var(--mono); font-size:12px; padding-block:7px;
+  width:min(100% - 2*var(--gutter), var(--maxw)); margin-inline:auto}
 .nb-tag{font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--gold-text); font-weight:700}
 .nb-stat{display:inline-flex; align-items:baseline; gap:6px; font-variant-numeric:tabular-nums}
 .nb-stat .k{color:var(--text2); font-size:10px; text-transform:uppercase; letter-spacing:.05em}
@@ -498,6 +567,18 @@ footer{border-top:1px solid var(--border); background:var(--surface); margin-top
 .reveal.pre{opacity:0; transform:translateY(14px)}
 .reveal.in{opacity:1; transform:none}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+/* §9 safe-area insets — only adds notch overhang on top of the centered width:min(…) measure */
+@supports (padding:max(0px)){
+  .topbar{ padding-top:env(safe-area-inset-top); }
+  .topbar-inner, .nb-inner{ padding-inline:max(0px, env(safe-area-inset-left)) max(0px, env(safe-area-inset-right)); }
+  .toast{ bottom:max(32px, env(safe-area-inset-bottom)); }
+}
+/* §14 tooltip-overflow guard — container-type makes .card a containing block for the absolute tips
+   ([data-tip]::after). The gauge has no internal scroll, so visible is safe and lets its tips
+   (drawdown/Sharpe/Sortino) escape the card chrome. .c-trace keeps overflow:hidden (its feed must
+   clip) with the scroll/mask moved onto .trace-list (§4) so trace tips stay within the list region. */
+.c-gauge{ overflow:visible; }
 </style>
 </head>
 
@@ -567,6 +648,7 @@ footer{border-top:1px solid var(--border); background:var(--surface); margin-top
         <h1 id="hero-h" class="sr-only">Stoic roughly halves the worst-case drawdown of holding crypto: 17.7% versus 58.3%.</h1>
         <div class="hero-row">
           <div class="hero-num-wrap">
+            <span class="hero-ddtag">Max drawdown · OOS</span>
             <div class="hero-num" id="hero-num" aria-hidden="true">0<span class="pctsign">%</span></div>
             <div class="hero-ghost">vs <s id="hero-ghost">58.3%</s> buy &amp; hold</div>
           </div>
