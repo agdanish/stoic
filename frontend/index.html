@@ -365,8 +365,11 @@ main{display:block}
 .verdict.lag{background:var(--amber-dim); border-color:rgba(245,166,35,.4); color:var(--amber)}
 .verdict.bad{background:var(--red-dim); border-color:rgba(246,70,93,.4); color:var(--red)}
 .illus-tag{display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; color:var(--blue); border:1px solid rgba(91,141,239,.35); background:var(--blue-dim); border-radius:6px; padding:3px 8px; margin-bottom:10px}
+.illus-tag.real{color:var(--green); border-color:rgba(22,199,132,.4); background:rgba(22,199,132,.08)}
 .chart-card{background:var(--surface); border-radius:12px; box-shadow:var(--inset); padding:16px}
 .chart-card svg{display:block; width:100%; height:auto}
+.uw-pane{position:relative; margin-top:6px; border-top:1px dashed var(--border); padding-top:4px}
+.uw-pane .uw-lbl{position:absolute; left:8px; top:8px; font-family:var(--mono); font-size:9px; letter-spacing:.04em; color:var(--text2); pointer-events:none}
 /* §8 only harden the scroll container — table.tt{min-width:560px} UNCHANGED (table scrolls inside .tbl-wrap, never page-wide) */
 .tbl-wrap{overflow-x:auto; overscroll-behavior-x:contain; scrollbar-gutter:stable; border-radius:12px; box-shadow:var(--inset); margin-top:var(--gap)}
 table.tt{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:560px; background:var(--surface)}
@@ -709,7 +712,7 @@ footer{border-top:1px solid var(--border); background:var(--surface); margin-top
         </div>
         <div class="micro-spark">
           <span id="ml-spark" aria-hidden="true"></span>
-          <span class="ms-cap">cumulative excess vs B&amp;H, OOS <span class="is-gold">illustrative</span></span>
+          <span class="ms-cap">cumulative excess vs B&amp;H, OOS <span class="is-gold" id="ml-spark-tag">real per-bar</span></span>
         </div>
       </div>
     </section>
@@ -745,7 +748,7 @@ footer{border-top:1px solid var(--border); background:var(--surface); margin-top
       <div class="stat-val" id="st-trades" aria-hidden="true">0 / 900</div>
       <div class="stat-delta">low turnover · <span data-tip="Win rate: share of closed trades that were profitable.">winRate</span> <span id="st-wr">15.9%</span></div>
       <div class="stat-spark" id="st-trades-chart"></div>
-      <p class="stat-sub">A patient long-only core — it sits out, it doesn't churn fees.</p>
+      <p class="stat-sub" id="st-trades-sub">A patient long-only core — the real OOS equity path barely moves: it sits out, it doesn't churn fees.</p>
     </section>
 
   </div>
@@ -756,7 +759,7 @@ footer{border-top:1px solid var(--border); background:var(--surface); margin-top
   <div class="wrap">
     <div class="section-head"><span class="kicker">The real backtest</span></div>
     <h2>Tearsheet — real multi-regime daily data</h2>
-    <p class="section-lede">Per-window aggregate and per-token metrics, switched live. The equity and underwater curves are <b>illustrative</b> — built from real summary endpoints, not a synthetic per-bar series.</p>
+    <p class="section-lede">Per-window aggregate and per-token metrics, switched live. The equity and underwater curves plot the <b>real committed per-bar series</b> (<span class="is-gold">series-momentum.json</span>) for the selected long-only EMA 30/80 config — reconciled to the report's totals. If that series can't be fetched, they fall back to an illustrative shape from the summary endpoints.</p>
 
     <div class="ts-controls">
       <div class="seg" role="group" aria-label="Backtest window">
@@ -780,9 +783,9 @@ footer{border-top:1px solid var(--border); background:var(--surface); margin-top
         <div class="verdict" id="ts-verdict"></div>
       </div>
       <div class="chart-card">
-        <span class="illus-tag"><span class="dot illus"></span>ILLUSTRATIVE — from real summary endpoints, not a per-bar series</span>
-        <div id="equity-chart" role="img" aria-label="Illustrative equity curve: Stoic steps over a deep buy-and-hold drawdown trough in the out-of-sample window."></div>
-        <p class="cap" id="equity-cap">Strategy (gold/green) holds near flat while Buy &amp; Hold (red) plunges into the shaded out-of-sample bear, then an inverted underwater pane shows the depth it dodges.</p>
+        <span class="illus-tag real" id="equity-tag"><span class="dot"></span>REAL — committed per-bar series (series-momentum.json), reconciled to the report</span>
+        <div id="equity-chart" role="img" aria-label="Real per-bar equity curve: Stoic holds near flat over a deep buy-and-hold drawdown trough in the out-of-sample window."></div>
+        <p class="cap" id="equity-cap">The real per-bar strategy curve (green) holds near flat while Buy &amp; Hold (red) plunges into the out-of-sample bear, then an inverted underwater pane shows the drawdown depth it dodges.</p>
       </div>
     </div>
 
@@ -1049,7 +1052,8 @@ const M = {
   agg: { outOfSample: STOIC.hero, inSample: STOIC.inSample, full: STOIC.full },
   perToken: STOIC.perToken,
   cmc: Object.assign({}, STOIC.cmc),
-  liveThisSession: false
+  liveThisSession: false,
+  series: null  // REAL per-bar series (series-momentum.json) once fetched; null -> illustrative fallback
 };
 
 /* ── count-up (handles negatives + decimals, easeOutExpo, terminates on frozen string) ── */
@@ -1361,7 +1365,17 @@ function renderStats(){
     {w:240,h:92});
   $("#st-trades").textContent = h.trades+" / "+h.bars;
   $("#st-wr").textContent = pct(h.winRate);
-  $("#st-trades-chart").innerHTML = sparkline([0,1,1,2,4,6,8,9,11].map(x=>x), "var(--gold)");
+  // REAL: the patient long-only OOS equity path (aggregate per-bar, series-momentum.json) — it barely
+  // moves, which is exactly the "low turnover / sits out" story. Fallback: the cumulative-trades ramp.
+  const oos = realAggOOS();
+  const sub = $("#st-trades-sub");
+  if(oos){
+    $("#st-trades-chart").innerHTML = sparkline(thin(oos.equity, 64), "var(--gold)");
+    if(sub) sub.textContent = "A patient long-only core — the real OOS equity path barely moves: it sits out, it doesn't churn fees.";
+  } else {
+    $("#st-trades-chart").innerHTML = sparkline([0,1,1,2,4,6,8,9,11], "var(--gold)");
+    if(sub) sub.textContent = "A patient long-only core — it sits out, it doesn't churn fees (cumulative-trades sketch; per-bar series unavailable).";
+  }
 }
 
 // ── micro-KPI ladder (bottom of the Regime Gate card) — REAL OOS numbers from M.agg.outOfSample ──
@@ -1371,8 +1385,18 @@ function renderMicroLadder(){
   $("#ml-sortino").textContent = num(d.sortino);  // -0.64
   $("#ml-trades").textContent  = d.trades;        // 11
   $("#ml-bars").textContent    = d.bars;          // 900
-  // illustrative cumulative-excess separation (ends near the real +43.2pt OOS excess), no-axis sparkline
-  $("#ml-spark").innerHTML = sparkline([0,0.03,0.06,0.04,0.12,0.21,0.30,0.39,0.43], "var(--gold)");
+  // REAL cumulative excess vs B&H, OOS: strategyEquity - buyHoldEquity per bar (aggregate per-bar,
+  // series-momentum.json). Ends near the real OOS excess. Fallback: the illustrative separation shape.
+  const oos = realAggOOS();
+  const tag = $("#ml-spark-tag");
+  if(oos){
+    const exc = oos.equity.map(function(e,i){ return e - (oos.buyHoldEquity[i]||0); });
+    $("#ml-spark").innerHTML = sparkline(thin(exc, 64), "var(--gold)");
+    if(tag){ tag.textContent = "real per-bar"; tag.classList.add("is-gold"); }
+  } else {
+    $("#ml-spark").innerHTML = sparkline([0,0.03,0.06,0.04,0.12,0.21,0.30,0.39,0.43], "var(--gold)");
+    if(tag) tag.textContent = "illustrative (fallback)";
+  }
 }
 
 /* ── illustrative equity / underwater (built from real summary endpoints) ── */
@@ -1395,12 +1419,77 @@ function buildEquity(win){
   }
   return {strat:strat, bh:bh, oosFrac:oos};
 }
+/* Pull the REAL per-bar window (equity/buyHold/underwater) for the current token+window, or
+   null if the series isn't loaded or this window isn't in it (in-sample is summary-only). */
+function realSeriesWindow(tok, win){
+  const s=M.series; if(!s) return null;
+  if(win!=="outOfSample" && win!=="full") return null; // series carries OOS + full only
+  let node;
+  if(tok==="agg"){ node = s.aggregate && s.aggregate[win]; }
+  else { const t=(s.perToken||[]).filter(function(p){ return p.symbol===tok+"USDT"; })[0]; node = t && t[win]; }
+  if(!node || !node.equity || !node.equity.length) return null;
+  return node;
+}
+/* Aggregate OOS per-bar node from the REAL series (or null when not loaded). Used by the two
+   small sparklines (cumulative-excess + the patient-equity trades spark) so they plot real
+   per-bar points, with the hardcoded shapes kept only as a graceful fallback. */
+function realAggOOS(){
+  const s=M.series;
+  const node = s && s.aggregate && s.aggregate.outOfSample;
+  if(!node || !node.equity || !node.equity.length || !node.buyHoldEquity) return null;
+  return node;
+}
+/* Downsample an array to at most n points (keeps endpoints) so the sparkline path stays light. */
+function thin(arr, n){
+  if(arr.length<=n) return arr.slice();
+  const out=[]; const step=(arr.length-1)/(n-1);
+  for(let i=0;i<n;i++) out.push(arr[Math.round(i*step)]);
+  return out;
+}
+/* Set the chart tag to reflect whether the REAL committed series or the illustrative shape is shown. */
+function setEquityTag(real){
+  const el=$("#equity-tag"); if(!el) return;
+  el.classList.toggle("real", !!real);
+  el.innerHTML = real
+    ? '<span class="dot"></span>REAL — committed per-bar series (series-momentum.json), reconciled to the report'
+    : '<span class="dot illus"></span>ILLUSTRATIVE (fallback) — series unreachable; shape from real summary endpoints';
+}
 function renderEquity(win){
+  const real = realSeriesWindow(curTok, win);
+  if(real){ renderEquityReal(real, win); setEquityTag(true); return; }
+  // graceful fallback: the deterministic illustrative shape from the summary endpoints.
   const e=buildEquity(win);
   const html=lineChart(
     [{pts:e.strat,color:"var(--green)",width:2.2},{pts:e.bh,color:"var(--red)",width:2}],
     {w:520,h:200,oosFrac:e.oosFrac});
   $("#equity-chart").innerHTML=html;
+  setEquityTag(false);
+  triggerDraw($("#equity-chart"));
+}
+/* Plot the REAL per-bar equity curves (strategy vs B&H, re-based to 1.0) + an inverted underwater
+   pane below it (strategy depth, shaded). Equity is converted to return (e-1) so the 0-line aligns. */
+function renderEquityReal(w, win){
+  const N=w.equity.length;
+  const stepX = i => i*(519/(N-1||1));
+  const strat=[], bh=[], uwStrat=[], uwBH=[];
+  for(let i=0;i<N;i++){
+    strat.push({x:stepX(i), y:w.equity[i]-1});
+    bh.push({x:stepX(i), y:w.buyHoldEquity[i]-1});
+    uwStrat.push({x:stepX(i), y:-(w.underwater[i]||0)});
+    uwBH.push({x:stepX(i), y:-(w.buyHoldUnderwater[i]||0)});
+  }
+  // OOS band only meaningful on the FULL window (split at 70%); OOS window is wholly held-out.
+  const oosFrac = win==="full" ? 0.30 : 0;
+  const eqHtml = lineChart(
+    [{pts:bh,color:"var(--red)",width:2},{pts:strat,color:"var(--green)",width:2.2}],
+    {w:520,h:148,oosFrac:oosFrac});
+  // underwater pane: B&H trough (red, faint) behind strategy depth (green) — shows the dodge.
+  const uwHtml = lineChart(
+    [{pts:uwBH,color:"rgba(246,70,93,0.55)",width:1.6},{pts:uwStrat,color:"var(--green)",width:1.8}],
+    {w:520,h:72,oosFrac:oosFrac});
+  $("#equity-chart").innerHTML =
+    '<div class="eq-pane">'+eqHtml+'</div>'+
+    '<div class="uw-pane" aria-hidden="true"><span class="uw-lbl">underwater (drawdown depth)</span>'+uwHtml+'</div>';
   triggerDraw($("#equity-chart"));
 }
 function triggerDraw(scope){
@@ -1643,6 +1732,17 @@ function hydrate(){
     const m=$("#ts-err"); m.classList.add("show");
     m.textContent="Backtest reports not reachable — showing frozen verified values. Serve the folder with `npx http-server frontend` so the relative fetch resolves.";
   });
+  // REAL per-bar series → equity/underwater chart data source (illustrative shape is the fallback)
+  fetchJson(candidates("series-momentum.json")).then(function(ser){
+    try{
+      if(ser && ser.aggregate && ser.aggregate.outOfSample){
+        M.series = ser;
+        // re-render everything fed by the real per-bar series: the equity/underwater chart, the
+        // patient-equity trades spark, and the cumulative-excess spark.
+        renderTearsheet(); renderStats(); renderMicroLadder();
+      }
+    }catch(e){ /* keep the illustrative fallback already rendered */ }
+  }).catch(function(){ /* series not reachable — illustrative fallback stays */ });
   // live CMC manifest → F&G
   fetchJson(['../fixtures/cmc/live/_manifest.json','fixtures/cmc/live/_manifest.json']).then(function(man){
     try{

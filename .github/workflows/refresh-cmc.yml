@@ -1,0 +1,77 @@
+name: Refresh CMC capture
+
+# Stoic — keep the COMMITTED CoinMarketCap MCP capture fresh through judging.
+#
+# This re-runs the existing keyed live round-trip (backtest/cmc-live-roundtrip.ts) on a
+# schedule, refreshing the raw envelopes under fixtures/cmc/live/ and committing them back
+# to main. Pushing to main is what rebuilds the GitHub Pages site, so the published demo
+# always shows a recent snapshot instead of one frozen at 2026-06-17.
+#
+# HONESTY: this is still a SNAPSHOT taken once per run (every 6h), NOT a per-visitor live
+# feed. Each commit just moves the snapshot forward in time.
+#
+# SETUP (one-time, by the repo owner) — see docs/REFRESH.md:
+#   1. Add repo secret CMC_MCP_API_KEY (free key at pro.coinmarketcap.com).
+#   2. Settings -> Actions -> General -> Workflow permissions -> "Read and write permissions".
+# With NO secret the round-trip writes nothing and exits 0, so the run stays GREEN and quiet.
+
+on:
+  schedule:
+    # Every 6 hours (UTC). Keeps the capture under ~6h old across the judging window.
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+# Needed so the job can push the refreshed fixtures back to main.
+permissions:
+  contents: write
+
+# Never overlap refresh runs (avoids racing pushes to main).
+concurrency:
+  group: refresh-cmc
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Re-capture fixtures/cmc/live and commit if changed
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Guard: with no secret the script prints its usage and exits 0 (writes nothing),
+      # so the step — and the run — stays green and quiet instead of failing noisily.
+      - name: Run keyed CMC live round-trip
+        env:
+          CMC_MCP_API_KEY: ${{ secrets.CMC_MCP_API_KEY }}
+        run: npx ts-node backtest/cmc-live-roundtrip.ts
+
+      # Commit + push ONLY if the capture actually changed. An unchanged capture (or a
+      # missing secret, which writes nothing) is a no-op success — no empty commit, no error.
+      - name: Commit and push refreshed capture if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add fixtures/cmc/live
+
+          if git diff --cached --quiet; then
+            echo "No change in fixtures/cmc/live — nothing to commit (capture unchanged or no key)."
+            exit 0
+          fi
+
+          git commit -m "chore(cmc): refresh live capture [skip ci]"
+          git push origin HEAD:main
+          echo "Pushed refreshed CMC capture to main."
