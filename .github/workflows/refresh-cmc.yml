@@ -16,9 +16,10 @@ name: Refresh CMC capture
 # With NO secret the round-trip writes nothing and exits 0, so the run stays GREEN and quiet.
 
 on:
-  schedule:
-    # Every 6 hours (UTC). Keeps the capture under ~6h old across the judging window.
-    - cron: "0 */6 * * *"
+  # Manual-only — run from the Actions tab when you want a fresh capture. NOT scheduled:
+  # an auto-refresh would drift the committed F&G/RSI/date out of sync with the specific
+  # numbers quoted in README/SUBMISSION/SKILL. (The dashboard + landing read the fixture
+  # dynamically, so an on-demand refresh still renders correctly.)
   workflow_dispatch: {}
 
 # Needed so the job can push the refreshed fixtures back to main.

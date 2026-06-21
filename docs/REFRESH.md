@@ -3,11 +3,16 @@
 The published demo (GitHub Pages) reads a **committed snapshot** of the CoinMarketCap MCP
 round-trip from `fixtures/cmc/live/`. Without help, that snapshot stays frozen at whenever it
 was last captured (2026-06-17). The `Refresh CMC capture` GitHub Action
-(`.github/workflows/refresh-cmc.yml`) keeps it current through judging.
+(`.github/workflows/refresh-cmc.yml`) lets you refresh it **on demand**.
+
+> ⚠️ **Manual-only.** Running it commits fresh F&G / RSI / capture-date values that will no
+> longer match the specific numbers quoted in `README.md` / `docs/SUBMISSION.md` /
+> `SKILL.md`. The dashboard + landing read the fixture **dynamically** so they always stay
+> correct — but re-sync that prose (or just leave the capture pinned at 2026-06-17) after a refresh.
 
 ## What it does — and what it is NOT
 
-- **On a schedule** (every 6 hours) and on manual **Run workflow**, it re-runs the existing
+- On a manual **Run workflow** (the Actions tab), it re-runs the existing
   keyed live round-trip (`backtest/cmc-live-roundtrip.ts`), which performs one real
   `tools/call` per wired CMC tool and rewrites the raw envelopes under `fixtures/cmc/live/`.
 - If the capture **changed**, it commits and pushes to **`main`**. Because `main` is the
@@ -16,7 +21,7 @@ was last captured (2026-06-17). The `Refresh CMC capture` GitHub Action
   stays green — no empty commit, no noisy failure.
 
 **Honest framing:** this keeps the committed capture *fresh* — it is still a **snapshot taken
-once per run** (every ~6h), **not** a per-visitor live feed. Each successful run just moves the
+once per run** (manual, on-demand), **not** a per-visitor live feed. Each successful run just moves the
 snapshot forward in time. Nothing about the strategy, reports, or headline numbers changes;
 only the `fixtures/cmc/live/` evidence is updated.
 

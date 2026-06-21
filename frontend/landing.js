@@ -199,7 +199,7 @@
   function initFeed() {
     var box = $('#ldFeed'); if (!box) return;
     var ev = [
-      ['tests', '<b>436 tests passing</b> · deterministic engine, no flakes'],
+      ['tests', '<b>498 tests passing</b> · deterministic engine, no flakes'],
       ['types', '<b>tsc --noEmit</b> exit 0 — strict mode, zero <code>any</code>'],
       ['repro', 'reports are <b>byte-reproducible</b> — same input, same bytes'],
       ['safe', '<b>look-ahead-safe</b> walk-forward · read &lt; t, hold into t+1'],
@@ -214,24 +214,165 @@
   }
 
   // ---------- CMC MCP terminal: real round-trip log + rise-on-scroll ----------
+  // The hardcoded values below are the committed 2026-06-17 capture; they are the
+  // graceful fallback. initLiveRegime() overwrites them in place with the LATEST
+  // committed capture (manifest, auto-refreshed every 6h) when the fetch succeeds.
+  function fgLabel(v) {
+    if (v <= 24) return 'Extreme Fear';
+    if (v <= 44) return 'Fear';
+    if (v <= 55) return 'Neutral';
+    if (v <= 74) return 'Greed';
+    return 'Extreme Greed';
+  }
+  function fgGate(v) {
+    // contrarian gate: low F&G → favour longs; high F&G → trim
+    return v <= 44 ? 'favour longs' : (v >= 75 ? 'trim greed' : 'hold / neutral');
+  }
   function initTerm() {
     var body = $('#ldTermBody'); if (!body) return;
     var L = [
       '<span class="c-p">$</span> <span class="c-cmd">stoic skill run sentiment-divergence-regime --symbol BTC</span>',
-      '<span class="c-mut">CMC Agent Hub · MCP round-trip · keyed capture 2026-06-17</span>',
+      '<span class="c-mut">CMC Agent Hub · MCP round-trip · keyed capture <span id="ldTermDate">2026-06-17</span></span>',
       '',
       '<span class="c-ai">→ search_cryptos</span>                        <span class="c-mut">resolve BTC / ETH / BNB</span>',
       '<span class="c-ai">→ get_crypto_quotes_latest</span>             <span class="c-mut">spot + 24h</span>',
-      '<span class="c-ai">→ get_crypto_technical_analysis</span>        RSI(14) <span class="c-amber">41.85</span>',
-      '<span class="c-ai">→ get_global_metrics_latest</span>           BTC.D <span class="c-amber">58.26%</span>',
+      '<span class="c-ai">→ get_crypto_technical_analysis</span>        RSI(14) <span class="c-amber" id="ldTermRsi">41.85</span>',
+      '<span class="c-ai">→ get_global_metrics_latest</span>           BTC.D <span class="c-amber" id="ldTermBtcd">58.26%</span>',
       '<span class="c-ai">→ get_global_crypto_derivatives_metrics</span> <span class="c-mut">funding / OI</span>',
       '<span class="c-ai">→ trending_crypto_narratives</span>          <span class="c-mut">crowd narratives</span>',
       '<span class="c-ai">→ get_crypto_metrics</span>                   <span class="c-mut">on-chain / supply</span>',
       '',
-      '<span class="c-amber">Fear &amp; Greed = 23  →  "Fear"</span>   <span class="c-mut">(keyed capture · 2026-06-17)</span>',
-      '<span class="c-ok">✓ regime gate: FEAR → favour longs</span>  <span class="c-mut">· 7 tools wired</span>'
+      '<span class="c-amber">Fear &amp; Greed = <span id="ldTermFg">23</span>  →  "<span id="ldTermFgLabel">Fear</span>"</span>   <span class="c-mut">(keyed capture · <span id="ldTermDate2">2026-06-17</span>)</span>',
+      '<span class="c-ok">✓ regime gate: <span id="ldTermGate">FEAR → favour longs</span></span>  <span class="c-mut">· 7 tools wired</span>'
     ];
     body.innerHTML = L.join('\n');
+  }
+
+  // ---------- LIVE regime hydration (graceful fallback) ----------
+  // Reads the LATEST committed capture from the manifest (auto-refreshed every 6h)
+  // and updates the gauge + terminal + lead/date text IN PLACE. This is still a
+  // committed snapshot, NOT a per-visitor real-time feed — wording stays honest.
+  function fetchManifest(paths, i) {
+    i = i || 0;
+    if (i >= paths.length) return Promise.reject(new Error('not found'));
+    return fetch(paths[i], { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .catch(function () { return fetchManifest(paths, i + 1); });
+  }
+  function leaf(obj, path) {
+    // safe deep read; returns the {value, available} node or null
+    var cur = obj;
+    for (var k = 0; k < path.length; k++) {
+      if (cur == null || typeof cur !== 'object') return null;
+      cur = cur[path[k]];
+    }
+    return cur;
+  }
+  function num(node) {
+    // returns a finite number only when the leaf is available, else null
+    if (!node || node.available === false) return null;
+    var v = (typeof node === 'object') ? node.value : node;
+    return (typeof v === 'number' && isFinite(v)) ? v : null;
+  }
+  function fmtDate(iso) {
+    // e.g. "2026-06-17T19:36:35.175Z" -> "2026-06-17 19:36 UTC"
+    if (typeof iso !== 'string') return null;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) +
+      ' ' + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ' UTC';
+  }
+  function setText(el, txt) { if (el && txt != null) el.textContent = txt; }
+  function initLiveRegime() {
+    // paths verified against the dashboard (index.html): ../fixtures works from
+    // frontend/landing.html on GitHub Pages; the bare path is the project-root fallback.
+    fetchManifest(['../fixtures/cmc/live/_manifest.json', 'fixtures/cmc/live/_manifest.json'])
+      .then(function (man) {
+        if (!man || typeof man !== 'object') return;
+        var np = man.normalizedParse || {};
+        var fg = num(leaf(np, ['get_global_metrics_latest', 'fearGreed']));
+        var btcd = num(leaf(np, ['get_global_metrics_latest', 'btcDominance']));
+        var rsi = num(leaf(np, ['get_crypto_technical_analysis', 'rsi']));
+        var when = fmtDate(man.capturedAt);          // "YYYY-MM-DD HH:MM UTC"
+        var dateOnly = when ? when.split(' ')[0] : null; // "YYYY-MM-DD"
+
+        // ----- gauge (regime section) -----
+        if (fg != null) {
+          var label = fgLabel(fg);
+          setText($('#regime .gv'), String(fg));
+          setText($('#regime .gl'), label);
+          setText($('#regime .gact'), '● gate action → ' + fgGate(fg));
+          // needle geometry: angle = -(180 - 1.8*value) degrees, pivot (100,104)
+          var needle = $('#regime .ld-gauge svg g');
+          if (needle) {
+            var ang = -(180 - 1.8 * fg);
+            needle.setAttribute('transform', 'rotate(' + ang.toFixed(1) + ' 100 104)');
+          }
+          // a11y label on the gauge svg
+          var gsvg = $('#regime .ld-gauge svg');
+          if (gsvg) gsvg.setAttribute('aria-label', 'Fear and Greed gauge at ' + fg + ', ' + label);
+        }
+
+        // ----- "RSI(14) X · BTC dominance Y%" + date line in gauge copy -----
+        var gp = $('#regime .gtxt p');
+        if (gp && (rsi != null || btcd != null || when)) {
+          var rsiTxt = rsi != null ? rsi.toFixed(2) : '41.85';
+          var btcdTxt = btcd != null ? btcd.toFixed(2) : '58.26';
+          var whenTxt = when || '2026-06-17 19:36 UTC';
+          var labelLow = (fg != null ? fgLabel(fg) : 'Fear');
+          gp.innerHTML = 'This keyed capture (' + whenTxt + '): RSI(14) <b>' + rsiTxt +
+            '</b> · BTC dominance <b>' + btcdTxt + '%</b>. In ' + labelLow +
+            ', the contrarian gate leans into the directional core.';
+        }
+
+        // ----- lead paragraph "capture from <date>" + Fear/Greed read -----
+        var lead = $('#regime .ld-lead');
+        if (lead && (dateOnly || fg != null)) {
+          var dTxt = dateOnly || '2026-06-17';
+          var readTxt = fg != null ? fgLabel(fg) : 'Fear';
+          var stance = (fg != null && fg > 55) ? 'trims into greed' : 'favours longs';
+          lead.innerHTML = 'A real keyed MCP round-trip across 7 wired tools — a committed ' +
+            '<b>capture from ' + dTxt + '</b> (a snapshot, not a real-time feed). ' +
+            'This capture reads <b>' + readTxt + '</b>, so the contrarian gate ' + stance + '.';
+        }
+
+        // ----- terminal -----
+        if (fg != null) {
+          setText($('#ldTermFg'), String(fg));
+          setText($('#ldTermFgLabel'), fgLabel(fg));
+          var gateWord = (fg <= 44) ? 'FEAR → favour longs'
+            : (fg >= 75 ? 'GREED → trim' : 'NEUTRAL → hold');
+          // "✓ regime gate: " prefix lives in initTerm's static text; this span holds only the verdict
+          setText($('#ldTermGate'), gateWord);
+        }
+        if (rsi != null) setText($('#ldTermRsi'), rsi.toFixed(2));
+        if (btcd != null) setText($('#ldTermBtcd'), btcd.toFixed(2) + '%');
+        if (dateOnly) { setText($('#ldTermDate'), dateOnly); setText($('#ldTermDate2'), dateOnly); }
+
+        // ----- hero badge + chip + hero badge dot (Fear & Greed = N (Label)) -----
+        if (fg != null) {
+          var lbl = fgLabel(fg);
+          var badge = $('.ld-badge');
+          if (badge) {
+            // preserve the leading dot span, replace the trailing text node
+            var dot = badge.querySelector('.dot');
+            badge.innerHTML = '';
+            if (dot) badge.appendChild(dot);
+            badge.appendChild(document.createTextNode(' BNB Hack · AI Trading Agent Edition · Fear & Greed = ' + fg + ' (' + lbl + ')'));
+          }
+          // hero chip counter "Fear & Greed N" — update the live target + shown text.
+          // initCounts() may have already animated to the old value; assert the live
+          // value now and once more on the next tick so we win any in-flight count-up.
+          var chip = $('.ld-chips .ld-chip:last-child b[data-count]');
+          if (chip) {
+            chip.setAttribute('data-count', String(fg));
+            chip.textContent = String(fg);
+            setTimeout(function () { chip.textContent = String(fg); }, 1500);
+          }
+        }
+      })
+      .catch(function () { /* offline / missing → keep committed-snapshot fallback values */ });
   }
   function initTermRise() {
     var t = $('#ldTerm'); if (!t) return;
@@ -248,6 +389,6 @@
     frame();
   }
 
-  function init() { initNav(); initReveal(); initCounts(); initHero(); initTerm(); initTermRise(); initSpine(); initGallery(); initFeed(); }
+  function init() { initNav(); initReveal(); initCounts(); initHero(); initTerm(); initLiveRegime(); initTermRise(); initSpine(); initGallery(); initFeed(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

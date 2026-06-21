@@ -1,7 +1,7 @@
 {
   "_capture": "LIVE",
-  "_note": "RAW live tools/call envelope for \"search_cryptos\" — captured 2026-06-21T09:23:12.980Z. NOT a SAMPLE fixture.",
-  "capturedAt": "2026-06-21T09:23:12.980Z",
+  "_note": "RAW live tools/call envelope for \"search_cryptos\" — captured 2026-06-17T19:36:35.175Z. NOT a SAMPLE fixture.",
+  "capturedAt": "2026-06-17T19:36:35.175Z",
   "tool": "search_cryptos",
   "args": {
     "query": "BTC"

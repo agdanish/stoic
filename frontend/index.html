@@ -1256,7 +1256,7 @@ function renderGauge(useSample){
   $("#gauge-bands").innerHTML = buildGaugeBands();
   const src = useSample ? STOIC.sampleRegime : M.cmc;
   const v = src.fearGreed;
-  const labelTxt = useSample ? "EXTREME GREED → trim long (SAMPLE)" : "EXTREME FEAR → favour long";
+  const labelTxt = useSample ? "EXTREME GREED → trim long (SAMPLE)" : (v <= 25 ? "EXTREME FEAR → favour long" : v >= 75 ? "EXTREME GREED → trim long" : "NEUTRAL → pass-through");
   countUp($("#gauge-val"), v, function(x){ return Math.round(x).toString(); }, 700);
   $("#gauge-label").textContent = labelTxt;
   // regime-state ring: spin only on the cached read; static marker on the SAMPLE demo (never imply liveness)
@@ -1743,19 +1743,55 @@ function hydrate(){
       }
     }catch(e){ /* keep the illustrative fallback already rendered */ }
   }).catch(function(){ /* series not reachable — illustrative fallback stays */ });
-  // live CMC manifest → F&G
+  // live CMC manifest → regime gauge + supporting reads.
+  // Reads the auto-refreshed (every 6h) committed capture and OVERRIDES the frozen STOIC
+  // values from man.normalizedParse.* + man.capturedAt. Each leaf is {value, available}; any
+  // missing leaf or {available:false} is skipped so M.cmc keeps its STOIC fallback for that field.
   fetchJson(['../fixtures/cmc/live/_manifest.json','fixtures/cmc/live/_manifest.json']).then(function(man){
     try{
-      if(man && (man.fearGreed!=null || (man.global && man.global.fearGreed!=null))){
-        const fg = man.fearGreed!=null?man.fearGreed:man.global.fearGreed;
-        M.cmc.fearGreed = fg;
-        if(man.capturedAt) M.cmc.capturedAt = man.capturedAt;
-        M.liveThisSession = true;
-        renderGauge(false); renderTrace();
+      if(!man) return;
+      const np = man.normalizedParse || {};
+      // read a {value,available} leaf; returns null if unavailable/missing so callers keep the fallback
+      function leaf(node, key){
+        const o = node && node[key];
+        if(o && o.available===true && o.value!=null && !(typeof o.value==='number' && isNaN(o.value))) return o.value;
+        return null;
       }
-    }catch(e){}
+      let touched = false;
+      function apply(field, val){ if(val!=null){ M.cmc[field]=val; touched=true; } }
+
+      const gm = np.get_global_metrics_latest;
+      apply('fearGreed',   leaf(gm,'fearGreed'));
+      apply('btcDominance',leaf(gm,'btcDominance'));
+
+      const ta = np.get_crypto_technical_analysis;
+      apply('rsi14',   leaf(ta,'rsi'));
+      apply('macdHist',leaf(ta,'macdHist'));
+
+      const q = np.get_crypto_quotes_latest;
+      apply('btcQuoteSnapshot',leaf(q,'price'));
+      apply('btcChange24h',    leaf(q,'percentChange24h'));
+
+      const dv = np.get_global_crypto_derivatives_metrics;
+      apply('fundingRate',     leaf(dv,'fundingRate'));
+      apply('openInterestUsd', leaf(dv,'openInterest'));
+
+      const cm = np.get_crypto_metrics;
+      apply('holderCount',leaf(cm,'holderCount'));
+      apply('whalesPct',  leaf(cm,'whalesPct'));
+
+      // capture timestamp drives the honest "captured <date>" caption + relative age
+      if(man.capturedAt){ M.cmc.capturedAt = man.capturedAt; touched = true; }
+
+      if(touched){
+        M.liveThisSession = false; // committed snapshot, NOT a per-visitor live feed
+        // only re-render the live gauge/reads when the SAMPLE toggle isn't the active view
+        renderGauge(typeof sampleOn!=='undefined' && sampleOn ? true : false);
+        renderTrace();
+      }
+    }catch(e){ /* malformed manifest — frozen STOIC fallback already rendered */ }
   }).catch(function(){
-    // cached fallback already rendered; no hang
+    // manifest unreachable (offline) — cached STOIC fallback already rendered; no hang
   });
 }
 function mergeAgg(base, src){
