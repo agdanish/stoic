@@ -10,7 +10,7 @@
 | Guarantee | Command | Result |
 |---|---|---|
 | Type-check | `npx tsc --noEmit` | exit **0** |
-| Test suite | `npx mocha` | **483 passing** (was 218 at the eval, 302 after the risk-overlay work, 416 before the ablation; +265 net-new incl. 21 momentum, 20 ablation, + the innovation-increment and partner-alignment suites) |
+| Test suite | `npx mocha` | **498 passing** (was 218 at the eval, 302 after the risk-overlay work, 416 before the ablation; +280 net-new incl. 21 momentum, 20 ablation, + the innovation, partner-alignment and real-series suites) |
 | Headline report byte-repro | `npx ts-node backtest/momentum.ts` then `git diff` | **no diff** (byte-identical) |
 | Frozen report byte-repro | `npm run backtest` then `git diff --stat backtest/` | **no diff** (byte-identical) |
 | Reports tracked | `git ls-files backtest/*.json` | `report.json` (frozen anchor), `report-momentum.json` (headline), `report-ablation.json` (layer attribution), `report-fullcoverage.json`, `report-search.json`, `report-crosssectional.json`, `report-cmc-compare.json` |
@@ -56,7 +56,7 @@ On the **held-out OOS** tail (trailing 30%, 300 daily bars/token — the 2026 dr
 ```
 $ npx ts-node backtest/momentum.ts          # regenerates report-momentum.json byte-identically
 $ npx ts-node backtest/robustness-momentum.ts   # read-only stress matrix (writes nothing)
-$ npx mocha   # → 483 passing; test/momentum.test.ts pins: selection in-sample only (NOT the OOS
+$ npx mocha   # → 498 passing; test/momentum.test.ts pins: selection in-sample only (NOT the OOS
               #   argmax), OOS verdict vs a fresh strict B&H (cannot be faked positive),
               #   look-ahead/truncation-invariance, byte-repro, frozen report.json untouched.
 ```
@@ -76,7 +76,7 @@ $ npx mocha   # → 483 passing; test/momentum.test.ts pins: selection in-sample
 **Command + output.**
 ```
 $ npx ts-node backtest/cmc-compare.ts   # regenerates report-cmc-compare.json
-$ npx mocha   # → 483 passing; cmcAdvisory + cmcLive cassette tests green.
+$ npx mocha   # → 498 passing; cmcAdvisory + cmcLive cassette tests green.
 ```
 
 Note: CMC's Fear & Greed is now also wired LIVE as the contrarian regime gate for the directional strategy — see the keyed capture in `fixtures/cmc/live/` (F&G = 23) and Gap 7.
@@ -114,7 +114,7 @@ Note: CMC's Fear & Greed is now also wired LIVE as the contrarian regime gate fo
 ```
 $ npx ts-node backtest/crossSectional.ts   # regenerates report-crosssectional.json
 $ npx ts-node backtest/ablation.ts         # regenerates report-ablation.json (byte-reproducible)
-$ npx mocha   # → 483 passing; crossSectional + ablation truncation-invariance + honesty tests green.
+$ npx mocha   # → 498 passing; crossSectional + ablation truncation-invariance + honesty tests green.
 ```
 
 **Residual caveat.** The "novel" overlays do **not** attributably earn on the held-out daily OOS — the F&G gate is rounding-level and the divergence filter is inert (`report-ablation.json`), and the cross-sectional arm does **NOT** beat B&H on its rising OOS tail (`report-crosssectional.json` `crossSectionalBeatsBuyHoldOOS:false`). Their claimed value is the look-ahead-safe relative-value construct, its measurable difference from the per-token engine, and the risk-control veto — reported as-is, never a fabricated edge.
@@ -165,7 +165,7 @@ Field-path anchors (robust to line shifts) are used where exact lines moved acro
 | Frozen contrarian loss −36.5% / OOS −18.1% etc. | README, SUBMISSION.md | `report.json:202-239` | ✅ exact (retained anchor) |
 | Cross-sectional OOS −1.11% vs −4.50%, DD 1.17% vs 4.67%, 29 vs 86 trades | README, CHANGES Gap 4 | `report-crosssectional.json:280-311` | ✅ exact (divergence-side) |
 | Ablation: trend core A1 OOS −0.35% / maxDD 17.75%; F&G gate Δret +0.03% / ΔSharpe +0.0011; div filter ΔSharpe −3e-12, trim=11/veto=0; `divergenceAddsValue:false` | README, SKILL.md, DEMO.md, SUBMISSION.md, CHANGES Gap 4 | `report-ablation.json` `arms[0..2]` + `attribution` + `verdict` | ✅ exact (A3 == `runStrategy` byte-for-byte) |
-| Test suite 483 passing | README, DEMO.md, SUBMISSION.md, CHANGES, this snapshot | `npx mocha` (416 baseline + 20 ablation + 24 innovation + 23 partner-alignment) | ✅ exact |
+| Test suite 498 passing | README, DEMO.md, SUBMISSION.md, CHANGES, this snapshot | `npx mocha` (416 baseline + 20 ablation + 24 innovation + 23 partner-alignment + 15 real-series) | ✅ exact |
 | CMC moves the product (1497 bars changed) | SUBMISSION.md (implied), this doc | `report-cmc-compare.json:250-251,287` | ✅ exact |
 | 7 wired + 5 documented | README, SUBMISSION.md | `test/honesty.test.ts` + `SKILL.md` allowed-tools | ✅ pinned |
 | CMC-compare snapshot prose (F&G 82 / RSI 74) | `report-cmc-compare.json:23` (note) | actual run used 88/66 (`:20-21`) | ⚠️ stale prose — see Gap 2 caveat (byte-pinned; not edited) |
@@ -180,7 +180,7 @@ Field-path anchors (robust to line shifts) are used where exact lines moved acro
 4. **package-lock.json carries 2 pre-existing npm audit advisories** (1 moderate, 1 high) noted at baseline — not introduced by this work, not blocking.
 5. **Regime-fragility of the OOS beat** — every tail-OOS window in the daily dataset ends in the 2026 drawdown, so the disclosed adjacent-split robustness shares one bear-dodge mechanism; the only universally-robust claim is lower drawdown. Disclosed in `ROBUSTNESS-momentum.md`. (Gap 1)
 6. **The "novel" overlays do not attributably earn on the daily OOS** — the ablation (`report-ablation.json`) shows the trend core is the entire OOS earner; the F&G gate is rounding-level and the divergence/funding risk filter is numerically inert (`divergenceAddsValue:false`). We do not claim these layers earn; the originality rests on the composition + the look-ahead-safe relative-value cross-sectional construct (which also does not beat B&H). This is a deliberate honest reframe, not a hidden weakness. (Gap 4)
-7. **~~`ROBUSTNESS-momentum.md:39` cited "416 passing"~~ — RESOLVED.** Updated to **483 passing** (both occurrences, lines 39 and 171), verified by `npx mocha`. The substantive robustness numbers in that doc are unchanged and correct. (Gap 4)
+7. **~~`ROBUSTNESS-momentum.md:39` cited "416 passing"~~ — RESOLVED.** Updated to **498 passing** (both occurrences, lines 39 and 171), verified by `npx mocha`. The substantive robustness numbers in that doc are unchanged and correct. (Gap 4)
 
 **RESOLVED since the earlier draft:** the keyed live CMC round-trip is now **done and committed** (`fixtures/cmc/live/`, F&G = 23 — was a user-execute blocker, Gap 7); the formerly-untracked `_capture:"LIVE"` files are now genuine LIVE captures with `available:true` (no longer empty dry-runs).
 
