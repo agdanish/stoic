@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-contrast="normal">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -48,12 +48,6 @@
   --space-l: clamp(1.50rem, 1.20rem + 1.50vi, 2.50rem);
   --col-min: 18rem;                                      /* RAM auto-fit column floor */
   --gutter: clamp(16px, 3vw, 32px);                      /* shared page gutter */
-}
-html[data-contrast="high"]{
-  --gold:#FFD54A; --gold-dim:rgba(255,213,74,.22);
-  --surface:#171C25; --surface2:#1E242F; --border:#33405250;
-  --border:#3A4555; --text:#FFFFFF; --text2:#C7CEDB;
-  --green:#27E29A; --red:#FF6075; --blue:#7DA6FF; --amber:#FFB94A;
 }
 /* §11 ultrawide — raise the centered measure so 2560px screens don't letterbox (non-optional) */
 @media (min-width:1700px){ :root{ --maxw:clamp(1320px, 90vw, 1560px); } }
@@ -604,7 +598,6 @@ footer{border-top:1px solid var(--border); background:var(--surface); margin-top
       7 CMC tools wired <span class="badge">7</span>
     </a>
     <div class="right">
-      <button class="toggle-btn" id="contrast-toggle" aria-pressed="false" aria-label="Toggle projector / high-contrast mode">◐ Projector</button>
       <span class="muted-meta">436 tests · BNB Chain</span>
     </div>
   </div>
@@ -1703,14 +1696,6 @@ function wireUI(){
     this.setAttribute("aria-pressed", on); sampleOn=on;
     this.textContent = on ? "Demo: live read" : "Demo: sample regime";
     renderGauge(on);
-  });
-  // contrast / projector
-  $("#contrast-toggle").addEventListener("click", function(){
-    const on = document.documentElement.getAttribute("data-contrast")!=="high";
-    document.documentElement.setAttribute("data-contrast", on?"high":"normal");
-    this.setAttribute("aria-pressed", on);
-    setNeedle(M.cmc.fearGreed, false);
-    $("#gauge-bands").innerHTML = buildGaugeBands();
   });
   // deprecated lazy fetch on first expand
   $("#acc-dep").addEventListener("toggle", function(){ if(this.open) loadDeprecated(); });
