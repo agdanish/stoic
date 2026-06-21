@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://stoic/skills/sentiment-divergence-regime/capsule.schema.json",
   "title": "Stoic — Strategy Capsule",
-  "description": "Machine-readable, backtestable strategy SPEC emitted by the sentiment-divergence-regime CMC Skill. The engineConstants below snapshot the look-ahead-safe conviction/divergence engine (src/signal/divergence.ts, src/signal/core.ts); the full shipped strategy composes a directional trend/momentum core (src/signal/momentum.ts) and a Fear & Greed contrarian regime gate on top, with the positioning/flow divergence overlay demoted to a numerically near-inert OOS risk filter — see SKILL.md and backtest/report-momentum.json. All numeric rules reference the engine's EXPORTED constants by name — the engine is the single source of truth; constantValues below are a snapshot only.",
+  "description": "Machine-readable, backtestable strategy SPEC emitted by the sentiment-divergence-regime CMC Skill. The engineConstants below snapshot the FULL shipped pipeline: a directional trend/momentum core (src/signal/momentum.ts — the OOS earner) modulated by a Fear & Greed contrarian regime gate (src/signal/regimeGate.ts), assembled through a look-ahead-safe conviction engine (src/signal/core.ts), with a positioning/flow divergence overlay (src/signal/divergence.ts) demoted to a numerically near-inert OOS risk filter (src/signal/strategy.ts) — see SKILL.md and backtest/report-momentum.json. All numeric rules reference the engine's EXPORTED constants by name — the engine is the single source of truth; constantValues below are a snapshot only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -75,7 +75,17 @@
         "ENTRY_MAX",
         "CALIBRATION_STEP",
         "REGIME_FLATTEN_BAND",
-        "STRONG_DIVERGENCE"
+        "STRONG_DIVERGENCE",
+        "EMA_FAST",
+        "EMA_SLOW",
+        "TREND_FULL_SEP",
+        "MOMENTUM_FULL_RET",
+        "TREND_WEIGHT",
+        "MOMENTUM_WEIGHT",
+        "GATE_MAX",
+        "GATE_MIN",
+        "RISK_FILTER_TRIM",
+        "RISK_FILTER_VETO_INTENSITY"
       ],
       "properties": {
         "ZSCORE_WINDOW": { "type": "number", "description": "src/signal/divergence.ts — rolling z-score lookback W (bars). Snapshot: 48." },
@@ -94,7 +104,17 @@
         "ENTRY_MAX": { "type": "number", "description": "src/signal/core.ts — upper bound of the calibrated entry threshold. Snapshot: 220." },
         "CALIBRATION_STEP": { "type": "number", "description": "src/signal/core.ts — entry-threshold nudge per resolved outcome. Snapshot: 10." },
         "REGIME_FLATTEN_BAND": { "type": "number", "description": "src/signal/core.ts — |divergenceBias-500| below this => pull toward flat. Snapshot: 60." },
-        "STRONG_DIVERGENCE": { "type": "number", "description": "src/signal/core.ts — |divergenceBias-500| at/above this => full-weight branch. Snapshot: 200." }
+        "STRONG_DIVERGENCE": { "type": "number", "description": "src/signal/core.ts — |divergenceBias-500| at/above this => full-weight branch. Snapshot: 200." },
+        "EMA_FAST": { "type": "number", "description": "src/signal/momentum.ts — fast EMA span (bars) for the directional trend core. Snapshot: 20." },
+        "EMA_SLOW": { "type": "number", "description": "src/signal/momentum.ts — slow EMA span (bars). Snapshot: 50." },
+        "TREND_FULL_SEP": { "type": "number", "description": "src/signal/momentum.ts — normalized EMA separation (fast-slow)/slow at which the trend bias saturates. Snapshot: 0.06." },
+        "MOMENTUM_FULL_RET": { "type": "number", "description": "src/signal/momentum.ts — lookback return at which the momentum bias saturates. Snapshot: 0.15." },
+        "TREND_WEIGHT": { "type": "number", "description": "src/signal/momentum.ts — weight of the trend leg in the directional blend. Snapshot: 0.6." },
+        "MOMENTUM_WEIGHT": { "type": "number", "description": "src/signal/momentum.ts — weight of the momentum leg in the directional blend. Snapshot: 0.4." },
+        "GATE_MAX": { "type": "number", "description": "src/signal/regimeGate.ts — max Fear & Greed gate multiplier (extreme-fear long boost). Snapshot: 1.25." },
+        "GATE_MIN": { "type": "number", "description": "src/signal/regimeGate.ts — min Fear & Greed gate multiplier (extreme-greed trim). Snapshot: 0.4." },
+        "RISK_FILTER_TRIM": { "type": "number", "description": "src/signal/strategy.ts — size multiplier when the divergence/funding risk filter trims (demoted overlay). Snapshot: 0.5." },
+        "RISK_FILTER_VETO_INTENSITY": { "type": "number", "description": "src/signal/strategy.ts — risk-filter intensity at/above which a position is vetoed. Snapshot: 0.6." }
       }
     },
     "regime": {

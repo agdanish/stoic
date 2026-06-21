@@ -56,6 +56,19 @@ import {
   STRONG_DIVERGENCE,
 } from "../src/signal/signalEngine";
 import { readRegime, regimeGain } from "../src/signal/divergence";
+// directional trend/momentum core + F&G gate + risk-filter constants (the headline
+// strategy that runStrategy/report-momentum.json runs) — folded into the Capsule snapshot
+// so the machine-checkable spec documents the actual OOS earner, not just the conviction engine.
+import {
+  EMA_FAST,
+  EMA_SLOW,
+  TREND_FULL_SEP,
+  MOMENTUM_FULL_RET,
+  TREND_WEIGHT,
+  MOMENTUM_WEIGHT,
+} from "../src/signal/momentum";
+import { GATE_MAX, GATE_MIN } from "../src/signal/regimeGate";
+import { RISK_FILTER_TRIM, RISK_FILTER_VETO_INTENSITY } from "../src/signal/strategy";
 
 const SCHEMA_PATH = path.resolve(
   __dirname,
@@ -174,6 +187,19 @@ function engineConstantsSnapshot() {
     CALIBRATION_STEP,
     REGIME_FLATTEN_BAND,
     STRONG_DIVERGENCE,
+    // directional trend/momentum core (src/signal/momentum.ts) — the OOS earner
+    EMA_FAST,
+    EMA_SLOW,
+    TREND_FULL_SEP,
+    MOMENTUM_FULL_RET,
+    TREND_WEIGHT,
+    MOMENTUM_WEIGHT,
+    // Fear & Greed contrarian regime-gate multipliers (src/signal/regimeGate.ts)
+    GATE_MAX,
+    GATE_MIN,
+    // positioning/funding divergence RISK FILTER (src/signal/strategy.ts) — demoted, inert OOS
+    RISK_FILTER_TRIM,
+    RISK_FILTER_VETO_INTENSITY,
   };
 }
 
