@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Stoic — Unmoved by Fear &amp; Greed · AI Crypto-Trading Agent</title>
-  <meta name="description" content="Stoic is an AI crypto-trading agent unmoved by the crowd's Fear & Greed: a regime-aware directional core gated by CoinMarketCap's live Fear & Greed, with a divergence/funding risk filter. In the held-out 2026 bear it roughly halves max drawdown vs buy-and-hold — 17.7% vs 58.3%. BNB Hack: AI Trading Agent Edition, Track 2 + Best Use of CMC Agent Hub.">
+  <meta name="description" content="Stoic is an AI crypto-trading agent unmoved by the crowd's Fear & Greed: a regime-aware directional core gated by CoinMarketCap's Fear & Greed, with a divergence/funding risk filter. In the held-out 2026 bear it roughly halves max drawdown vs buy-and-hold — 17.7% vs 58.3%. BNB Hack: AI Trading Agent Edition, Track 2 + Best Use of CMC Agent Hub.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='5' y='20' width='22' height='4' rx='1' fill='%23F0B90B'/><rect x='7' y='14' width='18' height='4' rx='1' fill='%235B8DEF'/><rect x='9' y='8' width='14' height='4' rx='1' fill='%2316C784'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +20,7 @@
         Stoic
       </a>
       <div class="ld-navlinks">
-        <a href="#cmc">Live CMC</a>
+        <a href="#cmc">CMC Hub</a>
         <a href="#how">How it works</a>
         <a href="#proof">The proof</a>
         <a href="#honesty">Honesty</a>
@@ -33,7 +33,7 @@
     </div>
   </nav>
   <div class="ld-drawer">
-    <a href="#cmc">Live CMC</a>
+    <a href="#cmc">CMC Hub</a>
     <a href="#how">How it works</a>
     <a href="#proof">The proof</a>
     <a href="#honesty">Honesty</a>
@@ -47,7 +47,7 @@
       <div class="ld-reveal">
         <span class="ld-badge"><span class="dot fear"></span> BNB Hack · AI Trading Agent Edition · Fear &amp; Greed = 23 (Fear)</span>
         <h1 class="ld-h1">Unmoved by <span class="ac">Fear &amp; Greed</span>.</h1>
-        <p class="ld-sub">An AI trading agent that rides the trend, reads CoinMarketCap's live regime, and sits out the storm. <b>The edge is knowing when not to play.</b></p>
+        <p class="ld-sub">An AI trading agent that rides the trend, reads CoinMarketCap's regime, and sits out the storm. <b>The edge is knowing when not to play.</b></p>
         <p class="ld-sub" style="margin-top:14px">Held-out 2026 bear: roughly <b>half the max drawdown</b> of buy-and-hold — <b style="color:var(--green)">17.7%</b> vs <b style="color:var(--red)">58.3%</b>.</p>
         <div class="ld-cta-row">
           <a class="ld-btn gold lg" href="./index.html">Open the dashboard <span class="ld-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
@@ -70,7 +70,7 @@
     </div>
   </header>
 
-  <!-- ===================== RISING TERMINAL — live CMC MCP round-trip ===================== -->
+  <!-- ===================== RISING TERMINAL — keyed CMC MCP round-trip (captured 2026-06-17) ===================== -->
   <section class="ld-termband" id="cmc">
     <div class="ld-wrap">
       <div class="ld-term" id="ldTerm">
@@ -81,7 +81,7 @@
         <pre class="ld-term-body" id="ldTermBody"></pre>
         <div class="ld-term-badge">
           <span class="bdot"></span>
-          <div class="bt"><b>Live CMC Agent Hub</b><span>7 tools wired · MCP</span></div>
+          <div class="bt"><b>CMC Agent Hub</b><span>7 tools wired · MCP</span></div>
         </div>
       </div>
     </div>
@@ -112,33 +112,33 @@
       <div class="ld-wrap">
         <div class="ld-reveal">
           <span class="ld-eyebrow">How it works · the composition is the novelty</span>
-          <h2 class="ld-h2">A trend core. A <span class="ac">live regime gate</span>. A risk veto.</h2>
-          <p class="ld-lead">Not the canned "sentiment divergence" example — a regime-aware composition: a directional core that rides bulls, gated by CoinMarketCap's live Fear &amp; Greed, risk-filtered by positioning divergence.</p>
+          <h2 class="ld-h2">A trend core. A <span class="ac">regime gate</span>. A risk veto.</h2>
+          <p class="ld-lead">Not the canned "sentiment divergence" example — a regime-aware composition: a directional core that rides bulls, gated by CoinMarketCap's Fear &amp; Greed, risk-filtered by positioning divergence.</p>
         </div>
 
         <!-- 3-layer pipeline figure -->
         <div class="ld-pipe ld-reveal">
-          <div class="pl l1"><div class="pn">Layer 1 · regime</div><h4>Read live CMC</h4><p>Fear &amp; Greed, RSI(14), BTC dominance, funding — the live market regime, straight from CoinMarketCap.</p><div class="bar"></div></div>
+          <div class="pl l1"><div class="pn">Layer 1 · regime</div><h4>Read CMC regime</h4><p>Fear &amp; Greed, RSI(14), BTC dominance, funding — the market regime, straight from CoinMarketCap.</p><div class="bar"></div></div>
           <div class="pl l2"><div class="pn">Layer 2 · core</div><h4>Directional trend core</h4><p>Rides the bull, goes flat in bear/chop. <b>The OOS earner</b> per the honest ablation.</p><div class="bar"></div></div>
           <div class="pl l3"><div class="pn">Layer 3 · gate + veto</div><h4>Gate &amp; risk filter</h4><p>Fear &amp; Greed gate trims greed / favours fear; a divergence/funding overlay vetoes euphoric entries.</p><div class="bar"></div></div>
         </div>
 
         <div class="ld-steps ld-stagger">
-          <div class="ld-step"><div class="n">01</div><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div><h3>Read live CMC regime</h3><p>Fear &amp; Greed, RSI(14), BTC dominance and funding — the live regime read from CoinMarketCap's Agent Hub.</p></div>
+          <div class="ld-step"><div class="n">01</div><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div><h3>Read CMC regime</h3><p>Fear &amp; Greed, RSI(14), BTC dominance and funding — the regime read from CoinMarketCap's Agent Hub.</p></div>
           <div class="ld-step"><div class="n">02</div><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg></div><h3>Directional trend core</h3><p>A trend/momentum core that rides the bull and goes flat in bear/chop — the OOS earner per the internal ablation.</p></div>
-          <div class="ld-step"><div class="n">03</div><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><circle cx="12" cy="8" r="3"/><circle cx="12" cy="16" r="3"/></svg></div><h3>Fear &amp; Greed gate</h3><p>The contrarian regime gate: trim into extreme greed, favour longs in extreme fear. CMC's live read drives it.</p></div>
+          <div class="ld-step"><div class="n">03</div><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><circle cx="12" cy="8" r="3"/><circle cx="12" cy="16" r="3"/></svg></div><h3>Fear &amp; Greed gate</h3><p>The contrarian regime gate: trim into extreme greed, favour longs in extreme fear. CMC's Fear &amp; Greed read drives it.</p></div>
           <div class="ld-step"><div class="n">04</div><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M15 9l-6 6M9 9l6 6"/></svg></div><h3>Divergence risk filter</h3><p>A positioning/funding overlay vetoes entries on euphoric positioning. <b>→ the result: sit out the storm.</b></p></div>
         </div>
       </div>
     </section>
 
-    <!-- ===================== LIVE CMC REGIME GAUGE (dark) — special prize ===================== -->
+    <!-- ===================== CMC REGIME GAUGE (captured snapshot, dark) — special prize ===================== -->
     <section class="ld-section" id="regime" data-theme="dark">
       <div class="ld-wrap">
         <div class="ld-reveal">
-          <span class="ld-eyebrow">Best Use of CMC Agent Hub · live regime read</span>
-          <h2 class="ld-h2">CoinMarketCap's <span class="ac">live Fear &amp; Greed</span> is the gate.</h2>
-          <p class="ld-lead">A real keyed MCP round-trip across 7 wired tools surfaces the live regime. Today it reads <b>Fear</b> — so the contrarian gate favours longs.</p>
+          <span class="ld-eyebrow">Best Use of CMC Agent Hub · keyed regime capture</span>
+          <h2 class="ld-h2">CoinMarketCap's <span class="ac">Fear &amp; Greed</span> is the gate.</h2>
+          <p class="ld-lead">A real keyed MCP round-trip across 7 wired tools — a committed <b>capture from 2026-06-17</b> (a snapshot, not a real-time feed). This capture reads <b>Fear</b>, so the contrarian gate favours longs.</p>
         </div>
         <div class="ld-gauge ld-reveal">
           <svg viewBox="0 0 200 118" role="img" aria-label="Fear and Greed gauge at 23, Fear">
@@ -159,7 +159,7 @@
             <div class="gv">23</div>
             <div class="gl">Fear</div>
             <div class="gact">● gate action → favour longs</div>
-            <p>Live reads this round-trip: RSI(14) <b>41.85</b> · BTC dominance <b>58.26%</b>. In Fear, the contrarian gate leans into the directional core.</p>
+            <p>This keyed capture (2026-06-17 19:36 UTC): RSI(14) <b>41.85</b> · BTC dominance <b>58.26%</b>. In Fear, the contrarian gate leans into the directional core.</p>
           </div>
         </div>
       </div>

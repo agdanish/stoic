@@ -218,7 +218,7 @@
     var body = $('#ldTermBody'); if (!body) return;
     var L = [
       '<span class="c-p">$</span> <span class="c-cmd">stoic skill run sentiment-divergence-regime --symbol BTC</span>',
-      '<span class="c-mut">CMC Agent Hub · MCP round-trip · keyed session</span>',
+      '<span class="c-mut">CMC Agent Hub · MCP round-trip · keyed capture 2026-06-17</span>',
       '',
       '<span class="c-ai">→ search_cryptos</span>                        <span class="c-mut">resolve BTC / ETH / BNB</span>',
       '<span class="c-ai">→ get_crypto_quotes_latest</span>             <span class="c-mut">spot + 24h</span>',
@@ -228,7 +228,7 @@
       '<span class="c-ai">→ trending_crypto_narratives</span>          <span class="c-mut">crowd narratives</span>',
       '<span class="c-ai">→ get_crypto_metrics</span>                   <span class="c-mut">on-chain / supply</span>',
       '',
-      '<span class="c-amber">Fear &amp; Greed = 23  →  "Fear"</span>   <span class="c-mut">(live regime read)</span>',
+      '<span class="c-amber">Fear &amp; Greed = 23  →  "Fear"</span>   <span class="c-mut">(keyed capture · 2026-06-17)</span>',
       '<span class="c-ok">✓ regime gate: FEAR → favour longs</span>  <span class="c-mut">· 7 tools wired</span>'
     ];
     body.innerHTML = L.join('\n');
