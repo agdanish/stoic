@@ -45,7 +45,7 @@
     "regimeGain": 1.35
   },
   "universe": {
-    "barInterval": "1h",
+    "barInterval": "1d",
     "pairConvention": "<SYMBOL>USDT",
     "symbols": [
       { "symbol": "BTC", "cmcId": 1, "resolved": true }
@@ -122,6 +122,7 @@
     "The OOS earner is the vanilla directional EMA trend/momentum core (EMA_FAST/EMA_SLOW, TREND_WEIGHT/MOMENTUM_WEIGHT). The Fear & Greed contrarian gate and the divergence/funding RISK FILTER are near-INERT out-of-sample by the committed ablation — they are documented here for transparency, not claimed as drivers.",
     "This live BTC example: F&G=23 (extreme-fear) with funding 0.0006212 above FUNDING_STRETCHED=0.0005, so the contrarian regime favors LONG (favoredSide=+1, regimeGain at REGIME_GATE_MAX=1.35). The divergence legs (crowdZ/flowZ) need ~30d of positioning history that the live read alone does not carry, so they are null/warming here and the divergence overlay contributes no edge on this bar.",
     "cmcId for BTC is the CMC numeric id (1) from search_cryptos; it is never guessed.",
-    "The live CMC narrative term is attention MOMENTUM, not sentiment polarity (folded as a bounded advisory; a strict {0,0} no-op when absent)."
+    "The live CMC narrative term is attention MOMENTUM, not sentiment polarity (folded as a bounded advisory; a strict {0,0} no-op when absent).",
+    "DEFAULT-vs-SELECTED disclosure (no contradiction): engineConstants here are the MODULE DEFAULT export values (EMA_FAST=20 / EMA_SLOW=50, allowShort path enabled, src/signal/momentum.ts) — the single source of truth the rules cite by name. The SELECTED headline backtest (backtest/report-momentum.json) runs the swept winner 'long-only + EMA 30/80' (emaFast=30 / emaSlow=80, allowShort=false), chosen on the in-sample 70% only. So the snapshot constants (20/50) and the reported config (30/80 long-only) intentionally differ — the same default-vs-selected split README.md and SKILL.md disclose — not a copied-then-drifted value."
   ]
 }

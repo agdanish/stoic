@@ -157,6 +157,34 @@ describe("capsule.example.json — the shipped BTC example Capsule", () => {
     expect(example.regime.fearGreed).to.be.at.most(example.engineConstants.FEAR_EXTREME);
   });
 
+  it("uses the DAILY bar interval that matches the headline backtest (report-momentum.json interval '1d')", () => {
+    const report = JSON.parse(fs.readFileSync(REPORT_PATH, "utf8"));
+    // The headline backtest is DAILY; the capsule's universe must say the same, not "1h".
+    expect(report.dataSource.interval).to.equal("1d");
+    expect(example.universe.barInterval).to.equal("1d");
+    expect(example.universe.barInterval).to.equal(report.dataSource.interval);
+  });
+
+  it("discloses the DEFAULT (module) vs SELECTED (backtest) EMA split so the capsule is self-consistent", () => {
+    const report = JSON.parse(fs.readFileSync(REPORT_PATH, "utf8"));
+    // engineConstants snapshot the MODULE DEFAULT export (EMA 20/50)...
+    expect(example.engineConstants.EMA_FAST).to.equal(20);
+    expect(example.engineConstants.EMA_SLOW).to.equal(50);
+    expect(report.params.moduleConstants.EMA_FAST).to.equal(20);
+    expect(report.params.moduleConstants.EMA_SLOW).to.equal(50);
+    // ...while the SELECTED headline backtest runs the swept winner EMA 30/80, long-only.
+    expect(report.selectedConfig.emaFast).to.equal(30);
+    expect(report.selectedConfig.emaSlow).to.equal(80);
+    expect(report.selectedConfig.allowShort).to.equal(false);
+    // The capsule notes must SURFACE this default-vs-selected split (both pairs named),
+    // so a reader sees the disclosed gap, not a silent contradiction.
+    const notesBlob = (example.notes as string[]).join("\n");
+    expect(notesBlob).to.match(/20\s*\/\s*50/); // module default pair
+    expect(notesBlob).to.match(/30\s*\/\s*80/); // selected backtest pair
+    expect(notesBlob.toLowerCase()).to.contain("default");
+    expect(notesBlob.toLowerCase()).to.contain("selected");
+  });
+
   it("tells the HONEST headline OOS story (drawdown overlay, NOT alpha) and ties it to report-momentum.json", () => {
     const report = JSON.parse(fs.readFileSync(REPORT_PATH, "utf8"));
     const oos = report.aggregate.outOfSample;

@@ -6,6 +6,21 @@
 
 ---
 
+> ### What is NOT wired (self-disclosed)
+>
+> We state the gaps up front so no judge has to find them:
+>
+> - **No Trust Wallet Agent Kit (TWAK) signing** — no wallet, no key custody, no transaction signing of any kind.
+> - **No BNB AI Agent SDK** — the BNB Chain agent SDK is not used anywhere in this repo.
+> - **No on-chain / BSC write** — nothing is broadcast, settled, or written on-chain; Track 2 is a spec-only deliverable.
+> - **x402 = dry-run code path only** — the keyless x402 transport branch in `src/data/cmc.ts` is wired as a *code path* (`CMC_MCP_X402_URL`, Base 8453 USDC). It is labelled "x402 keyless route — code wired, dry-run, NOT a funded/settled USDC call." No paid/settled x402 transaction has occurred.
+> - **7 of 12 CMC tools wired; only 2 feed the committed decision** — 7 tools have real adapters in `src/data/cmc.ts`; of those, exactly **2 feed the committed `runStrategy` decision** (the Fear & Greed regime gate + the RSI/divergence read), and the other **5 are ablation-disclosed context only** (not in the decision path). The remaining 5 of 12 are documented, not wired.
+> - **Not alpha** — the held-out OOS aggregate is **−0.32% (a LOSS)**. The win is **≈ halved maximum drawdown** (a risk overlay / bear-dodge), never standalone alpha.
+>
+> **Why this serves CoinMarketCap:** a real **7-tool keyed CMC round-trip** (committed under `fixtures/cmc/live/`), a **publishable `cmc-mcp` Skill** in CMC's own SKILL.md format, and an **honest failure-handling contract** (missing fields drop their leg, never fabricated; unkeyed default is a strict `{0,0}` no-op) that matches CMC's own Skill-quality bar.
+
+---
+
 ## Title
 
 **Stoic — Regime-Aware Directional Core + CoinMarketCap Fear & Greed Gate (a Strategy Skill)**

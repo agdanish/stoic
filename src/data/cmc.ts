@@ -30,6 +30,23 @@ import * as path from "path";
 
 // ── config ──────────────────────────────────────────────────────────────────
 export const CMC_MCP_URL = "https://mcp.coinmarketcap.com/mcp";
+
+/**
+ * x402 KEYLESS route — CODE PATH, DRY-RUN, NOT a funded/settled USDC call.
+ *
+ * CoinMarketCap also exposes the same MCP tools behind an x402-paywalled endpoint that
+ * takes per-call micropayments (USDC on Base, chain id 8453, ~$0.01/call) INSTEAD of an
+ * API key. This constant + buildX402Request() below construct the request SHAPE for that
+ * route so the keyless path is wired and unit-testable. They DO NOT perform a payment:
+ * there is NO wallet, NO signature, NO USDC transfer, NO settled transaction here — only
+ * the un-paid HTTP request shape (the one that, on the real endpoint, would come back 402
+ * Payment Required with an `accepts` challenge). Claiming a completed paid x402 call would
+ * be false. This is a dry-run code path ONLY.
+ */
+export const CMC_MCP_X402_URL = "https://mcp.coinmarketcap.com/x402/mcp";
+/** Settlement network for the x402 keyless route (dry-run metadata, not used to pay). */
+export const X402_NETWORK = { name: "base", chainId: 8453, asset: "USDC", pricePerCall: "$0.01" } as const;
+
 const FIXTURE_DIR = path.resolve(__dirname, "../../fixtures/cmc");
 
 // ── normalized result types ───────────────────────────────────────────────────
@@ -230,6 +247,55 @@ export function hasLiveKey(): boolean {
 }
 
 /**
+ * x402 keyless route — CODE PATH, DRY-RUN, NOT a funded/settled USDC call.
+ *
+ * Opt-in flag for the keyless x402 transport branch. Set CMC_X402=1 (and NO CMC_MCP_API_KEY)
+ * to make callTool() construct the keyless request shape against CMC_MCP_X402_URL instead of
+ * reading a fixture. This is ADDITIVE: the keyed branch (hasLiveKey) remains the default and
+ * takes precedence; the fixture branch remains the fallback. Enabling this flag does NOT pay
+ * anything — see buildX402Request().
+ */
+export function useX402Keyless(): boolean {
+  return !hasLiveKey() && !!(process.env.CMC_X402 && process.env.CMC_X402.trim());
+}
+
+/**
+ * x402 keyless route — CODE PATH, DRY-RUN, NOT a funded/settled USDC call.
+ *
+ * Build the OUTGOING JSON-RPC `tools/call` request for the keyless x402 endpoint. This is the
+ * UN-PAID request — the first hop of the x402 handshake that, on the real server, returns
+ * `402 Payment Required` with an `accepts` payment challenge. We deliberately do NOT attach an
+ * `X-PAYMENT` header, a wallet, a signature, or any USDC transfer: there is no settlement here.
+ * A real funded call would (1) send this request, (2) receive the 402 challenge, (3) sign a
+ * USDC-on-Base authorization and retry with `X-PAYMENT` — steps (2)/(3) are NOT implemented and
+ * NOT claimed. Pure request-shape construction so the keyless path is wired + unit-testable.
+ */
+export function buildX402Request(
+  tool: string,
+  args: Record<string, any> = {}
+): { url: string; method: "POST"; headers: Record<string, string>; body: string; settlement: typeof X402_NETWORK } {
+  return {
+    url: CMC_MCP_X402_URL,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json, text/event-stream",
+      // NOTE: NO X-CMC-MCP-API-KEY and NO X-PAYMENT header. This is the un-paid, dry-run
+      // request shape only — the keyed branch carries the API key; a funded x402 call (not
+      // implemented) would add an X-PAYMENT header after signing the 402 challenge.
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name: tool, arguments: args },
+    }),
+    // Dry-run settlement metadata describing what a funded call WOULD cost — informational only.
+    settlement: X402_NETWORK,
+  };
+}
+
+/**
  * Call one MCP tool. LIVE when `CMC_MCP_API_KEY` is set (HTTP POST JSON-RPC), else
  * FIXTURE mode reading fixtures/cmc/<tool>.json. Returns the RAW envelope (callers
  * pass it through `unwrapMcp` + a defensive parser). NEVER throws — returns `{}` on any
@@ -244,7 +310,13 @@ export async function callTool(
   args: Record<string, any> = {},
   fixtureName?: string
 ): Promise<any> {
-  if (!hasLiveKey()) return readFixture(fixtureName ?? tool);
+  // 1) KEYED LIVE branch (DEFAULT) — unchanged: keyed round-trip wins whenever a key is set.
+  // 2) x402 KEYLESS branch (opt-in, dry-run) — code path only; see callToolX402 below.
+  // 3) FIXTURE branch (fallback) — offline pinned samples.
+  if (!hasLiveKey()) {
+    if (useX402Keyless()) return callToolX402(tool, args, fixtureName);
+    return readFixture(fixtureName ?? tool);
+  }
 
   try {
     const res = await fetch(CMC_MCP_URL, {
@@ -293,6 +365,44 @@ export async function callTool(
       if (/^\s*(data:|event:|id:)/m.test(body)) return parseSse(body);
       try {
         return JSON.parse(body);
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  } catch {
+    return {}; // network / parse failure -> no-op upstream
+  }
+}
+
+/**
+ * x402 keyless route — CODE PATH, DRY-RUN, NOT a funded/settled USDC call.
+ *
+ * Keyless transport branch. Constructs the un-paid x402 request via buildX402Request() and
+ * (only when CMC_X402_FETCH=1) issues that ONE un-paid request. It does NOT pay: there is no
+ * wallet, no signature, no USDC transfer, no X-PAYMENT retry. On the real endpoint that request
+ * returns `402 Payment Required`; we treat ANY non-2xx (including 402), a thrown fetch, or a
+ * disabled fetch as the documented degrade-to-`{}` no-op so the bounded-advisory layer passes
+ * through. By default (no CMC_X402_FETCH) it does no network at all and just degrades to `{}` —
+ * the request shape having been built and asserted by the unit test. NEVER throws.
+ */
+export async function callToolX402(
+  tool: string,
+  args: Record<string, any> = {},
+  _fixtureName?: string
+): Promise<any> {
+  // Always build the request shape (this is the testable artifact of the dry-run path).
+  const req = buildX402Request(tool, args);
+  // Default dry-run: do not touch the network at all. A funded/paid call is NOT implemented.
+  if (!(process.env.CMC_X402_FETCH && process.env.CMC_X402_FETCH.trim())) return {};
+  try {
+    const res = await fetch(req.url, { method: req.method, headers: req.headers, body: req.body });
+    // 402 Payment Required (or any non-OK) is EXPECTED on the un-paid request -> no-op {}.
+    // We never read or honor the `accepts` challenge: no payment is signed or sent.
+    if (!res || !(res as any).ok) return {};
+    if (typeof (res as any).json === "function") {
+      try {
+        return await (res as any).json();
       } catch {
         return {};
       }
