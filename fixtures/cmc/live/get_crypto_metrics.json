@@ -1,7 +1,7 @@
 {
   "_capture": "LIVE",
-  "_note": "RAW live tools/call envelope for \"get_crypto_metrics\" — captured 2026-06-17T19:36:35.175Z. NOT a SAMPLE fixture.",
-  "capturedAt": "2026-06-17T19:36:35.175Z",
+  "_note": "RAW live tools/call envelope for \"get_crypto_metrics\" — captured 2026-06-21T09:23:12.980Z. NOT a SAMPLE fixture.",
+  "capturedAt": "2026-06-21T09:23:12.980Z",
   "tool": "get_crypto_metrics",
   "args": {
     "id": "1"

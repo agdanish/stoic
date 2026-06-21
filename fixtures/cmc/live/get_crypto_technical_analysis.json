@@ -1,7 +1,7 @@
 {
   "_capture": "LIVE",
-  "_note": "RAW live tools/call envelope for \"get_crypto_technical_analysis\" — captured 2026-06-17T19:36:35.175Z. NOT a SAMPLE fixture.",
-  "capturedAt": "2026-06-17T19:36:35.175Z",
+  "_note": "RAW live tools/call envelope for \"get_crypto_technical_analysis\" — captured 2026-06-21T09:23:12.980Z. NOT a SAMPLE fixture.",
+  "capturedAt": "2026-06-21T09:23:12.980Z",
   "tool": "get_crypto_technical_analysis",
   "args": {
     "id": "1"
@@ -13,7 +13,7 @@
       "content": [
         {
           "type": "text",
-          "text": "{\"moving_averages\":{\"simple_moving_average_7_day\":\"64,367.92\",\"simple_moving_average_30_day\":\"69,523.92\",\"simple_moving_average_200_day\":\"77,394.28\",\"exponential_moving_average_7_day\":\"64,885.77\",\"exponential_moving_average_30_day\":\"68,358.89\",\"exponential_moving_average_200_day\":\"79,169.65\"},\"macd\":{\"macdLine\":\"-2,584.51\",\"signalLine\":\"-3,205.38\",\"histogram\":\"620.87\"},\"rsi\":{\"rsi7\":\"52.75\",\"rsi14\":\"41.85\",\"rsi21\":\"40.53\"},\"fibonacciLevels\":{\"swingHigh\":\"78,100.56\",\"swingLow\":\"59,108.92\",\"retracementLevels\":{\"50.0%\":\"68,604.74\",\"23.6%\":\"73,618.53\",\"38.2%\":\"70,845.75\",\"78.6%\":\"63,173.13\",\"61.8%\":\"66,363.72\"},\"extensionLevels\":{\"161.8%\":\"89,837.39\",\"127.2%\":\"83,266.29\",\"200.0%\":\"97,092.2\"}},\"pivotPoint\":\"65948.11\"}"
+          "text": "{\"moving_averages\":{\"simple_moving_average_7_day\":\"64,670.85\",\"simple_moving_average_30_day\":\"67,737.03\",\"simple_moving_average_200_day\":\"76,875.16\",\"exponential_moving_average_7_day\":\"64,143.04\",\"exponential_moving_average_30_day\":\"67,285.81\",\"exponential_moving_average_200_day\":\"78,634.05\"},\"macd\":{\"macdLine\":\"-2,196.24\",\"signalLine\":\"-2,690.68\",\"histogram\":\"494.45\"},\"rsi\":{\"rsi7\":\"47.06\",\"rsi14\":\"40.55\",\"rsi21\":\"39.67\"},\"fibonacciLevels\":{\"swingHigh\":\"77,990.87\",\"swingLow\":\"59,108.92\",\"retracementLevels\":{\"50.0%\":\"68,549.89\",\"23.6%\":\"73,534.73\",\"38.2%\":\"70,777.96\",\"78.6%\":\"63,149.65\",\"61.8%\":\"66,321.82\"},\"extensionLevels\":{\"161.8%\":\"89,659.91\",\"127.2%\":\"83,126.76\",\"200.0%\":\"96,872.82\"}},\"pivotPoint\":\"63898.82\"}"
         }
       ],
       "isError": false
@@ -21,39 +21,39 @@
   },
   "unwrapped": {
     "moving_averages": {
-      "simple_moving_average_7_day": "64,367.92",
-      "simple_moving_average_30_day": "69,523.92",
-      "simple_moving_average_200_day": "77,394.28",
-      "exponential_moving_average_7_day": "64,885.77",
-      "exponential_moving_average_30_day": "68,358.89",
-      "exponential_moving_average_200_day": "79,169.65"
+      "simple_moving_average_7_day": "64,670.85",
+      "simple_moving_average_30_day": "67,737.03",
+      "simple_moving_average_200_day": "76,875.16",
+      "exponential_moving_average_7_day": "64,143.04",
+      "exponential_moving_average_30_day": "67,285.81",
+      "exponential_moving_average_200_day": "78,634.05"
     },
     "macd": {
-      "macdLine": "-2,584.51",
-      "signalLine": "-3,205.38",
-      "histogram": "620.87"
+      "macdLine": "-2,196.24",
+      "signalLine": "-2,690.68",
+      "histogram": "494.45"
     },
     "rsi": {
-      "rsi7": "52.75",
-      "rsi14": "41.85",
-      "rsi21": "40.53"
+      "rsi7": "47.06",
+      "rsi14": "40.55",
+      "rsi21": "39.67"
     },
     "fibonacciLevels": {
-      "swingHigh": "78,100.56",
+      "swingHigh": "77,990.87",
       "swingLow": "59,108.92",
       "retracementLevels": {
-        "50.0%": "68,604.74",
-        "23.6%": "73,618.53",
-        "38.2%": "70,845.75",
-        "78.6%": "63,173.13",
-        "61.8%": "66,363.72"
+        "50.0%": "68,549.89",
+        "23.6%": "73,534.73",
+        "38.2%": "70,777.96",
+        "78.6%": "63,149.65",
+        "61.8%": "66,321.82"
       },
       "extensionLevels": {
-        "161.8%": "89,837.39",
-        "127.2%": "83,266.29",
-        "200.0%": "97,092.2"
+        "161.8%": "89,659.91",
+        "127.2%": "83,126.76",
+        "200.0%": "96,872.82"
       }
     },
-    "pivotPoint": "65948.11"
+    "pivotPoint": "63898.82"
   }
 }

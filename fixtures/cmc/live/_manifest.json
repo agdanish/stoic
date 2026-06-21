@@ -1,6 +1,6 @@
 {
   "_capture": "LIVE",
-  "capturedAt": "2026-06-17T19:36:35.175Z",
+  "capturedAt": "2026-06-21T09:23:12.980Z",
   "endpoint": "https://mcp.coinmarketcap.com/mcp",
   "tools": [
     {
@@ -39,41 +39,41 @@
     },
     "get_crypto_quotes_latest": {
       "price": {
-        "value": 64423.60777929984,
+        "value": 63936.15963920204,
         "available": true
       },
       "percentChange24h": {
-        "value": -1.82169664,
+        "value": 0.71487582,
         "available": true
       }
     },
     "get_crypto_technical_analysis": {
       "rsi": {
-        "value": 41.85,
+        "value": 40.55,
         "available": true
       },
       "macdHist": {
-        "value": 620.87,
+        "value": 494.45,
         "available": true
       }
     },
     "get_global_metrics_latest": {
       "fearGreed": {
-        "value": 23,
+        "value": 22,
         "available": true
       },
       "btcDominance": {
-        "value": 58.26,
+        "value": 58.4,
         "available": true
       }
     },
     "get_global_crypto_derivatives_metrics": {
       "fundingRate": {
-        "value": 0.0006212,
+        "value": 0.0034111,
         "available": true
       },
       "openInterest": {
-        "value": 407900000000,
+        "value": 370240000000,
         "available": true
       }
     },
