@@ -55,6 +55,40 @@ backtester, or a downstream execution agent can run and reproduce.
 > framework below admits. See `backtest/report-momentum.json`, `backtest/report-ablation.json`,
 > and `ROBUSTNESS-momentum.md`.
 
+## Verifiable & reproducible (what you can check, not what we claim)
+
+> **This Skill is built to be audited, not believed.** The deliverable is a schema-pinned
+> **Strategy Capsule** with a committed worked example, and every honesty admission is bound to a
+> committed report + a test that fails if the admission ever stops being true.
+>
+> - **Strategy Capsule + worked example** — the emitted spec validates against
+>   `capsule.schema.json`; a concrete, schema-validated example for BTC is committed at
+>   `skills/sentiment-divergence-regime/capsule.example.json` and pinned by
+>   `test/capsuleExample.test.ts` (isolated npm script, GREEN).
+> - **Published per-layer ablation (now incl. the A5 arm)** — `backtest/report-ablation.json`
+>   holds the in-sample-locked config fixed and toggles ONE overlay at a time on the held-out OOS
+>   (A1 trend-core-alone, A2 +F&G gate, A3 +divergence/funding filter, **A5 drawdown-bucket exposure
+>   scaler**). Every `verdict` is computed from the metrics, never hand-set, and pinned byte-for-byte
+>   by `test/ablation.test.ts`.
+> - **Multi-tool regime CLASSIFIER (deterministic, explainable)** — `backtest/cmc-regime-briefing.ts`
+>   composes the 7 wired CMC MCP tools into ONE regime read via a **pure classifier**
+>   (`classifyRegime`) that maps the normalized tool reads to exactly ONE label from a fixed enum
+>   `{BEAR_CAPITULATION_FAVOUR_LONG, GREED_TRIM, RISK_OFF_CROWDED_LONG, NEUTRAL_PASS_THROUGH,
+>   UNKNOWN_INSUFFICIENT_DATA}`. See "Multi-tool regime classifier" below.
+> - **Honest A5 framing (disclosed inert monitor, NOT a driver):** the A5 drawdown-bucket exposure
+>   scaler genuinely cuts OOS max drawdown by ~3.96pp (**17.75% → 13.79%**) but costs ~2.94pp of OOS
+>   return (**−0.35% → −3.29%**) and LOWERS Sharpe (−0.597 → −0.778, Δ −0.1819). By the committed
+>   bite criterion (OOS maxDD reduction ≥1pp AND OOS return give-up ≤2pp) it does **NOT bite**: the
+>   drawdown cut is real, the return give-up is too large. It is a reactive de-risking OVERLAY that
+>   de-risks AFTER price has fallen and lags re-entry on the sharp OOS recovery — the textbook honest
+>   failure mode of a reactive drawdown overlay — published as-is in `report-ablation.json`
+>   (`attribution.drawdownScaler`, `verdict.drawdownScalerBites: false`), **not** hidden,
+>   **not** alpha, **not** a driver/edge, and it does **not** beat buy-and-hold. The earner remains
+>   the vanilla EMA-30/80 trend core (A1's bear-dodge).
+> - **Deliverables:** repo-root `HONESTY-CONTRACT.md` (four-clause honesty contract, every claim
+>   pinned to `report*.json` + tests) and `guardrails.json` (four machine-readable Unattended-Use
+>   guardrails, every value cross-checked against committed code + `report-ablation.json`).
+
 ## Core Principle
 
 > **The deterministic engine is the product; CoinMarketCap is the live data + regime read; the
@@ -233,6 +267,33 @@ append the look-ahead-safe **backtest-replay** instructions so the reader can re
 a held-out window. Validate the JSON Capsule against `capsule.schema.json` (same folder) before
 returning it.
 
+## Multi-tool regime classifier (deterministic, explainable — `backtest/cmc-regime-briefing.ts`)
+
+The 7-tool CMC briefing no longer emits a flat string-joined `derivedStance`; it runs a **pure,
+deterministic classifier** (`classifyRegime`) that maps the normalized tool reads to **exactly ONE**
+label from a fixed enum:
+
+| Label | Fires when (cites the engine constants) |
+|---|---|
+| `BEAR_CAPITULATION_FAVOUR_LONG` | Fear & Greed ≤ `FEAR_EXTREME` (extreme fear → favour long) |
+| `GREED_TRIM` | Fear & Greed ≥ `GREED_EXTREME` (extreme greed → trim long) |
+| `RISK_OFF_CROWDED_LONG` | greed + stretched-positive funding (crowded longs unconfirmed) |
+| `NEUTRAL_PASS_THROUGH` | F&G neither extreme → regime gain 1.0 |
+| `UNKNOWN_INSUFFICIENT_DATA` | the decision-feeding leg is absent / non-finite |
+
+Honest scope of the classifier:
+
+- Only the **2 of 7** tools that feed the committed decision path drive the LABEL (the live Fear &
+  Greed contrarian gate + the divergence/funding risk filter); each contributing branch records a
+  `because` field citing the real engine constant (`FEAR_EXTREME` / `GREED_EXTREME`).
+- The other legs (funding, BTC dominance, trending narratives) are **context only** — they are
+  attached as `notes` and **never change the label**. Per-tool badges mark each tool "feeds decision
+  (2 of 7)" vs "context only".
+- It is a **classifier over a live regime read, not a backtest and not alpha**: the label describes
+  the current regime; it does not assert a return edge. Five unit tests pin the label boundaries
+  (`test/regimeBriefing.test.ts`) and the committed fixture (`fixtures/cmc/live/regime-briefing.json`)
+  is regenerated from the production parsers with NO key.
+
 ## Analysis framework
 
 - **Why a directional core (the new earner):** a contrarian signal cannot out-earn buy-and-hold in
@@ -363,12 +424,16 @@ BACKTEST-REPLAY INSTRUCTIONS (reproduce the result, look-ahead-safe)
   6. Determinism: with no CMC/LLM key the advisories are {0,0} no-ops, so report-momentum.json is
      byte-reproducible from the committed fixtures (rebuts "one lucky run"). The frozen original
      contrarian report.json is retained, byte-identical, as the original anchor.
-  7. npx ts-node backtest/cmc-regime-briefing.ts   # multi-tool CMC explainability TRACE: composes
-     ALL 7 wired CMC MCP tools into ONE regime briefing (call + real returned value + interpretation
-     per tool, then a combined regime read), replaying the committed live captures (fixtures/cmc/live/*.json)
-     through the production parsers with NO key → fixtures/cmc/live/regime-briefing.json. HONEST scope:
-     this is a regime briefing, NOT a backtest — only the Fear & Greed gate + RSI advisory feed the
-     committed decision; the other 5 tools are context, and derivedStance is a description, not alpha.
+  7. npx ts-node backtest/cmc-regime-briefing.ts   # multi-tool CMC explainability TRACE + deterministic
+     CLASSIFIER: composes ALL 7 wired CMC MCP tools into ONE regime briefing (call + real returned value
+     + interpretation per tool), then runs the PURE classifyRegime() to emit exactly ONE enum label
+     {BEAR_CAPITULATION_FAVOUR_LONG, GREED_TRIM, RISK_OFF_CROWDED_LONG, NEUTRAL_PASS_THROUGH,
+     UNKNOWN_INSUFFICIENT_DATA} with a `because` citing the engine constant; replays the committed live
+     captures (fixtures/cmc/live/*.json) through the production parsers with NO key →
+     fixtures/cmc/live/regime-briefing.json. HONEST scope: this is a regime CLASSIFIER, NOT a backtest —
+     only 2 of 7 tools (Fear & Greed gate + divergence/funding filter) feed the committed decision and
+     drive the label; the other legs are context-only `notes` that never change the label, and the label
+     is a regime description, not alpha. Label boundaries pinned by test/regimeBriefing.test.ts.
 ```
 
 ## Error handling

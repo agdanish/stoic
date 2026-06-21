@@ -36,7 +36,7 @@ nor the frozen `report.json`.
 | Check | Result |
 |---|---|
 | `tsc --noEmit` | exit 0 |
-| `npm test` | **436 passing** |
+| `npm test` | **460 passing** |
 | Look-ahead suite (truncation invariance incl. real fixtures) | green |
 | `report-momentum.json` byte-reproducible | yes (`ts-node backtest/momentum.ts` → no diff) |
 | Frozen `backtest/report.json` | byte-IDENTICAL, untouched |
@@ -168,5 +168,5 @@ a regime-independent beat the data does not support.
   next to it, all net-of-cost.
 - `backtest/robustness-momentum.ts` is a read-only harness — it writes no report and does
   not touch the frozen `report.json` or `report-momentum.json` (both verified byte-identical
-  after the run). It is not imported by any test; `tsc` stays exit 0 and the 436-test suite
+  after the run). It is not imported by any test; `tsc` stays exit 0 and the 460-test suite
   stays green with it present.

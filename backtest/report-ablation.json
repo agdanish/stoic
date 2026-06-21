@@ -23,7 +23,21 @@
     "slippageBps": 10,
     "oosFraction": 0.3,
     "barsPerYear": 365,
-    "costModelNote": "Transaction cost + slippage are a CONFIGURABLE ASSUMPTION (default 10 bps each), charged on |Δ signed notional| per position change, folded into equity. The exact organizer model is UNCONFIRMED."
+    "costModelNote": "Transaction cost + slippage are a CONFIGURABLE ASSUMPTION (default 10 bps each), charged on |Δ signed notional| per position change, folded into equity. The exact organizer model is UNCONFIRMED.",
+    "drawdownBuckets": {
+      "edges": {
+        "shallow": 0.05,
+        "mid": 0.15,
+        "deep": 0.25
+      },
+      "multipliers": {
+        "full": 1,
+        "mid": 0.66,
+        "deep": 0.4,
+        "floor": 0.2
+      },
+      "note": "A5 drawdown-bucket exposure scaler (src/signal/drawdownState.ts): exposure multiplier keyed on point-in-time underwater depth dd=1-equity/peak, using ONLY realized equity through the prior bar (look-ahead-safe). Edges IN-SAMPLE-biased (no OOS peeking); deliberately round to avoid curve-fit appearance."
+    }
   },
   "selectedConfig": {
     "emaFast": 30,
@@ -544,6 +558,176 @@
           }
         }
       ]
+    },
+    {
+      "id": "A5",
+      "label": "+drawdownScaler",
+      "desc": "Full pipeline (== A3) WITH the DRAWDOWN-BUCKET EXPOSURE SCALER (src/signal/drawdownState.ts): position size is multiplied by a de-risking ladder keyed on point-in-time underwater depth (dd<5%->1.0x, 5-15%->0.66x, 15-25%->0.4x, >=25%->0.2x), using ONLY realized equity through the prior bar. A drawdown OVERLAY, NOT an alpha source — measured vs A1 on the SAME held-out OOS.",
+      "layers": {
+        "fgGate": true,
+        "riskFilter": true
+      },
+      "riskActions": {
+        "trim": 11,
+        "veto": 0
+      },
+      "aggregate": {
+        "inSample": {
+          "totalReturn": 0.36589602553,
+          "buyAndHoldReturn": 2.620502619378,
+          "excessReturn": -2.254606593848,
+          "beatsBuyHold": false,
+          "sharpe": 0.822815295669,
+          "buyAndHoldSharpe": 1.504760925586,
+          "maxDrawdown": 0.214056274404,
+          "buyAndHoldMaxDrawdown": 0.421924262097,
+          "tradeCount": 45,
+          "bars": 2100
+        },
+        "outOfSample": {
+          "totalReturn": -0.032871593736,
+          "buyAndHoldReturn": -0.435033820369,
+          "excessReturn": 0.402162226633,
+          "beatsBuyHold": true,
+          "sharpe": -0.778490058219,
+          "buyAndHoldSharpe": -1.000405780621,
+          "maxDrawdown": 0.137893391874,
+          "buyAndHoldMaxDrawdown": 0.583020888755,
+          "tradeCount": 11,
+          "bars": 900
+        },
+        "full": {
+          "totalReturn": 0.326043951488,
+          "buyAndHoldReturn": 1.114030492073,
+          "excessReturn": -0.787986540585,
+          "beatsBuyHold": false,
+          "sharpe": 0.577969704139,
+          "buyAndHoldSharpe": 0.757158848915,
+          "maxDrawdown": 0.214056274404,
+          "buyAndHoldMaxDrawdown": 0.583020888755,
+          "tradeCount": 56,
+          "bars": 3000
+        }
+      },
+      "perToken": [
+        {
+          "symbol": "BTCUSDT",
+          "inSample": {
+            "totalReturn": 0.38063443018,
+            "buyAndHoldReturn": 3.232483350351,
+            "excessReturn": -2.851848920171,
+            "beatsBuyHold": false,
+            "sharpe": 0.907996380607,
+            "buyAndHoldSharpe": 1.793930996753,
+            "maxDrawdown": 0.193573430316,
+            "buyAndHoldMaxDrawdown": 0.280952767669,
+            "tradeCount": 16,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": -0.05016360171,
+            "buyAndHoldReturn": -0.429105155556,
+            "excessReturn": 0.378941553845,
+            "beatsBuyHold": true,
+            "sharpe": -2.036838625191,
+            "buyAndHoldSharpe": -1.280692089286,
+            "maxDrawdown": 0.059222557729,
+            "buyAndHoldMaxDrawdown": 0.511588857049,
+            "tradeCount": 7,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 0.311376834517,
+            "buyAndHoldReturn": 1.416302923912,
+            "excessReturn": -1.104926089395,
+            "beatsBuyHold": false,
+            "sharpe": 0.649795080307,
+            "buyAndHoldSharpe": 0.913614289838,
+            "maxDrawdown": 0.193573430316,
+            "buyAndHoldMaxDrawdown": 0.511588857049,
+            "tradeCount": 23,
+            "bars": 1000
+          }
+        },
+        {
+          "symbol": "ETHUSDT",
+          "inSample": {
+            "totalReturn": 0.216806707464,
+            "buyAndHoldReturn": 1.652283626685,
+            "excessReturn": -1.435476919221,
+            "beatsBuyHold": false,
+            "sharpe": 0.594147004952,
+            "buyAndHoldSharpe": 1.0862822926,
+            "maxDrawdown": 0.243323190419,
+            "buyAndHoldMaxDrawdown": 0.637519681165,
+            "tradeCount": 16,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": -0.078994104509,
+            "buyAndHoldReturn": -0.589203133505,
+            "excessReturn": 0.510209028996,
+            "beatsBuyHold": true,
+            "sharpe": -0.576285212233,
+            "buyAndHoldSharpe": -1.270584462458,
+            "maxDrawdown": 0.158728660417,
+            "buyAndHoldMaxDrawdown": 0.675151643085,
+            "tradeCount": 1,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 0.120686151247,
+            "buyAndHoldReturn": 0.089549802898,
+            "excessReturn": 0.031136348349,
+            "beatsBuyHold": true,
+            "sharpe": 0.311036612493,
+            "buyAndHoldSharpe": 0.381607475298,
+            "maxDrawdown": 0.243323190419,
+            "buyAndHoldMaxDrawdown": 0.675151643085,
+            "tradeCount": 17,
+            "bars": 1000
+          }
+        },
+        {
+          "symbol": "BNBUSDT",
+          "inSample": {
+            "totalReturn": 0.500246938946,
+            "buyAndHoldReturn": 2.976740881099,
+            "excessReturn": -2.476493942153,
+            "beatsBuyHold": false,
+            "sharpe": 0.966302501447,
+            "buyAndHoldSharpe": 1.634069487404,
+            "maxDrawdown": 0.205272202476,
+            "buyAndHoldMaxDrawdown": 0.347300337458,
+            "tradeCount": 13,
+            "bars": 700
+          },
+          "outOfSample": {
+            "totalReturn": 0.03054292501,
+            "buyAndHoldReturn": -0.286793172045,
+            "excessReturn": 0.317336097055,
+            "beatsBuyHold": true,
+            "sharpe": 0.277653662767,
+            "buyAndHoldSharpe": -0.449940790118,
+            "maxDrawdown": 0.195728957476,
+            "buyAndHoldMaxDrawdown": 0.562322166131,
+            "tradeCount": 3,
+            "bars": 300
+          },
+          "full": {
+            "totalReturn": 0.546068868699,
+            "buyAndHoldReturn": 1.836238749408,
+            "excessReturn": -1.290169880709,
+            "beatsBuyHold": false,
+            "sharpe": 0.773077419617,
+            "buyAndHoldSharpe": 0.976254781608,
+            "maxDrawdown": 0.205272202476,
+            "buyAndHoldMaxDrawdown": 0.562322166131,
+            "tradeCount": 16,
+            "bars": 1000
+          }
+        }
+      ]
     }
   ],
   "attribution": {
@@ -567,6 +751,15 @@
       },
       "addsValue": false,
       "summary": "A2 +fgGate OOS -0.32% (Sharpe -0.595462333326, maxDD 17.72%) → A3 +riskFilter OOS -0.32% (Sharpe -0.595462333329, maxDD 17.72%). Δreturn 0.00%, Δsharpe -0.0000, ΔmaxDD 0.00%. Risk filter fired trim=11 veto=0 across the full universe (3 tokens × 1000 bars)."
+    },
+    "drawdownScaler": {
+      "comparand": "A5 vs A1 (the UNSCALED trend-core bear-dodge that already carries the OOS result) on the SAME held-out OOS",
+      "deltaOOSReturn": -0.029381568604,
+      "deltaOOSSharpe": -0.181931467255,
+      "deltaOOSMaxDrawdown": -0.039564629091,
+      "bites": false,
+      "biteCriteria": "BITES iff OOS maxDD reduction >= 1pp AND OOS return give-up <= 2pp.",
+      "summary": "A1 trendOnly OOS -0.35% (Sharpe -0.596558590964, maxDD 17.75%) → A5 +drawdownScaler OOS -3.29% (Sharpe -0.778490058219, maxDD 13.79%). Δreturn -2.94%, Δsharpe -0.1819, ΔmaxDD -3.96%. It does NOT bite on this OOS: a disclosed, INERT monitor (like the A3 risk filter), reported as-is — never a driver/edge."
     }
   },
   "crossSectional": {
@@ -606,6 +799,8 @@
     "fgGateAddsValue": true,
     "divergenceAddsValue": false,
     "crossSectionalAddsValue": true,
+    "drawdownScalerBites": false,
+    "drawdownScalerStatement": "Drawdown-bucket exposure scaler (A5) vs the unscaled bear-dodge (A1) on the SAME OOS: Δreturn -2.94%, ΔmaxDD -3.96%, Δsharpe -0.1819. It does NOT bite on this OOS — a disclosed, INERT monitor exactly like the A3 risk filter, published as-is and never called a driver/edge.",
     "attributionStatement": "Trend core (A1) = the earner/bear-dodge. F&G gate (A2) adds marginal OOS risk-adjusted value. Divergence/funding risk filter (A3) is INERT/negligible on this OOS — it fired trim=11 veto=0 across the entire universe and leaves the OOS aggregate essentially unchanged (a non-earning safety veto, exactly as SKILL.md admits). Cross-sectional (A4) is a SEPARATE hourly-harness contrarian construct: it improves on the per-token divergence baseline (lower drawdown / less churn) but does NOT beat B&H on its rising OOS tail; it cannot be wired onto the daily trend core."
   }
 }

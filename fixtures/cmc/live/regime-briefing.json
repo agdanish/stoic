@@ -1,6 +1,6 @@
 {
   "_artifact": "CMC_REGIME_BRIEFING",
-  "_note": "Multi-tool REGIME BRIEFING / explainability trace over all 7 wired CMC MCP tools. NOT a backtest and NOT a claim that all 7 tools drive the strategy: only the Fear & Greed gate + RSI advisory feed the committed backtest decision; the other five tools are context. derivedStance is a regime DESCRIPTION from real engine constants, not a trade signal or alpha.",
+  "_note": "Multi-tool REGIME BRIEFING / explainability trace over all 7 wired CMC MCP tools. NOT a backtest and NOT a claim that all 7 tools drive the strategy: only the Fear & Greed gate + RSI advisory feed the committed backtest decision; the other five tools are context. derivedStance is a deterministic regime CLASSIFICATION (one enum label) from real engine constants, decided by ONLY those 2 decision-relevant legs — not a trade signal or alpha.",
   "mode": "FIXTURE_REPLAY",
   "generatedFrom": "fixtures/cmc/live/<tool>.json (committed _capture:LIVE envelopes, replayed offline)",
   "symbol": "BTC",
@@ -19,6 +19,36 @@
     "get_global_crypto_derivatives_metrics",
     "trending_crypto_narratives",
     "get_crypto_metrics"
+  ],
+  "toolBadges": [
+    {
+      "tool": "search_cryptos",
+      "badge": "context only"
+    },
+    {
+      "tool": "get_crypto_quotes_latest",
+      "badge": "context only"
+    },
+    {
+      "tool": "get_crypto_technical_analysis",
+      "badge": "feeds decision (2 of 7)"
+    },
+    {
+      "tool": "get_global_metrics_latest",
+      "badge": "feeds decision (2 of 7)"
+    },
+    {
+      "tool": "get_global_crypto_derivatives_metrics",
+      "badge": "context only"
+    },
+    {
+      "tool": "trending_crypto_narratives",
+      "badge": "context only"
+    },
+    {
+      "tool": "get_crypto_metrics",
+      "badge": "context only"
+    }
   ],
   "toolCallTrace": [
     {
@@ -167,5 +197,14 @@
       "leader": "Binance Ecosystem"
     }
   },
-  "derivedStance": "regime gate: extreme fear -> contrarian gate FAVOURS a long bias; RSI advisory: neutral; funding stretched -> risk-filter trigger armed (near-inert OOS per ablation)"
+  "derivedStance": "BEAR_CAPITULATION_FAVOUR_LONG",
+  "classification": {
+    "label": "BEAR_CAPITULATION_FAVOUR_LONG",
+    "because": "F&G 23 <= FEAR_EXTREME=25 -> extreme fear -> contrarian gate FAVOURS a long bias.",
+    "notes": [
+      "funding |rate| >= FUNDING_STRETCHED=0.0005 -> risk-filter trigger armed (near-inert OOS per ablation; context only)",
+      "BTC dominance 58.26 (context only)",
+      "attention leader \"Binance Ecosystem\" (narrative MOMENTUM, not polarity; context only)"
+    ]
+  }
 }

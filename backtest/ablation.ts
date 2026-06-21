@@ -92,6 +92,17 @@ import {
   sizeFromConviction,
 } from "../src/signal/core";
 import { decideTrade, Side } from "../src/agent/decide";
+import {
+  DrawdownState,
+  DRAWDOWN_BUCKETS,
+  DD_EDGE_SHALLOW,
+  DD_EDGE_MID,
+  DD_EDGE_DEEP,
+  DD_MULT_FULL,
+  DD_MULT_MID,
+  DD_MULT_DEEP,
+  DD_MULT_FLOOR,
+} from "../src/signal/drawdownState";
 
 // ════════════════════════════════════════════════════════════════════════════
 //  CONFIG / PATHS
@@ -283,6 +294,143 @@ export function ablationWalk(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+//  A5 — DRAWDOWN-SCALED WALK  (the full A3 pipeline + drawdown-bucket exposure scaler)
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Walk a DAILY bar series IDENTICALLY to `ablationWalk`, but multiply the per-bar position
+ * SIZE by the drawdown-bucket exposure multiplier (src/signal/drawdownState.ts) BEFORE the
+ * trade decision. PURELY ADDITIVE: with the multiplier pinned to 1 (no drawdown) this reduces
+ * to `ablationWalk` byte-for-byte; A1..A3 do not call this path at all.
+ *
+ * LOOK-AHEAD SAFETY — the load-bearing ordering:
+ *   1. Book bar i's return on the PRIOR weight and update `equity` (realized through bar i).
+ *   2. Read `dds.multiplier()` — derived ONLY from equity realized at-or-before bar i.
+ *   3. Scale this bar's sizeBps by that multiplier, then decide the position held INTO bar i+1.
+ *   4. AFTER the decision, feed bar i's realized equity into the state (`dds.update`) so the
+ *      NEXT bar sees the peak/dd through bar i. The multiplier for bar i thus uses equity
+ *      through bar i-1 (the prior bar) — never bar i's own not-yet-decided move, never a
+ *      future bar. Appending/mutating any future bar cannot change a past multiplier.
+ *
+ * The scaler only ever REDUCES size (multiplier in (0,1]); it can shave return as well as
+ * drawdown. Cost is charged on the (scaled) |Δ signed notional| exactly as the base walk.
+ * Pure + deterministic.
+ */
+export function ablationWalkDrawdownScaled(
+  bars: DailyBar[],
+  convs: { conviction: number; sizeBps: number }[],
+  walk: WalkParams = DEFAULT_WALK
+): AblationWalkResult {
+  const costRate = (walk.txCostBps + walk.slippageBps) / 10000;
+  const trace: WalkBar[] = [];
+  const trades: CompletedTrade[] = [];
+
+  let equity = 1.0;
+  let buyHold = 1.0;
+  let prevWeight = 0;
+  let prevSide: Side | null = null;
+
+  let openSide: Side | null = null;
+  let openEntryBar = 0;
+  let openEntryPrice = 0;
+  let openCostAccrued = 0;
+
+  // Drawdown state seeded at the starting equity. It is updated with bar i's realized equity
+  // ONLY AFTER bar i's position is decided, so the multiplier read for bar i reflects equity
+  // through bar i-1 (the prior, fully-realized bar) — look-ahead-safe.
+  const dds = new DrawdownState(equity, DRAWDOWN_BUCKETS);
+
+  for (let i = 0; i < bars.length; i++) {
+    const b = bars[i];
+    const c = convs[i];
+
+    let barReturn = 0;
+    if (i > 0) {
+      const prevClose = bars[i - 1].close;
+      const r =
+        isFinite(prevClose) && prevClose !== 0 && isFinite(b.close) ? b.close / prevClose - 1 : 0;
+      barReturn = prevWeight * r;
+      equity *= 1 + barReturn;
+      buyHold *= 1 + r;
+    }
+
+    // Exposure multiplier from the drawdown state — derived from equity realized THROUGH the
+    // PRIOR bar (bar i has not yet been fed). Scales THIS bar's size before the decision.
+    const ddMult = dds.multiplier();
+    const scaledSizeBps = Math.round(c.sizeBps * ddMult);
+
+    let side: Side = decideTrade(prevSide, c.conviction, scaledSizeBps, walk.entryThreshold).side;
+    if (side === "short" && !walk.allowShort) side = "flat";
+
+    const magnitude = (scaledSizeBps / 10000) * walk.maxLeverage;
+    const targetWeight = side === "long" ? magnitude : side === "short" ? -magnitude : 0;
+
+    const deltaNotional = Math.abs(targetWeight - prevWeight);
+    const cost = deltaNotional * costRate;
+    if (cost > 0) equity *= 1 - cost;
+
+    const sideChanged = side !== (openSide ?? "flat");
+    if (sideChanged) {
+      if (openSide === "long" || openSide === "short") {
+        const exitPrice = b.close;
+        const gross =
+          openSide === "long" ? exitPrice / openEntryPrice - 1 : openEntryPrice / exitPrice - 1;
+        trades.push({
+          entryBar: openEntryBar,
+          exitBar: i,
+          side: openSide,
+          netReturn: round12(gross - (openCostAccrued + cost)),
+        });
+        openSide = null;
+        openCostAccrued = 0;
+      }
+      if (side === "long" || side === "short") {
+        openSide = side;
+        openEntryBar = i;
+        openEntryPrice = b.close;
+        openCostAccrued = cost;
+      }
+    } else if (openSide === "long" || openSide === "short") {
+      openCostAccrued += cost;
+    }
+
+    trace.push({
+      bar: i,
+      t: b.t,
+      close: b.close,
+      conviction: c.conviction,
+      side,
+      targetWeight: round12(targetWeight),
+      barReturn: round12(barReturn),
+      cost: round12(cost),
+      equity: round12(equity),
+      buyHoldEquity: round12(buyHold),
+    });
+
+    // Feed bar i's REALIZED post-cost equity into the drawdown state AFTER the decision, so the
+    // NEXT bar's multiplier reflects the peak/dd through bar i (and never bar i+1).
+    dds.update(equity);
+
+    prevWeight = targetWeight;
+    prevSide = side === "flat" ? prevSide : side;
+  }
+
+  if ((openSide === "long" || openSide === "short") && bars.length > 0) {
+    const last = bars[bars.length - 1];
+    const gross =
+      openSide === "long" ? last.close / openEntryPrice - 1 : openEntryPrice / last.close - 1;
+    trades.push({
+      entryBar: openEntryBar,
+      exitBar: bars.length - 1,
+      side: openSide,
+      netReturn: round12(gross - openCostAccrued),
+    });
+  }
+
+  return { trace, trades };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 //  EVALUATE ONE ABLATION ARM across the universe (per-token + aggregate splits)
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -297,7 +445,8 @@ export function evaluateArm(
   universe: TokenInput[],
   cand: Candidate,
   layers: AblationLayers,
-  oosFraction: number
+  oosFraction: number,
+  drawdownScaled: boolean = false
 ): ArmEval {
   let trim = 0;
   let veto = 0;
@@ -307,7 +456,9 @@ export function evaluateArm(
       if (c.riskAction === "trim") trim++;
       else if (c.riskAction === "veto") veto++;
     }
-    const { trace, trades } = ablationWalk(tok.bars, convs, cand.walk);
+    const { trace, trades } = drawdownScaled
+      ? ablationWalkDrawdownScaled(tok.bars, convs, cand.walk)
+      : ablationWalk(tok.bars, convs, cand.walk);
     const n = tok.bars.length;
     const splitBar = splitBarOf(n, oosFraction);
     const split: SplitMetrics = {
@@ -394,27 +545,43 @@ export function buildAblationReport(
     },
   ];
 
-  const arms = armDefs.map((a) => {
-    const ev = evaluateArm(universe, winner, a.layers, oosFraction);
-    return {
-      id: a.id,
-      label: a.label,
-      desc: a.desc,
-      layers: a.layers,
-      riskActions: ev.riskActions,
-      aggregate: {
-        inSample: quad(ev.aggregate.inSample),
-        outOfSample: quad(ev.aggregate.outOfSample),
-        full: quad(ev.aggregate.full),
-      },
-      perToken: ev.perToken.map((p) => ({
-        symbol: p.symbol,
-        inSample: quad(p.split.inSample),
-        outOfSample: quad(p.split.outOfSample),
-        full: quad(p.split.full),
-      })),
-    };
+  const armToReport = (a: { id: string; label: string; desc: string; layers: AblationLayers }, ev: ArmEval) => ({
+    id: a.id,
+    label: a.label,
+    desc: a.desc,
+    layers: a.layers,
+    riskActions: ev.riskActions,
+    aggregate: {
+      inSample: quad(ev.aggregate.inSample),
+      outOfSample: quad(ev.aggregate.outOfSample),
+      full: quad(ev.aggregate.full),
+    },
+    perToken: ev.perToken.map((p) => ({
+      symbol: p.symbol,
+      inSample: quad(p.split.inSample),
+      outOfSample: quad(p.split.outOfSample),
+      full: quad(p.split.full),
+    })),
   });
+
+  const arms = armDefs.map((a) => armToReport(a, evaluateArm(universe, winner, a.layers, oosFraction)));
+
+  // A5 — the FULL A3 pipeline WITH the drawdown-bucket exposure scaler. Purely additive: same
+  // conviction series as A3, only the position SIZE is scaled by the realized-drawdown bucket
+  // multiplier inside the walk (ablationWalkDrawdownScaled). A1..A3 are byte-untouched.
+  const a5Def = {
+    id: "A5",
+    label: "+drawdownScaler",
+    layers: { fgGate: true, riskFilter: true } as AblationLayers,
+    desc:
+      "Full pipeline (== A3) WITH the DRAWDOWN-BUCKET EXPOSURE SCALER (src/signal/drawdownState.ts): " +
+      "position size is multiplied by a de-risking ladder keyed on point-in-time underwater depth " +
+      "(dd<5%->1.0x, 5-15%->0.66x, 15-25%->0.4x, >=25%->0.2x), using ONLY realized equity through the " +
+      "prior bar. A drawdown OVERLAY, NOT an alpha source — measured vs A1 on the SAME held-out OOS.",
+  };
+  const a5Ev = evaluateArm(universe, winner, a5Def.layers, oosFraction, true);
+  const a5 = armToReport(a5Def, a5Ev);
+  arms.push(a5);
 
   const a1 = arms[0];
   const a2 = arms[1];
@@ -448,6 +615,20 @@ export function buildAblationReport(
     riskChangesAnything && (dRiskSharpe > 0 || dRiskMaxDD < 0) && dRiskReturn >= -1e-12;
 
   const totalRiskActions = a3.riskActions;
+
+  // 3b) DRAWDOWN SCALER (A5) — marginal effect of the drawdown-bucket exposure scaler vs the
+  //     UNSCALED bear-dodge baseline A1 (the trend core that already carries the OOS result), on
+  //     the SAME held-out OOS. A drawdown OVERLAY: we report Δreturn / ΔmaxDD / ΔSharpe AS-IS.
+  //     "BITES" = a NON-TRIVIAL OOS maxDD reduction vs A1 (>= 1 percentage point shallower) WITHOUT
+  //     a worse-than-trivial return give-up. If it does not bite it is a disclosed inert monitor —
+  //     never dressed up as a driver. All deltas COMPUTED from the committed metrics, never hand-set.
+  const dScalerReturn = round12(a5.aggregate.outOfSample.totalReturn - a1.aggregate.outOfSample.totalReturn);
+  const dScalerSharpe = round12(a5.aggregate.outOfSample.sharpe - a1.aggregate.outOfSample.sharpe);
+  const dScalerMaxDD = round12(a5.aggregate.outOfSample.maxDrawdown - a1.aggregate.outOfSample.maxDrawdown);
+  const A5_BITE_DD_THRESHOLD = 0.01; // >= 1 percentage-point OOS maxDD reduction to count as a bite
+  const A5_BITE_RETURN_GIVEUP = 0.02; // tolerate at most a 2pp OOS return give-up for that drawdown cut
+  const drawdownScalerBites =
+    dScalerMaxDD <= -A5_BITE_DD_THRESHOLD && dScalerReturn >= -A5_BITE_RETURN_GIVEUP;
 
   // 4) CROSS-SECTIONAL (A4) — surfaced from the committed report-crosssectional.json (a SEPARATE
   //    hourly divergence harness), clearly labelled. It cannot be wired onto the daily trend core.
@@ -524,6 +705,14 @@ export function buildAblationReport(
       costModelNote:
         "Transaction cost + slippage are a CONFIGURABLE ASSUMPTION (default 10 bps each), charged on " +
         "|Δ signed notional| per position change, folded into equity. The exact organizer model is UNCONFIRMED.",
+      drawdownBuckets: {
+        edges: { shallow: DD_EDGE_SHALLOW, mid: DD_EDGE_MID, deep: DD_EDGE_DEEP },
+        multipliers: { full: DD_MULT_FULL, mid: DD_MULT_MID, deep: DD_MULT_DEEP, floor: DD_MULT_FLOOR },
+        note:
+          "A5 drawdown-bucket exposure scaler (src/signal/drawdownState.ts): exposure multiplier keyed on " +
+          "point-in-time underwater depth dd=1-equity/peak, using ONLY realized equity through the prior bar " +
+          "(look-ahead-safe). Edges IN-SAMPLE-biased (no OOS peeking); deliberately round to avoid curve-fit appearance.",
+      },
     },
     selectedConfig: {
       emaFast: winner.strategy.emaFast as number,
@@ -563,6 +752,20 @@ export function buildAblationReport(
           `Δreturn ${pct(dRiskReturn)}, Δsharpe ${dRiskSharpe.toFixed(4)}, ΔmaxDD ${pct(dRiskMaxDD)}. ` +
           `Risk filter fired trim=${totalRiskActions.trim} veto=${totalRiskActions.veto} across the full universe (${universe.length} tokens × ${universe[0]?.bars.length ?? 0} bars).`,
       },
+      drawdownScaler: {
+        comparand: "A5 vs A1 (the UNSCALED trend-core bear-dodge that already carries the OOS result) on the SAME held-out OOS",
+        deltaOOSReturn: dScalerReturn,
+        deltaOOSSharpe: dScalerSharpe,
+        deltaOOSMaxDrawdown: dScalerMaxDD,
+        bites: drawdownScalerBites,
+        biteCriteria:
+          `BITES iff OOS maxDD reduction >= ${A5_BITE_DD_THRESHOLD * 100}pp AND OOS return give-up <= ${A5_BITE_RETURN_GIVEUP * 100}pp.`,
+        summary:
+          `A1 trendOnly OOS ${pct(a1.aggregate.outOfSample.totalReturn)} (Sharpe ${a1.aggregate.outOfSample.sharpe}, maxDD ${pct(a1.aggregate.outOfSample.maxDrawdown)}) ` +
+          `→ A5 +drawdownScaler OOS ${pct(a5.aggregate.outOfSample.totalReturn)} (Sharpe ${a5.aggregate.outOfSample.sharpe}, maxDD ${pct(a5.aggregate.outOfSample.maxDrawdown)}). ` +
+          `Δreturn ${pct(dScalerReturn)}, Δsharpe ${dScalerSharpe.toFixed(4)}, ΔmaxDD ${pct(dScalerMaxDD)}. ` +
+          `${drawdownScalerBites ? "It BITES: a non-trivial OOS drawdown reduction for an acceptable return give-up — a load-bearing drawdown overlay (NOT alpha)." : "It does NOT bite on this OOS: a disclosed, INERT monitor (like the A3 risk filter), reported as-is — never a driver/edge."}`,
+      },
     },
     crossSectional: xs,
     verdict: {
@@ -572,6 +775,13 @@ export function buildAblationReport(
       fgGateAddsValue,
       divergenceAddsValue,
       crossSectionalAddsValue,
+      drawdownScalerBites,
+      drawdownScalerStatement:
+        `Drawdown-bucket exposure scaler (A5) vs the unscaled bear-dodge (A1) on the SAME OOS: ` +
+        `Δreturn ${pct(dScalerReturn)}, ΔmaxDD ${pct(dScalerMaxDD)}, Δsharpe ${dScalerSharpe.toFixed(4)}. ` +
+        (drawdownScalerBites
+          ? `It BITES — a load-bearing DRAWDOWN OVERLAY (cuts the OOS drawdown for an acceptable return give-up). It is NOT alpha and does NOT beat B&H; it is a de-risking rule, disclosed as such.`
+          : `It does NOT bite on this OOS — a disclosed, INERT monitor exactly like the A3 risk filter, published as-is and never called a driver/edge.`),
       attributionStatement:
         `Trend core (A1) = the earner/bear-dodge. F&G gate (A2) ${fgGateAddsValue ? "adds marginal OOS risk-adjusted value" : "is ~inert on this OOS (it only bites in F&G extremes, which the directional core mostly already sizes for)"}. ` +
         `Divergence/funding risk filter (A3) ${divergenceAddsValue ? "adds marginal OOS risk-adjusted value" : `is INERT/negligible on this OOS — it fired trim=${totalRiskActions.trim} veto=${totalRiskActions.veto} across the entire universe and leaves the OOS aggregate essentially unchanged (a non-earning safety veto, exactly as SKILL.md admits)`}. ` +
@@ -612,8 +822,9 @@ export function main(): void {
   console.log(`  ── ATTRIBUTION (marginal OOS contribution) ──`);
   console.log(`  + F&G gate          : ${report.attribution.fgGate.summary}`);
   console.log(`  + divergence filter : ${report.attribution.divergenceRiskFilter.summary}`);
+  console.log(`  + drawdown scaler   : ${report.attribution.drawdownScaler.summary}`);
   console.log(
-    `  VERDICT: fgGateAddsValue=${report.verdict.fgGateAddsValue} divergenceAddsValue=${report.verdict.divergenceAddsValue} crossSectionalAddsValue=${report.verdict.crossSectionalAddsValue}`
+    `  VERDICT: fgGateAddsValue=${report.verdict.fgGateAddsValue} divergenceAddsValue=${report.verdict.divergenceAddsValue} crossSectionalAddsValue=${report.verdict.crossSectionalAddsValue} drawdownScalerBites=${report.verdict.drawdownScalerBites}`
   );
 }
 

@@ -114,6 +114,101 @@ function show(m: { value: number; available: boolean }, digits = 4): string {
   return m.available ? Number(m.value.toFixed(digits)).toString() : "unavailable";
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+//  DETERMINISTIC REGIME CLASSIFIER  (pure — the promoted derivedStance)
+// ════════════════════════════════════════════════════════════════════════════
+//
+// HONEST SCOPE (unchanged thesis): this maps the live tool reads to ONE descriptive
+// regime LABEL. It is NOT alpha, NOT a trade signal, NOT consumed by any committed report.
+// Only the Fear & Greed GATE + the RSI advisory feed the committed backtest decision; this
+// classifier therefore decides the label using ONLY those two legs (F&G is primary, RSI is
+// the tie-break advisory). Funding/OI/dominance/narratives/holders are surfaced as context
+// `notes` on the result but never change the committed-decision label — keeping the
+// "2 of 7 feed the decision" framing literally true in code.
+
+/** The fixed regime enum. Exactly one is returned per classification. */
+export type RegimeLabel =
+  | "BEAR_CAPITULATION_FAVOUR_LONG" // extreme fear -> contrarian gate favours a long
+  | "GREED_TRIM" // extreme greed -> contrarian gate trims/flattens a long
+  | "RISK_OFF_CROWDED_LONG" // extreme greed + RSI overbought -> crowded long, risk-off
+  | "NEUTRAL_PASS_THROUGH" // neutral F&G -> gate is a pass-through (gain 1.0)
+  | "UNKNOWN_INSUFFICIENT_DATA"; // F&G unavailable -> cannot describe a regime
+
+/** Normalized reads the classifier consumes (the 7-tool reads, distilled). */
+export interface RegimeInputs {
+  fearGreed: number | null; // get_global_metrics_latest (DECISION-RELEVANT: the gate)
+  rsi: number | null; // get_crypto_technical_analysis (DECISION-RELEVANT: RSI advisory)
+  fundingStretched: boolean; // get_global_crypto_derivatives_metrics (CONTEXT ONLY)
+  dominance: number | null; // get_global_metrics_latest (CONTEXT ONLY)
+  narrativeLeader: string | null; // trending_crypto_narratives (CONTEXT ONLY)
+}
+
+export interface RegimeClassification {
+  label: RegimeLabel;
+  /** The one branch that PRODUCED the label — the recorded decision reason. */
+  because: string;
+  /** CONTEXT-only observations. Surfaced for the briefing; do NOT affect `label`. */
+  notes: string[];
+}
+
+/**
+ * PURE deterministic classifier. Maps the normalized tool reads to ONE RegimeLabel using
+ * ONLY the two decision-relevant legs (F&G gate primary, RSI advisory secondary), citing the
+ * real engine constants FEAR_EXTREME / GREED_EXTREME. Context legs are recorded as `notes`
+ * but never branch the label. No IO, no Date, no random — deterministic.
+ */
+export function classifyRegime(inp: RegimeInputs): RegimeClassification {
+  const notes: string[] = [];
+  if (inp.fundingStretched)
+    notes.push(
+      `funding |rate| >= FUNDING_STRETCHED=${FUNDING_STRETCHED} -> risk-filter trigger armed (near-inert OOS per ablation; context only)`
+    );
+  if (inp.dominance !== null) notes.push(`BTC dominance ${inp.dominance} (context only)`);
+  if (inp.narrativeLeader !== null)
+    notes.push(`attention leader "${inp.narrativeLeader}" (narrative MOMENTUM, not polarity; context only)`);
+
+  // Gate unavailable -> we cannot honestly describe a regime.
+  if (inp.fearGreed === null || !isFinite(inp.fearGreed)) {
+    return {
+      label: "UNKNOWN_INSUFFICIENT_DATA",
+      because: "Fear & Greed unavailable -> regime gate passes through (gain 1.0); no regime to describe.",
+      notes,
+    };
+  }
+
+  // EXTREME FEAR -> contrarian gate favours a long (a capitulation bargain).
+  if (inp.fearGreed <= FEAR_EXTREME) {
+    return {
+      label: "BEAR_CAPITULATION_FAVOUR_LONG",
+      because: `F&G ${inp.fearGreed} <= FEAR_EXTREME=${FEAR_EXTREME} -> extreme fear -> contrarian gate FAVOURS a long bias.`,
+      notes,
+    };
+  }
+
+  // EXTREME GREED -> trim/flatten a long. RSI overbought makes it a crowded-long risk-off.
+  if (inp.fearGreed >= GREED_EXTREME) {
+    if (inp.rsi !== null && isFinite(inp.rsi) && inp.rsi >= 70) {
+      return {
+        label: "RISK_OFF_CROWDED_LONG",
+        because: `F&G ${inp.fearGreed} >= GREED_EXTREME=${GREED_EXTREME} AND RSI ${inp.rsi} >= 70 (overbought) -> crowded long, contrarian gate TRIMS into a risk-off tape.`,
+        notes,
+      };
+    }
+    return {
+      label: "GREED_TRIM",
+      because: `F&G ${inp.fearGreed} >= GREED_EXTREME=${GREED_EXTREME} -> extreme greed -> contrarian gate TRIMS/flattens a long bias.`,
+      notes,
+    };
+  }
+
+  // NEUTRAL F&G -> the gate is a pass-through; the directional core rules.
+  return {
+    label: "NEUTRAL_PASS_THROUGH",
+    because: `F&G ${inp.fearGreed} is between FEAR_EXTREME=${FEAR_EXTREME} and GREED_EXTREME=${GREED_EXTREME} -> neutral -> regime gate passes through (gain 1.0).`,
+    notes,
+  };
+}
+
 interface TraceStep {
   step: number;
   tool: string;
@@ -278,23 +373,37 @@ export async function buildBriefing(isLive: boolean): Promise<any> {
       : null,
   };
 
-  // derivedStance: a plain-English regime description built from the two DECISION-RELEVANT
-  // legs (F&G gate + RSI). Explicitly NOT a trade, NOT alpha, NOT consumed by any report.
-  const stanceParts: string[] = [];
-  if (regime.fearGreed) {
-    if (fgLabel === "extreme-fear")
-      stanceParts.push("regime gate: extreme fear -> contrarian gate FAVOURS a long bias");
-    else if (fgLabel === "extreme-greed")
-      stanceParts.push("regime gate: extreme greed -> contrarian gate TRIMS/flattens a long");
-    else stanceParts.push("regime gate: neutral -> pass-through (gain 1.0)");
-  }
-  if (regime.rsi) stanceParts.push(`RSI advisory: ${rsiLabel}`);
-  if (fundingStretched)
-    stanceParts.push("funding stretched -> risk-filter trigger armed (near-inert OOS per ablation)");
-  const derivedStance =
-    stanceParts.length > 0
-      ? stanceParts.join("; ")
-      : "insufficient live legs to describe a regime";
+  // derivedStance: now a DETERMINISTIC CLASSIFICATION (one enum label + the branch that
+  // produced it), not a flat string-join. Built from ONLY the two DECISION-RELEVANT legs
+  // (F&G gate primary, RSI advisory secondary); context legs become `notes`, never the label.
+  // Explicitly NOT a trade, NOT alpha, NOT consumed by any committed report.
+  const classification = classifyRegime({
+    fearGreed: g.fearGreed.available ? g.fearGreed.value : null,
+    rsi: t.rsi.available ? t.rsi.value : null,
+    fundingStretched,
+    dominance: g.btcDominance.available ? g.btcDominance.value : null,
+    narrativeLeader: top?.name ?? null,
+  });
+
+  // Honest "feeds decision (2 of 7)" vs "context only" badges, one per wired tool.
+  const decisionRelevantTools = [
+    "get_global_metrics_latest (Fear&Greed gate)",
+    "get_crypto_technical_analysis (RSI advisory)",
+  ];
+  const contextOnlyTools = [
+    "search_cryptos",
+    "get_crypto_quotes_latest",
+    "get_global_crypto_derivatives_metrics",
+    "trending_crypto_narratives",
+    "get_crypto_metrics",
+  ];
+  const decisionToolNames = new Set(["get_global_metrics_latest", "get_crypto_technical_analysis"]);
+  const toolBadges = TOOL_ORDER.map((tool) => ({
+    tool,
+    badge: decisionToolNames.has(tool)
+      ? `feeds decision (${decisionRelevantTools.length} of ${TOOL_ORDER.length})`
+      : "context only",
+  }));
 
   return {
     _artifact: "CMC_REGIME_BRIEFING",
@@ -302,7 +411,8 @@ export async function buildBriefing(isLive: boolean): Promise<any> {
       "Multi-tool REGIME BRIEFING / explainability trace over all 7 wired CMC MCP tools. " +
       "NOT a backtest and NOT a claim that all 7 tools drive the strategy: only the Fear & Greed " +
       "gate + RSI advisory feed the committed backtest decision; the other five tools are context. " +
-      "derivedStance is a regime DESCRIPTION from real engine constants, not a trade signal or alpha.",
+      "derivedStance is a deterministic regime CLASSIFICATION (one enum label) from real engine " +
+      "constants, decided by ONLY those 2 decision-relevant legs — not a trade signal or alpha.",
     mode,
     generatedFrom:
       mode === "FIXTURE_REPLAY"
@@ -310,17 +420,14 @@ export async function buildBriefing(isLive: boolean): Promise<any> {
         : "live CMC MCP endpoint (CMC_MCP_API_KEY set)",
     symbol: SYMBOL,
     engineConstants: { FEAR_EXTREME, GREED_EXTREME, FUNDING_STRETCHED },
-    decisionRelevantTools: ["get_global_metrics_latest (Fear&Greed gate)", "get_crypto_technical_analysis (RSI advisory)"],
-    contextOnlyTools: [
-      "search_cryptos",
-      "get_crypto_quotes_latest",
-      "get_global_crypto_derivatives_metrics",
-      "trending_crypto_narratives",
-      "get_crypto_metrics",
-    ],
+    decisionRelevantTools,
+    contextOnlyTools,
+    toolBadges,
     toolCallTrace: trace,
     regime,
-    derivedStance,
+    // Promoted from a flat string-join into a deterministic classification:
+    derivedStance: classification.label,
+    classification,
   };
 }
 
@@ -338,15 +445,20 @@ export async function main(): Promise<void> {
     "HONEST SCOPE: this is a regime briefing, NOT a backtest. Only Fear & Greed + RSI feed the\n" +
       "committed decision; the other 5 tools are context. derivedStance is a description, not alpha.\n"
   );
+  const badgeOf: Record<string, string> = {};
+  for (const b of briefing.toolBadges) badgeOf[b.tool] = b.badge;
   for (const stp of briefing.toolCallTrace) {
-    console.log(`[${stp.step}/7] ${stp.tool}`);
+    console.log(`[${stp.step}/7] ${stp.tool}   [${badgeOf[stp.tool] ?? "context only"}]`);
     console.log(`      call : ${stp.call}`);
     console.log(`      ret  : ${JSON.stringify(stp.returned)}`);
     console.log(`      read : ${stp.interpretation}\n`);
   }
   console.log("--- combined regime read ---");
   console.log(JSON.stringify(briefing.regime, null, 2));
-  console.log(`\nderivedStance: ${briefing.derivedStance}`);
+  console.log("\n--- deterministic classification (F&G gate + RSI only) ---");
+  console.log(`label   : ${briefing.classification.label}`);
+  console.log(`because : ${briefing.classification.because}`);
+  for (const note of briefing.classification.notes) console.log(`note    : ${note} `);
 
   fs.mkdirSync(LIVE_DIR, { recursive: true });
   fs.writeFileSync(ARTIFACT, JSON.stringify(briefing, null, 2) + "\n", "utf8");

@@ -6,7 +6,7 @@
 
 [![BNB Hack - Track 2 Strategy Skills](https://img.shields.io/badge/BNB%20Hack-Track%202%20Strategy%20Skills-F0B90B?style=flat)](https://github.com/agdanish/stoic)
 [![CMC Agent Hub - LIVE](https://img.shields.io/badge/CMC%20Agent%20Hub-LIVE-orange?style=flat)](#-live-coinmarketcap-agent-hub-integration)
-[![tests - 436 passing](https://img.shields.io/badge/tests-436%20passing-brightgreen?style=flat)](#3--verify-it-yourself-60-seconds)
+[![tests - 460 passing](https://img.shields.io/badge/tests-460%20passing-brightgreen?style=flat)](#3--verify-it-yourself-60-seconds)
 [![tsc --noEmit - 0 errors](https://img.shields.io/badge/tsc%20--noEmit-0%20errors-blue?style=flat)](#3--verify-it-yourself-60-seconds)
 [![reports - byte-reproducible](https://img.shields.io/badge/reports-byte--reproducible-success?style=flat)](#3--verify-it-yourself-60-seconds)
 [![data - REAL Binance + F&G](https://img.shields.io/badge/data-REAL%20Binance%20%2B%20F%26G-informational?style=flat)](#1-the-headline-numbers--held-out-out-of-sample)
@@ -22,6 +22,20 @@
 
 </div>
 
+<div align="center">
+
+### 🏷️ A regime-aware drawdown overlay with a falsifiable, self-ablating honesty contract.
+
+*Read the one-page, four-clause* ***[Honesty Contract →](HONESTY-CONTRACT.md)*** *— every claim pinned to a committed report and a test that fails loudly if the claim ever stops being true.*
+
+</div>
+
+> ### ⚠️ What this is NOT
+> - **NOT alpha.** Aggregate OOS return is **−0.32% — a small LOSS, not a profit**. The only win is risk: maxDD roughly halved, **17.7% vs 58.3%** OOS.
+> - **NOT a working divergence signal.** The divergence/funding filter is **inert OOS** (Δreturn 0.00%, trim=11/veto=0) — a non-earning safety veto, not an edge.
+> - **NOT 12 tools.** **7 wired CMC tools** (all `ok:true`, one committed keyed snapshot) + 5 documented — never 12.
+> - **NOT regime-independent on return.** The absolute OOS "beat" is a **regime-conditional bear-dodge**; on a bull mid-window the same strategy loses to buy-and-hold by ~37%. Only the drawdown reduction is durable.
+
 > ### The agent did NOT make money. It lost less. Stated bluntly, both sides.
 > **Aggregate out-of-sample return is −0.32% — a small loss, not a profit.** The win is **DRAWDOWN REDUCTION**: on a **held-out 2026 drawdown** (params selected on the in-sample 70% **only**), Stoic cut maximum drawdown to **17.7% vs buy-and-hold's 58.3%** — roughly half — on REAL multi-regime data, holding on **all three tokens and every cost level tested**. This is a regime-aware **risk overlay**, not alpha.
 > **What "beats buy-and-hold on all 3 tokens" actually means:** buy-and-hold lost more (aggregate −43.50%), so beating it here means **losing less, not earning**. **2 of the 3 token "beats" are negative-absolute** (BTC −7.53%, ETH −11.90% — they lost, just less than B&H); only BNB (+18.48%) is positive. **Aggregate OOS is a −0.32% loss.** In a strong bull (in-sample) the strategy *lags* buy-and-hold by a wide margin (+57% vs +262%). We lead with the drawdown halving because it is the only claim the data supports *everywhere* — and because the agent did not, on aggregate, make money. **That honesty is the whole pitch.**
@@ -35,7 +49,7 @@ Every number in this README is **byte-reproducible** from a committed run, and e
 - 📉 **The agent lost less, it did not earn.** Aggregate OOS return is **−0.32%** (a small loss). The real win is **roughly halved drawdown** vs buy-and-hold on a held-out 2026 drawdown - **17.7% vs 58.3%** OOS, robust across every window and cost level. A risk overlay, not alpha. → [`backtest/report-momentum.json`](backtest/report-momentum.json)
 - 🔴 **A genuinely LIVE CoinMarketCap Agent Hub integration** - a real keyed MCP round-trip, **7/7 wired tools `ok:true`** (of 7 wired + 5 documented, never 12), captured **Fear & Greed = 23**, RSI 41.85, BTC dominance 58.26%. CMC's live Fear & Greed *is* the contrarian regime gate. → [`fixtures/cmc/live/_manifest.json`](fixtures/cmc/live/_manifest.json)
 - 🔬 **We decompose, we don't assert.** A per-layer ablation openly proves the trend core is the *entire* OOS earner while our own overlays are rounding-level / inert. → [`backtest/report-ablation.json`](backtest/report-ablation.json)
-- ✅ **436 tests passing · `tsc --noEmit` exit 0 · all reports byte-reproducible · CI green · no API key in the repo.** → [`CHANGES-FOR-JUDGES.md`](CHANGES-FOR-JUDGES.md)
+- ✅ **460 tests passing · `tsc --noEmit` exit 0 · all reports byte-reproducible · CI green · no API key in the repo.** → [`CHANGES-FOR-JUDGES.md`](CHANGES-FOR-JUDGES.md)
 - 🧭 **Radical honesty as a feature.** Every caveat is kept and framed up front - the bear-dodge, the lost-less beats, the inert filter - each one traceable to a committed file. → [`ROBUSTNESS-momentum.md`](ROBUSTNESS-momentum.md)
 - 📦 **Track-2 deliverable, done right.** An execution-agnostic **Strategy Capsule** in CMC's own `SKILL.md` format, with a committed JSON Schema ([`capsule.schema.json`](skills/sentiment-divergence-regime/capsule.schema.json)) a Trust-Wallet / BSC agent can validate against. → [`skills/sentiment-divergence-regime/SKILL.md`](skills/sentiment-divergence-regime/SKILL.md)
 
@@ -94,6 +108,21 @@ flowchart LR
 The diagram is honest by design: **the overlays modulate at the margin, they do not earn.** Originality rests on the composition and the live-CMC gating, attributed precisely below.
 
 > **The one genuinely novel mechanism, in one sentence:** on the divergence side, a **look-ahead-safe cross-sectional panel-demean** ([`src/signal/crossSectional.ts`](src/signal/crossSectional.ts)) subtracts the market-wide (beta) component of divergence across the {BTC, ETH, BNB} panel at each bar, isolating the *idiosyncratically* offside token - a market-neutral-flavoured relative-value selection the per-token engine cannot express. (It is validated on its own hourly harness and, honestly, does **not** beat buy-and-hold there - see the ablation - so it is offered as the original *construct*, not a return claim.)
+
+#### Cross-sectional dislocation - a non-textbook *mechanism* (not the canned "sentiment vs price")
+
+The per-token engine asks: is *this* token's crowd offside vs *this* token's flow, against its **own** history? The cross-sectional term ([`src/signal/crossSectional.ts`](src/signal/crossSectional.ts)) asks a different question entirely: across the **whole {BTC, ETH, BNB} panel at this instant**, which token is the divergence **outlier** relative to its peers? It **panel-demeans** - subtracts the common (market-wide / beta) component, which is the part the per-token engine shorts as undifferentiated beta - and **fades only the idiosyncratically dislocated token**. That is a relative-value (stat-arb-flavoured) selection the per-token engine *cannot express*, because it has no concept of the other tokens. Look-ahead-safe by construction (panel reads only at-or-before-derived values), pinned by a truncation-invariance test.
+
+> **Honest results box** (verbatim from [`backtest/report-crosssectional.json`](backtest/report-crosssectional.json), aggregate held-out OOS, net 10+10 bps):
+>
+> | Aggregate held-out OOS | Cross-sectional | Per-token arm | Buy & hold |
+> |---|---:|---:|---:|
+> | Total return | **−1.11%** | −4.50% | **+4.09%** |
+> | Max drawdown | **1.17%** | 4.67% | — |
+>
+> - **Lower drawdown and lower churn than the per-token arm** (OOS maxDD 1.17% vs 4.67%; 29 trades vs 86), and a smaller OOS loss (−1.11% vs −4.50%).
+> - **It does NOT beat buy-and-hold** (B&H +4.09% on this rising OOS tail) and **posts a small negative OOS return (−1.11%)** - reported as-is (`verdict.crossSectionalBeatsBuyHoldOOS: false`). Consistent with the thesis that a contrarian/relative-value construct does not earn on a rising tail.
+> - It lives on a **separate hourly harness** (`report-crosssectional.json`); it is **NOT wired to the daily earner** (`report-momentum.json`) and changes no headline number. Offered as the original *construct* and its measurable difference from the per-token engine, never a return claim.
 
 ---
 
@@ -159,6 +188,9 @@ We do not assert which layer is novel; **we decompose it.** [`backtest/ablation.
 | **A1 - trend core ALONE** | no gate, no filter | **−0.35%** (B&H −43.50%) | **17.75%** (B&H 58.30%) | **- this is the whole result** |
 | A2 - + F&G contrarian gate | trend core + gate | −0.32% | 17.72% | Δret **+0.03%**, ΔSharpe **+0.0011** (rounding-level) |
 | A3 - + divergence/funding filter (== full pipeline) | trend core + gate + filter | −0.32% | 17.72% | Δret **0.00%**, ΔSharpe **−3e-12** (**inert**; trim=11/veto=0) |
+| A5 - drawdown-state exposure scaler (isolated arm, vs A1) | trend core + de-risk-on-drawdown overlay | −3.29% | 13.79% | ΔmaxDD **−3.96pp** (17.75%→13.79%, shallower) **but** Δret **−2.94%**, ΔSharpe **−0.1819** → **does NOT bite** |
+
+> **The drawdown-state exposure control (arm A5) does NOT bite - a disclosed inert monitor, like A3.** Added only as an isolated ablation arm (it changes **no** headline number), it scales exposure down by realized drawdown bucket. Measured on the held-out OOS, it genuinely **cuts maxDD by 3.96pp (17.75% → 13.79%)** - but that drawdown cut **costs ~2.94pp of OOS return (−0.35% → −3.29%)** and lowers Sharpe (−0.597 → −0.778). By the committed bite criterion (maxDD reduction ≥1pp **AND** return give-up ≤2pp) the return give-up is too large, so it **does not bite** (`verdict.drawdownScalerBites: false`). Because it de-risks *after* price has already fallen and lags re-entry on the sharp OOS recovery, it surrenders more upside than drawdown on this particular window - the textbook honest failure mode of a reactive drawdown overlay, disclosed as such. It is **not** load-bearing, **not** an edge, and does not beat B&H; the earner remains the vanilla EMA-30/80 trend core (A1). The null result is published openly in [`backtest/report-ablation.json`](backtest/report-ablation.json) (`attribution.drawdownScaler`, `verdict.drawdownScalerBites: false`), never hidden.
 
 **The directional core IS the entire earner.** A1 alone produces the whole bear-dodge *and* the whole ~halved drawdown. The F&G gate is rounding-level (`addsValue` true only on a technicality); the divergence filter is `divergenceAddsValue: false`. A test pins `|ΔOOS return| < 5 bps` as an honesty guard, so any change that silently makes an overlay load-bearing trips the alarm.
 
@@ -174,13 +206,13 @@ export CMC_MCP_API_KEY=<free key from pro.coinmarketcap.com>   # PowerShell: $en
 npm run fetch-data                  # FREE Binance public REST + alternative.me F&G → bar fixtures (no CMC key)
 npx ts-node backtest/momentum.ts    # HEADLINE walk-forward → report-momentum.json   (=> git diff: no diff, byte-identical)
 npx ts-node backtest/ablation.ts    # layer attribution → report-ablation.json        (=> A3 == runStrategy byte-for-byte)
-npm test                            # mocha + ts-node                                 (=> 436 passing)
+npm test                            # mocha + ts-node                                 (=> 460 passing)
 ```
 
 | Guarantee | Command | Result |
 |---|---|---|
 | Type-check | `npx tsc --noEmit` | exit **0** (strict) |
-| Test suite | `npx mocha` | **436 passing** |
+| Test suite | `npx mocha` | **460 passing** |
 | Headline report byte-repro | `npx ts-node backtest/momentum.ts` then `git diff` | **no diff** |
 | Frozen anchor byte-repro | `npm run backtest` then `git diff` | **no diff** |
 | CI | `.github/workflows/ci.yml` | runs `tsc` + tests on Node 20 |
@@ -285,7 +317,7 @@ This is **why we pivoted**: a contrarian signal cannot out-earn buy-and-hold in 
 
 | Rubric axis (equal weight) | One-sentence answer | Proof |
 |---|---|---|
-| **Technical execution** | It works and is real, not cosmetic: a deterministic pure engine, a look-ahead-safe walk-forward backtest on REAL multi-regime data, 436 tests, byte-reproducible reports, CI green. | ✅ [`report-momentum.json`](backtest/report-momentum.json) · [`CHANGES-FOR-JUDGES.md`](CHANGES-FOR-JUDGES.md) |
+| **Technical execution** | It works and is real, not cosmetic: a deterministic pure engine, a look-ahead-safe walk-forward backtest on REAL multi-regime data, 460 tests, byte-reproducible reports, CI green. | ✅ [`report-momentum.json`](backtest/report-momentum.json) · [`CHANGES-FOR-JUDGES.md`](CHANGES-FOR-JUDGES.md) |
 | **Originality** | A regime-aware composition packaged as a risk overlay, plus a genuinely novel mechanism - a look-ahead-safe **cross-sectional panel-demean** that strips market-wide beta from divergence to isolate the idiosyncratically offside token - with a per-layer ablation that honestly attributes the result, not the canned "sentiment vs price" one-liner. | ✅ [`report-ablation.json`](backtest/report-ablation.json) · [`crossSectional.ts`](src/signal/crossSectional.ts) · [`strategy.ts`](src/signal/strategy.ts) |
 | **Real-world relevance** | A risk-conscious allocator who wants to ride bulls but not eat the full drawdown gets an execution-agnostic **Strategy Capsule** - emitted in CMC's `SKILL.md` format and validated against a committed [`capsule.schema.json`](skills/sentiment-divergence-regime/capsule.schema.json) - that a Trust-Wallet/BSC agent can consume; delivered value is capital preservation. | ✅ [`SKILL.md`](skills/sentiment-divergence-regime/SKILL.md) · [`capsule.schema.json`](skills/sentiment-divergence-regime/capsule.schema.json) |
 | **Demo & presentation** | A reachable live dashboard + committed hero screenshots, and a README that leads with the robust claim and the honesty posture (video pending, honestly marked). | ✅ [Live dashboard](https://agdanish.github.io/stoic/) · [`docs/assets/`](docs/assets/) |
@@ -298,6 +330,10 @@ This is **why we pivoted**: a contrarian signal cannot out-earn buy-and-hold in 
 **Who is this for?** A risk-conscious crypto allocator who wants to *participate* in bull markets but *not* eat the full drawdown when the regime turns. The delivered value is **capital preservation** - roughly halved drawdown - disclosed as regime-conditional for the absolute beat.
 
 **How it's consumed.** The deliverable is **not** a live-trading toy. It is an execution-agnostic **Strategy Capsule** (entry / exit / invalidation / sizing / risk + look-ahead-safe replay) authored in CMC's own `cmc-mcp` `SKILL.md` format. The Capsule has a **committed JSON Schema** ([`capsule.schema.json`](skills/sentiment-divergence-regime/capsule.schema.json)) - required fields `strategyId`, `generatedAt`, `dataSources`, `engineConstants`, `regime`, `universe`, `entryRule`, `exitRule`, `invalidation`, `positionSizing`, `riskLimits`, `backtestReplay`, each numeric rule citing its engine constant by name - so a downstream Trust-Wallet / BSC execution agent ingests a *spec it can machine-validate*, not prose. No live trades, no on-chain writes, no token/fundraising language (Track-2 compliant).
+
+> **Strategy Capsule, made concrete.** A committed, schema-validated example Capsule for BTC ships at [`skills/sentiment-divergence-regime/capsule.example.json`](skills/sentiment-divergence-regime/capsule.example.json), gated by a committed-file test you can run in isolation: **`npm run validate-capsule`** (GREEN). A downstream BSC execution agent consumes it directly: it reads `entryRule` / `exitRule` (when to open and flatten, each threshold citing its engine constant), `invalidation` (the regime conditions that void the read), `positionSizing` (`sizeFromConviction` in bps), and `riskLimits` (look-ahead-safe, bounded advisories, calibrated entry threshold) - turning the spec into orders without re-deriving the strategy.
+
+> **Unattended-use safety contract.** Machine-readable guardrails for a self-custody holder live in [`guardrails.json`](guardrails.json), every bound sourced from committed code/reports: **de-risk-only** (the overlay can trim/flatten or scale edge but never flip the directional sign or exceed 1x), a **sub-30% max-drawdown disqualify cap** (committed OOS 17.7% sits 12.3pp inside it), a **universe allowlist** (BTC / ETH / BNB only), and **no on-chain writes** (spec-only, runs with no API key as a strict {0,0} no-op).
 
 ```mermaid
 flowchart LR
@@ -373,7 +409,7 @@ npx ts-node backtest/momentum.ts                  # HEADLINE → report-momentum
 npx ts-node backtest/robustness-momentum.ts       # read-only stress matrix (writes nothing)
 npx ts-node backtest/ablation.ts                  # layer attribution → report-ablation.json
 npm run backtest                                  # frozen original anchor → report.json (byte-identical)
-npm test                                          # 436 passing
+npm test                                          # 460 passing
 npx http-server frontend                          # serve the dashboard (BNB-gold accent)
 
 # To use the Skill in your own CMC-MCP agent:
@@ -393,7 +429,7 @@ flowchart LR
     RP --> AB["ablation.ts → report-ablation.json<br/>A3 == runStrategy byte-for-byte"]
     CMC["CMC Agent Hub MCP<br/>keyed round-trip"] --> CAP["fixtures/cmc/live/_manifest.json<br/>F&amp;G = 23 · 7/7 ok"]
     CAP --> SK["the Skill → Strategy Capsule"]
-    AB --> V["436 tests · tsc 0 · CI · no API key in repo"]
+    AB --> V["460 tests · tsc 0 · CI · no API key in repo"]
     SK --> V
 ```
 

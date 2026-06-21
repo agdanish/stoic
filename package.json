@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "test": "mocha -r ts-node/register \"test/**/*.test.ts\"",
+    "validate-capsule": "mocha --grep \"the shipped BTC example Capsule\"",
     "backtest": "ts-node backtest/run.ts",
     "fetch-data": "ts-node src/data/fetchHistory.ts"
   },

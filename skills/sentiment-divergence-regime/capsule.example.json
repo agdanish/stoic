@@ -1,0 +1,127 @@
+{
+  "strategyId": "sentiment-divergence-regime",
+  "version": "0.1.0",
+  "generatedAt": "2026-06-21T00:00:00.000Z",
+  "dataSources": {
+    "live": "CoinMarketCap MCP (https://mcp.coinmarketcap.com/mcp)",
+    "backtest": "Binance public REST (klines + funding + long/short account ratio + taker buy/sell volume)",
+    "cmcKeyPresent": true
+  },
+  "engineConstants": {
+    "ZSCORE_WINDOW": 48,
+    "ZSCORE_MIN_OBS": 12,
+    "MOMENTUM_LOOKBACK": 12,
+    "DIVERGENCE_DEADBAND_Z": 0.5,
+    "DIVERGENCE_FULL_Z": 2.5,
+    "FEAR_EXTREME": 25,
+    "GREED_EXTREME": 75,
+    "FUNDING_STRETCHED": 0.0005,
+    "REGIME_GATE_MAX": 1.35,
+    "REGIME_GATE_MIN": 0.5,
+    "CONVICTION_FLAT": 500,
+    "ENTRY_THRESHOLD": 120,
+    "ENTRY_MIN": 60,
+    "ENTRY_MAX": 220,
+    "CALIBRATION_STEP": 10,
+    "REGIME_FLATTEN_BAND": 60,
+    "STRONG_DIVERGENCE": 200,
+    "EMA_FAST": 20,
+    "EMA_SLOW": 50,
+    "TREND_FULL_SEP": 0.06,
+    "MOMENTUM_FULL_RET": 0.15,
+    "TREND_WEIGHT": 0.6,
+    "MOMENTUM_WEIGHT": 0.4,
+    "GATE_MAX": 1.25,
+    "GATE_MIN": 0.4,
+    "RISK_FILTER_TRIM": 0.5,
+    "RISK_FILTER_VETO_INTENSITY": 0.6
+  },
+  "regime": {
+    "fearGreed": 23,
+    "funding": 0.0006212,
+    "stretchedFunding": true,
+    "label": "extreme-fear",
+    "favoredSide": 1,
+    "regimeGain": 1.35
+  },
+  "universe": {
+    "barInterval": "1h",
+    "pairConvention": "<SYMBOL>USDT",
+    "symbols": [
+      { "symbol": "BTC", "cmcId": 1, "resolved": true }
+    ]
+  },
+  "signal": {
+    "crowdZ": null,
+    "flowZ": null,
+    "divergence": null,
+    "divergenceBias": 500,
+    "conviction": 500,
+    "warming": true
+  },
+  "entryRule": {
+    "expression": "Trade only when |conviction - CONVICTION_FLAT| > ENTRY_THRESHOLD; conviction > CONVICTION_FLAT + ENTRY_THRESHOLD => LONG, conviction < CONVICTION_FLAT - ENTRY_THRESHOLD => SHORT. Conviction itself is the directional trend/momentum core (EMA_FAST/EMA_SLOW, TREND_WEIGHT/MOMENTUM_WEIGHT, saturating at TREND_FULL_SEP/MOMENTUM_FULL_RET) — the OOS earner — modulated by the Fear & Greed gate (bounded GATE_MIN..GATE_MAX).",
+    "thresholdConstant": "ENTRY_THRESHOLD",
+    "referencesConstants": [
+      "CONVICTION_FLAT",
+      "ENTRY_THRESHOLD",
+      "EMA_FAST",
+      "EMA_SLOW",
+      "TREND_FULL_SEP",
+      "MOMENTUM_FULL_RET",
+      "TREND_WEIGHT",
+      "MOMENTUM_WEIGHT",
+      "GATE_MAX",
+      "GATE_MIN"
+    ]
+  },
+  "exitRule": {
+    "expression": "Exit to FLAT when |conviction - CONVICTION_FLAT| <= ENTRY_THRESHOLD (the directional edge collapses inside REGIME_FLATTEN_BAND of flat), OR on a side flip (decideTrade.flip).",
+    "referencesConstants": [
+      "CONVICTION_FLAT",
+      "ENTRY_THRESHOLD",
+      "REGIME_FLATTEN_BAND"
+    ]
+  },
+  "invalidation": {
+    "conditions": [
+      "Fear & Greed leaves the extreme-fear band (rises above FEAR_EXTREME=25) so the contrarian gate (GATE_MAX/GATE_MIN) no longer favors the long -> reassess.",
+      "Either divergence leg goes warming (fewer than ZSCORE_MIN_OBS=12 past obs over the ZSCORE_WINDOW=48 window, z=0) -> no actionable divergence overlay -> rely on the directional core only.",
+      "Funding leaves the stretched regime the read relied on (|funding| drops below FUNDING_STRETCHED=0.0005) -> regime gain relaxes toward 1.0."
+    ]
+  },
+  "positionSizing": {
+    "method": "sizeFromConviction",
+    "expression": "sizeBps = 10000 * |conviction - CONVICTION_FLAT| / CONVICTION_FLAT (0 bps at flat, 10000 bps at the extreme), scaled by the account risk budget; the divergence/funding RISK FILTER may trim by RISK_FILTER_TRIM=0.5 or veto at RISK_FILTER_VETO_INTENSITY=0.6 (inert OOS by the committed ablation).",
+    "maxPositionBps": null
+  },
+  "riskLimits": {
+    "lookAheadSafe": true,
+    "calibratedThreshold": {
+      "function": "calibrateEntryThreshold",
+      "bounds": [60, 220],
+      "step": 10
+    },
+    "advisoriesBounded": true,
+    "maxPositionBps": null
+  },
+  "backtestReplay": {
+    "steps": [
+      "npm install",
+      "npm run fetch-data",
+      "npm run backtest",
+      "Report on a HELD-OUT out-of-sample window: total return, win rate, max drawdown, Sharpe/Sortino vs buy-and-hold."
+    ],
+    "metrics": ["totalReturn", "winRate", "maxDrawdown", "sharpe", "sortino"],
+    "baseline": "buy-and-hold",
+    "outOfSample": true,
+    "reproducible": true
+  },
+  "notes": [
+    "HEADLINE OOS (backtest/report-momentum.json, aggregate held-out 30% window, net of 10+10 bps cost): totalReturn -0.32% (a small LOSS, NOT alpha) vs buy-and-hold -43.5% over the same bars. This is a DRAWDOWN OVERLAY, not an edge: maxDrawdown 17.7% vs buy-and-hold 58.3%.",
+    "The OOS earner is the vanilla directional EMA trend/momentum core (EMA_FAST/EMA_SLOW, TREND_WEIGHT/MOMENTUM_WEIGHT). The Fear & Greed contrarian gate and the divergence/funding RISK FILTER are near-INERT out-of-sample by the committed ablation — they are documented here for transparency, not claimed as drivers.",
+    "This live BTC example: F&G=23 (extreme-fear) with funding 0.0006212 above FUNDING_STRETCHED=0.0005, so the contrarian regime favors LONG (favoredSide=+1, regimeGain at REGIME_GATE_MAX=1.35). The divergence legs (crowdZ/flowZ) need ~30d of positioning history that the live read alone does not carry, so they are null/warming here and the divergence overlay contributes no edge on this bar.",
+    "cmcId for BTC is the CMC numeric id (1) from search_cryptos; it is never guessed.",
+    "The live CMC narrative term is attention MOMENTUM, not sentiment polarity (folded as a bounded advisory; a strict {0,0} no-op when absent)."
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "contract": "Unattended-Use Safety Contract",
+  "project": "stoic / strata-signal",
+  "version": "1.0.0",
+  "date": "2026-06-21",
+  "track": 2,
+  "purpose": "Machine-readable safety envelope a self-custody holder can audit before letting the Strata Signal overlay run unattended. Every bound below is sourced from committed code or committed reports; no claim of alpha is made. The strategy is a DRAWDOWN OVERLAY on a vanilla EMA trend core, not an edge.",
+  "honestyPreamble": {
+    "thesis": "RADICAL HONESTY. This is NOT alpha. On the held-out OOS the full pipeline LOSES money in aggregate (-0.32%); its only honest selling point is that it halves the worst-case drawdown versus buy-and-hold (58.3% -> 17.7%).",
+    "theEarner": "The earner/bear-dodge is the directional EMA-30/80 trend core (ablation arm A1) sitting flat through the 2026 drawdown. The overlays modulate it at the margin only.",
+    "inertLayers": [
+      {
+        "layer": "F&G regime gate (ablation A2)",
+        "oosContribution": "+0.03% return delta vs A1 — negligible, not a driver."
+      },
+      {
+        "layer": "divergence/funding risk filter (ablation A3)",
+        "oosContribution": "Δ0.00% return; fired trim=11, veto=0 across the full universe — INERT on OOS."
+      },
+      {
+        "layer": "drawdown-bucket exposure scaler (ablation A5)",
+        "oosContribution": "does NOT bite on this OOS (Δreturn -2.94%, ΔmaxDD -3.96%); a disclosed INERT monitor, never a driver."
+      }
+    ],
+    "forbiddenClaims": ["driver", "edge", "alpha", "beats buy-and-hold (as a return claim)"]
+  },
+  "guardrails": {
+    "1_deRiskOnly": {
+      "invariant": "The contrarian regime overlay can ONLY de-risk (trim/flatten) or confirm an existing directional bias by scaling its EDGE. It can NEVER add leverage beyond 1x, and it can NEVER flip the directional sign (long->short or short->long).",
+      "mechanism": "applyRegimeGate scales the EDGE (distance from the 500 flat line) by a MULTIPLICATIVE gain; the SIGN of the directional bias is preserved. Direction is set by the trend core, not the overlay.",
+      "bounds": {
+        "GATE_MIN": 0.4,
+        "GATE_MAX": 1.25,
+        "interpretation": "Gain is clamped to [GATE_MIN, GATE_MAX]. GATE_MIN=0.4 means a contradicting regime can trim edge to at most 40% of its size (toward flat) but never past zero into a flip. GATE_MAX=1.25 means a confirming regime can boost edge by at most 25%; combined with maxLeverage=1 (selectedConfig) this cannot produce >1x exposure."
+      },
+      "leverageCeiling": 1,
+      "canFlipShort": false,
+      "source": {
+        "file": "src/signal/regimeGate.ts",
+        "constants": "GATE_MIN (line 69), GATE_MAX (line 68)",
+        "signPreservation": "applyRegimeGate (lines 156-166): gatedEdge = (directionalBias - 500) * gain; gain >= GATE_MIN > 0, so 500 + edge*gain keeps the sign of edge."
+      }
+    },
+    "2_maxDrawdownDisqualify": {
+      "invariant": "HARD disqualify line: if realized maximum drawdown reaches 30%, the strategy is disqualified (mirrors the Track 1 max-drawdown disqualify threshold). The committed OOS worst case sits well inside this line.",
+      "disqualifyMaxDrawdown": 0.30,
+      "committedOOS": {
+        "strategyMaxDrawdown": 0.177,
+        "strategyMaxDrawdownExact": 0.177229,
+        "buyAndHoldMaxDrawdown": 0.583,
+        "buyAndHoldMaxDrawdownExact": 0.583020888755,
+        "drawdownHalvedFrom": "58.3% (buy-and-hold) -> 17.7% (strategy)",
+        "headroomToDisqualify": "17.7% strategy OOS maxDD is 12.3pp inside the 30% disqualify line."
+      },
+      "stoicOOSReturn": -0.0032,
+      "stoicOOSReturnExact": -0.003156,
+      "stoicOOSReturnNote": "The Stoic full-pipeline OOS aggregate return is a -0.32% LOSS, shown here honestly INSIDE the drawdown story — the overlay's value is risk reduction, not return.",
+      "source": {
+        "report": "backtest/report-ablation.json",
+        "arm": "A3 (+riskFilter, full pipeline == runStrategy == report-momentum.json)",
+        "fields": "arms[2].aggregate.outOfSample.maxDrawdown, .totalReturn, .buyAndHoldMaxDrawdown"
+      }
+    },
+    "3_universeAllowlistAndCompliance": {
+      "universeAllowlist": ["BTCUSDT", "ETHUSDT", "BNBUSDT"],
+      "universeNote": "BTC / ETH / BNB only. Any symbol outside this allowlist is out of scope and must not be traded by the overlay.",
+      "track2Compliance": {
+        "specOnly": true,
+        "noKeys": "Default unkeyed path: with no CMC_MCP_API_KEY the CMC provider is a strict {0,0} no-op (src/signal/cmcAdvisory.ts). The strategy needs no API keys to run.",
+        "noOnChainWrites": true,
+        "statement": "spec-only, no keys, no on-chain writes."
+      },
+      "source": {
+        "reportSymbols": "backtest/report-ablation.json -> dataSource.symbols",
+        "cmcNoKey": "src/signal/cmcAdvisory.ts (UNKEYED DEFAULT = STRICT {0,0} NO-OP)"
+      }
+    },
+    "4_failureModeNoFabrication": {
+      "invariant": "When a CoinMarketCap leg is unavailable, that field degrades to a strict {0,0} no-op contribution; it is NEVER fabricated and NEVER substituted with a stale or sample value.",
+      "behavior": "Each CMC snapshot field is a normalized {value, available} cell. An unavailable field maps to {0,0} (zero tilt, zero intensity) so a partial snapshot degrades field-by-field; an empty snapshot makes the entire CMC provider a strict {0,0} no-op on every bar.",
+      "regimeUnknownPassThrough": "Mirrors regimeGate.readRegimeGate: undefined / non-finite Fear&Greed -> { label: 'unknown', favored: 0, intensity: 0 } -> regimeGateGain returns 1.0 (pass-through). No data, no tilt.",
+      "noOp": { "favored": 0, "intensity": 0 },
+      "source": {
+        "cmc": "src/signal/cmcAdvisory.ts (unavailable -> {0,0}; lines ~25, 69-83, 103, 138)",
+        "regime": "src/signal/regimeGate.ts readRegimeGate (lines 98-101) + regimeGateGain (line 135, returns 1.0 when favored===0)"
+      }
+    }
+  },
+  "scopeGuard": {
+    "headlineUntouched": "This contract does NOT modify report-momentum.json, the runStrategy decision path, or any headline number. The drawdown scaler is an isolated ablation arm (A5), measured and published like A1-A3.",
+    "filesInScope": ["guardrails.json"]
+  },
+  "provenance": {
+    "code": ["src/signal/regimeGate.ts", "src/signal/cmcAdvisory.ts"],
+    "reports": ["backtest/report-ablation.json"],
+    "allValuesConsistentWithCommittedCodeAndReports": true
+  }
+}

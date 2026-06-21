@@ -55,7 +55,7 @@ demonstrably gates the product.
      and expand the **DEPRECATED original contrarian prototype** panel at the bottom to show the
      retained loss (`report.json`, **−36.5%** / OOS **−18.1%**). (Pre-captured proof:
      `docs/assets/dashboard-hero.png`, `docs/assets/dashboard-hero-fold.png`.)
-3. Have a terminal ready for `npm test` (shows **436 passing**, incl. the look-ahead-bias suite, the
+3. Have a terminal ready for `npm test` (shows **460 passing**, incl. the look-ahead-bias suite, the
    21 momentum tests and the 20 ablation tests) and for `npx ts-node backtest/momentum.ts` (regenerates
    `report-momentum.json` byte-identical — the headline result). Have `backtest/report-momentum.json`
    open in an editor to read the OOS numbers verbatim. (The dashboard headline now renders the
@@ -104,7 +104,7 @@ conviction signal-over-time chart.
 
 ### 1:20 – 1:45 · Look-ahead safety, on camera
 > *"This is the claim everything rests on, so let's prove it, not assert it."*
-**Screen:** in terminal, run **`npm test`** → **436 passing**. Point to the suites
+**Screen:** in terminal, run **`npm test`** → **460 passing**. Point to the suites
 *"LOOK-AHEAD BIAS — appending/truncating FUTURE bars cannot change the PAST"* and the momentum
 look-ahead/truncation-invariance tests (`test/momentum.test.ts`, `test/strategy.test.ts`).
 > *"Four hundred and thirty-six tests. Truncate the series at any bar — every past read, every past
@@ -169,10 +169,10 @@ then `backtest/report-ablation.json` `verdict` + `attribution`.
 
 | Rubric axis | Stoic's answer |
 |---|---|
-| **Technical execution** | Deterministic pure engine: directional trend/momentum core + F&G gate + divergence risk filter; dedicated look-ahead-bias suite; cost-inclusive walk-forward backtester on multi-regime daily data; per-layer ablation (A3 == `runStrategy` byte-for-byte); live CMC Fear & Greed gate; **436** mocha+chai tests; GitHub Actions CI (`tsc --noEmit` + `npm test`). |
+| **Technical execution** | Deterministic pure engine: directional trend/momentum core + F&G gate + divergence risk filter; dedicated look-ahead-bias suite; cost-inclusive walk-forward backtester on multi-regime daily data; per-layer ablation (A3 == `runStrategy` byte-for-byte); live CMC Fear & Greed gate; **460** mocha+chai tests; GitHub Actions CI (`tsc --noEmit` + `npm test`). |
 | **Originality** | A **regime-aware composition packaged as a risk overlay** — directional core *gated* by a contrarian CMC Fear & Greed read and *risk-filtered* by a positioning-vs-flow divergence overlay — that rides bulls, dodges bears and roughly halves drawdown, validated on real multi-regime daily data. A per-layer **ablation** attributes the OOS result honestly (trend core earns; gate + filter marginal-to-inert), so originality rests on the composition + the look-ahead-safe relative-value cross-sectional construct, not on a claim that the overlays earn. Not a sentiment-vs-price one-liner. |
 | **Real-world relevance** | Live CMC Agent Hub (**7 tools wired + 5 documented**, Fear & Greed LIVE at F&G = 23); execution-agnostic Capsule a BSC/Trust-Wallet agent can consume; backtested on real multi-regime history; held-out OOS beats B&H (bear-dodge) with halved drawdown — disclosed as regime-conditional. |
-| **Demo / presentation** | This 2:30–3:00 script; committed dashboard screenshots; `npm test` (436) run on camera; one-command reproduction. |
+| **Demo / presentation** | This 2:30–3:00 script; committed dashboard screenshots; `npm test` (460) run on camera; one-command reproduction. |
 
 ## Honest framing (pre-empt the skeptics) — say these if asked
 
@@ -193,7 +193,7 @@ then `backtest/report-ablation.json` `verdict` + `attribution`.
 - **CMC's Fear & Greed is wired LIVE into the evaluated product** as the contrarian regime gate (keyed
   capture committed, F&G = 23). The keyed advisory also flips the conviction tilt with the regime
   (`report-cmc-compare.json`); the unkeyed default is a strict `{0,0}` no-op, so the committed reports
-  and all **436** tests stay byte-reproducible.
+  and all **460** tests stay byte-reproducible.
 - The cost/slippage model (10 bps + 10 bps) is a **labelled configurable assumption**; the organizer
   model is unconfirmed; the OOS beat survives 15+15 and 25+25 bps stress.
 - The "attention" leg is **momentum**, not polarity; the LLM rationale **no-ops** when absent; the
@@ -209,7 +209,7 @@ npx ts-node backtest/momentum.ts   # HEADLINE: walk-forward → backtest/report-
 npx ts-node backtest/robustness-momentum.ts   # read-only stress matrix (adjacent splits, mid-window, cost bumps, per-regime)
 npm run backtest            # frozen original contrarian anchor → backtest/report.json (byte-identical)
 npx ts-node backtest/ablation.ts   # layer attribution → backtest/report-ablation.json (byte-reproducible)
-npm test                    # 436 tests: determinism / BVA / look-ahead-bias / momentum / ablation / CMC-on-vs-off / cassette
+npm test                    # 460 tests: determinism / BVA / look-ahead-bias / momentum / ablation / CMC-on-vs-off / cassette
 npx http-server . -p 8123 -c-1   # then open http://localhost:8123/frontend/index.html
 
 # CMC in the evaluated loop (no key needed):
