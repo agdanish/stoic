@@ -363,6 +363,12 @@ BACKTEST-REPLAY INSTRUCTIONS (reproduce the result, look-ahead-safe)
   6. Determinism: with no CMC/LLM key the advisories are {0,0} no-ops, so report-momentum.json is
      byte-reproducible from the committed fixtures (rebuts "one lucky run"). The frozen original
      contrarian report.json is retained, byte-identical, as the original anchor.
+  7. npx ts-node backtest/cmc-regime-briefing.ts   # multi-tool CMC explainability TRACE: composes
+     ALL 7 wired CMC MCP tools into ONE regime briefing (call + real returned value + interpretation
+     per tool, then a combined regime read), replaying the committed live captures (fixtures/cmc/live/*.json)
+     through the production parsers with NO key → fixtures/cmc/live/regime-briefing.json. HONEST scope:
+     this is a regime briefing, NOT a backtest — only the Fear & Greed gate + RSI advisory feed the
+     committed decision; the other 5 tools are context, and derivedStance is a description, not alpha.
 ```
 
 ## Error handling

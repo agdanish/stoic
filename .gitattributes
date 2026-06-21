@@ -1,0 +1,2 @@
+# Byte-reproducible generated reports must stay LF so byte-for-byte tests pass on every OS (Linux/macOS/Windows)
+backtest/report*.json text eol=lf

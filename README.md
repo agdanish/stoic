@@ -18,13 +18,13 @@
 
 [![Stoic dashboard - directional read, live regime, honest backtest](docs/assets/dashboard-hero-fold.png)](https://agdanish.github.io/stoic/)
 
-<sub>Dashboard rendered from the committed `report.json`, with the demo regime pinned to **Fear & Greed = 78 ("Extreme Greed")** ([`frontend/index.html`](frontend/index.html)) so the contrarian mechanic fires on camera. **Separately**, the live keyed CMC round-trip captured **F&G = 23 ("Fear")** · RSI(14) = 41.85 · BTC dominance 58.26% - see [`fixtures/cmc/live/_manifest.json`](fixtures/cmc/live/_manifest.json). The screenshot does not display the live 23; the two are different reads, kept distinct on purpose.</sub>
+<sub>Dashboard rendered from the committed headline run [`backtest/report-momentum.json`](backtest/report-momentum.json) (aggregate OOS **−0.32%**, a small loss; maxDD **17.7% vs 58.3%**), with the demo regime pinned to **Fear & Greed = 78 ("Extreme Greed")** ([`frontend/index.html`](frontend/index.html)) so the contrarian mechanic fires on camera. **Separately**, the live keyed CMC round-trip captured **F&G = 23 ("Fear")** · RSI(14) = 41.85 · BTC dominance 58.26% - see [`fixtures/cmc/live/_manifest.json`](fixtures/cmc/live/_manifest.json). The screenshot does not display the live 23; the two are different reads, kept distinct on purpose.</sub>
 
 </div>
 
-> ### The one robust, regime-independent claim - stated honestly, both sides.
-> On a **held-out 2026 drawdown** (params selected on the in-sample 70% **only**), Stoic cut maximum drawdown to **17.7% vs buy-and-hold's 58.3%** - roughly half - on REAL multi-regime data, holding on **all three tokens and every cost level tested**.
-> **And here is what it is *not*:** the out-of-sample beat of buy-and-hold is a **regime-conditional bear-dodge, not standalone alpha** - in a strong bull (in-sample) the strategy *lags* buy-and-hold by a wide margin (+57% vs +262%). We lead with the drawdown halving because it is the only claim the data supports *everywhere*. **That honesty is the whole pitch.**
+> ### The agent did NOT make money. It lost less. Stated bluntly, both sides.
+> **Aggregate out-of-sample return is −0.32% — a small loss, not a profit.** The win is **DRAWDOWN REDUCTION**: on a **held-out 2026 drawdown** (params selected on the in-sample 70% **only**), Stoic cut maximum drawdown to **17.7% vs buy-and-hold's 58.3%** — roughly half — on REAL multi-regime data, holding on **all three tokens and every cost level tested**. This is a regime-aware **risk overlay**, not alpha.
+> **What "beats buy-and-hold on all 3 tokens" actually means:** buy-and-hold lost more (aggregate −43.50%), so beating it here means **losing less, not earning**. **2 of the 3 token "beats" are negative-absolute** (BTC −7.53%, ETH −11.90% — they lost, just less than B&H); only BNB (+18.48%) is positive. **Aggregate OOS is a −0.32% loss.** In a strong bull (in-sample) the strategy *lags* buy-and-hold by a wide margin (+57% vs +262%). We lead with the drawdown halving because it is the only claim the data supports *everywhere* — and because the agent did not, on aggregate, make money. **That honesty is the whole pitch.**
 
 Every number in this README is **byte-reproducible** from a committed run, and every headline claim is mapped to its committed source in the cross-check table in [`CHANGES-FOR-JUDGES.md`](CHANGES-FOR-JUDGES.md). In a field where most submissions overclaim, **a result you can re-run to the digit is the differentiator.**
 
@@ -32,7 +32,7 @@ Every number in this README is **byte-reproducible** from a committed run, and e
 
 ## TL;DR - the whole submission in ten seconds
 
-- 📉 **Roughly halves drawdown** vs buy-and-hold on a held-out 2026 drawdown - **17.7% vs 58.3%** OOS, robust across every window and cost level. → [`backtest/report-momentum.json`](backtest/report-momentum.json)
+- 📉 **The agent lost less, it did not earn.** Aggregate OOS return is **−0.32%** (a small loss). The real win is **roughly halved drawdown** vs buy-and-hold on a held-out 2026 drawdown - **17.7% vs 58.3%** OOS, robust across every window and cost level. A risk overlay, not alpha. → [`backtest/report-momentum.json`](backtest/report-momentum.json)
 - 🔴 **A genuinely LIVE CoinMarketCap Agent Hub integration** - a real keyed MCP round-trip, **7/7 wired tools `ok:true`** (of 7 wired + 5 documented, never 12), captured **Fear & Greed = 23**, RSI 41.85, BTC dominance 58.26%. CMC's live Fear & Greed *is* the contrarian regime gate. → [`fixtures/cmc/live/_manifest.json`](fixtures/cmc/live/_manifest.json)
 - 🔬 **We decompose, we don't assert.** A per-layer ablation openly proves the trend core is the *entire* OOS earner while our own overlays are rounding-level / inert. → [`backtest/report-ablation.json`](backtest/report-ablation.json)
 - ✅ **436 tests passing · `tsc --noEmit` exit 0 · all reports byte-reproducible · CI green · no API key in the repo.** → [`CHANGES-FOR-JUDGES.md`](CHANGES-FOR-JUDGES.md)
@@ -297,7 +297,7 @@ This is **why we pivoted**: a contrarian signal cannot out-earn buy-and-hold in 
 
 **Who is this for?** A risk-conscious crypto allocator who wants to *participate* in bull markets but *not* eat the full drawdown when the regime turns. The delivered value is **capital preservation** - roughly halved drawdown - disclosed as regime-conditional for the absolute beat.
 
-**How it's consumed.** The deliverable is **not** a live-trading toy. It is an execution-agnostic **Strategy Capsule** (entry / exit / invalidation / sizing / risk + look-ahead-safe replay) authored in CMC's own `cmc-mcp` `SKILL.md` format. The Capsule has a **committed JSON Schema** ([`capsule.schema.json`](skills/sentiment-divergence-regime/capsule.schema.json)) - required fields `strategyId`, `regime`, `universe`, `entryRule`, `exitRule`, `invalidation`, `positionSizing`, `riskLimits`, `backtestReplay`, each numeric rule citing its engine constant by name - so a downstream Trust-Wallet / BSC execution agent ingests a *spec it can machine-validate*, not prose. No live trades, no on-chain writes, no token/fundraising language (Track-2 compliant).
+**How it's consumed.** The deliverable is **not** a live-trading toy. It is an execution-agnostic **Strategy Capsule** (entry / exit / invalidation / sizing / risk + look-ahead-safe replay) authored in CMC's own `cmc-mcp` `SKILL.md` format. The Capsule has a **committed JSON Schema** ([`capsule.schema.json`](skills/sentiment-divergence-regime/capsule.schema.json)) - required fields `strategyId`, `generatedAt`, `dataSources`, `engineConstants`, `regime`, `universe`, `entryRule`, `exitRule`, `invalidation`, `positionSizing`, `riskLimits`, `backtestReplay`, each numeric rule citing its engine constant by name - so a downstream Trust-Wallet / BSC execution agent ingests a *spec it can machine-validate*, not prose. No live trades, no on-chain writes, no token/fundraising language (Track-2 compliant).
 
 ```mermaid
 flowchart LR
@@ -347,7 +347,7 @@ Because the +43% excess is a regime-conditional bear-dodge that the data does *n
 
 [![Stoic dashboard - full view](docs/assets/dashboard-hero.png)](https://agdanish.github.io/stoic/)
 
-<sub>The dashboard renders the directional read, the live regime, and the honest backtest report from the committed `report.json` (demo regime pinned to F&G = 78 / "Extreme Greed" so the contrarian mechanic fires on camera). **Note:** a 2:30–3:00 demo video is scripted (`docs/DEMO.md`) but **not yet recorded/linked** - the screenshots and live dashboard are the committed demo evidence today.</sub>
+<sub>The dashboard renders the directional read, the live regime, and the honest backtest report from the committed headline run [`backtest/report-momentum.json`](backtest/report-momentum.json) (aggregate OOS **−0.32%** loss; maxDD **17.7% vs 58.3%**); the frozen original contrarian loss is shown separately from `report.json`. Demo regime pinned to F&G = 78 / "Extreme Greed" so the contrarian mechanic fires on camera. **Note:** a 2:30–3:00 demo video is scripted (`docs/DEMO.md`) but **not yet recorded/linked** - the screenshots and live dashboard are the committed demo evidence today.</sub>
 
 **What you'll see in 30 seconds on the live dashboard:**
 

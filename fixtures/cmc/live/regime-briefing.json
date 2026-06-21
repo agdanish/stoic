@@ -1,0 +1,171 @@
+{
+  "_artifact": "CMC_REGIME_BRIEFING",
+  "_note": "Multi-tool REGIME BRIEFING / explainability trace over all 7 wired CMC MCP tools. NOT a backtest and NOT a claim that all 7 tools drive the strategy: only the Fear & Greed gate + RSI advisory feed the committed backtest decision; the other five tools are context. derivedStance is a regime DESCRIPTION from real engine constants, not a trade signal or alpha.",
+  "mode": "FIXTURE_REPLAY",
+  "generatedFrom": "fixtures/cmc/live/<tool>.json (committed _capture:LIVE envelopes, replayed offline)",
+  "symbol": "BTC",
+  "engineConstants": {
+    "FEAR_EXTREME": 25,
+    "GREED_EXTREME": 75,
+    "FUNDING_STRETCHED": 0.0005
+  },
+  "decisionRelevantTools": [
+    "get_global_metrics_latest (Fear&Greed gate)",
+    "get_crypto_technical_analysis (RSI advisory)"
+  ],
+  "contextOnlyTools": [
+    "search_cryptos",
+    "get_crypto_quotes_latest",
+    "get_global_crypto_derivatives_metrics",
+    "trending_crypto_narratives",
+    "get_crypto_metrics"
+  ],
+  "toolCallTrace": [
+    {
+      "step": 1,
+      "tool": "search_cryptos",
+      "call": "search_cryptos({ query: \"BTC\" })",
+      "returned": {
+        "id": 1,
+        "symbol": "BTC",
+        "available": true
+      },
+      "interpretation": "Resolved BTC -> CMC id 1; carried into every keyed call below."
+    },
+    {
+      "step": 2,
+      "tool": "get_crypto_quotes_latest",
+      "call": "get_crypto_quotes_latest({ id: \"1\" })",
+      "returned": {
+        "price": {
+          "value": 64367.06488208331,
+          "available": true
+        },
+        "percentChange24h": {
+          "value": -1.93697347,
+          "available": true
+        },
+        "percentChange7d": {
+          "value": 4.02402951,
+          "available": true
+        }
+      },
+      "interpretation": "Spot BTC = 64367.06, 24h -1.94%, 7d 4.02%. Context only — not a backtest driver."
+    },
+    {
+      "step": 3,
+      "tool": "get_crypto_technical_analysis",
+      "call": "get_crypto_technical_analysis({ id: \"1\" })",
+      "returned": {
+        "rsi": {
+          "value": 41.85,
+          "available": true
+        },
+        "macdHist": {
+          "value": 620.87,
+          "available": true
+        },
+        "ema50": {
+          "value": 68358.89,
+          "available": true
+        },
+        "ema200": {
+          "value": 79169.65,
+          "available": true
+        }
+      },
+      "interpretation": "RSI(14) = 41.85 (neutral); MACD hist 620.87. RSI is ONE of the two legs that actually nudges the decision (bounded advisory)."
+    },
+    {
+      "step": 4,
+      "tool": "get_global_metrics_latest",
+      "call": "get_global_metrics_latest({})",
+      "returned": {
+        "fearGreed": {
+          "value": 23,
+          "available": true
+        },
+        "btcDominance": {
+          "value": 58.26,
+          "available": true
+        },
+        "altSeasonIndex": {
+          "value": 47,
+          "available": true
+        }
+      },
+      "interpretation": "Fear & Greed = 23 -> extreme-fear (FEAR_EXTREME=25, GREED_EXTREME=75); BTC dominance 58.26%. F&G is the live CONTRARIAN gate — the second leg that actually feeds the decision."
+    },
+    {
+      "step": 5,
+      "tool": "get_global_crypto_derivatives_metrics",
+      "call": "get_global_crypto_derivatives_metrics({})",
+      "returned": {
+        "fundingRate": {
+          "value": 0.0006212,
+          "available": true
+        },
+        "openInterest": {
+          "value": 407900000000,
+          "available": true
+        },
+        "openInterestChange24h": {
+          "value": 0.73331,
+          "available": true
+        }
+      },
+      "interpretation": "Funding = 0.000621 -> stretched (FUNDING_STRETCHED=0.0005); OI 407900000000. Funding feeds the divergence/funding RISK FILTER, which the ablation shows is near-inert OOS (reported honestly)."
+    },
+    {
+      "step": 6,
+      "tool": "trending_crypto_narratives",
+      "call": "trending_crypto_narratives({})",
+      "returned": {
+        "available": true,
+        "count": 5,
+        "topNarrative": {
+          "name": "Binance Ecosystem",
+          "avgPriceChange24h": -1.04
+        }
+      },
+      "interpretation": "5 trending narratives; leader \"Binance Ecosystem\" at -1.04% 24h. HONEST label: attention/narrative MOMENTUM, not sentiment polarity. Context only."
+    },
+    {
+      "step": 7,
+      "tool": "get_crypto_metrics",
+      "call": "get_crypto_metrics({ id: \"1\" })",
+      "returned": {
+        "holderCount": {
+          "value": 55831462,
+          "available": true
+        },
+        "whalesPct": {
+          "value": 2.01,
+          "available": true
+        }
+      },
+      "interpretation": "55831462 holders; whale-bucket 2.01%. On-chain concentration context — not wired into the backtest decision."
+    }
+  ],
+  "regime": {
+    "fearGreed": {
+      "value": 23,
+      "label": "extreme-fear"
+    },
+    "rsi": {
+      "value": 41.85,
+      "label": "neutral"
+    },
+    "funding": {
+      "value": 0.0006212,
+      "stretched": true
+    },
+    "openInterest": 407900000000,
+    "dominance": 58.26,
+    "narratives": {
+      "count": 5,
+      "leader": "Binance Ecosystem"
+    }
+  },
+  "derivedStance": "regime gate: extreme fear -> contrarian gate FAVOURS a long bias; RSI advisory: neutral; funding stretched -> risk-filter trigger armed (near-inert OOS per ablation)"
+}

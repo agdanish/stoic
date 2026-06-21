@@ -76,9 +76,11 @@ MCP server `cmc-mcp` at `https://mcp.coinmarketcap.com/mcp`, header `X-CMC-MCP-A
 | `get_crypto_latest_news` | DOC | Headline context / rationale. |
 | `search_crypto_info` | DOC | Free-text lookup over CMC metadata. |
 
-## The headline claim — a RISK OVERLAY that roughly HALVES drawdown (the OOS B&H beat is a bear-dodge)
+## The headline claim — the agent LOST 0.32% (it did not make money); the win is HALVED drawdown
 
-What the product is positioned on is **drawdown reduction**: a regime-aware directional **risk overlay** that roughly **halves maximum drawdown** vs buy-and-hold across bull, bear and chop, on all three tokens and every cost level tested (`ROBUSTNESS-momentum.md`) — the one regime-independent claim. On the **held-out out-of-sample** tail (trailing 30%, 300 daily bars/token — the 2026 YTD drawdown, never used to select any parameter), the in-sample-selected directional core (`long-only + EMA 30/80`) also **beats buy-and-hold net of 10+10 bps cost on all 3 tokens AND the aggregate — but as a bear-dodge**, not alpha. Source: `backtest/report-momentum.json` → `aggregate.outOfSample` + `perToken[].outOfSample`; pinned byte-for-byte by `test/momentum.test.ts`.
+**Read the headline before anything else: aggregate out-of-sample return is −0.32% — a small LOSS, not a profit. The agent did not, on aggregate, make money.** What the product is positioned on is **drawdown reduction**: a regime-aware directional **risk overlay** that roughly **halves maximum drawdown** vs buy-and-hold (held-out OOS **17.7% vs 58.3%**) across bull, bear and chop, on all three tokens and every cost level tested (`ROBUSTNESS-momentum.md`) — the one regime-independent claim. This is an **overlay, not alpha.**
+
+On the **held-out out-of-sample** tail (trailing 30%, 300 daily bars/token — the 2026 YTD drawdown, never used to select any parameter), the in-sample-selected directional core (`long-only + EMA 30/80`) **"beats buy-and-hold net of 10+10 bps cost on all 3 tokens AND the aggregate" — but here that means LOST LESS, not earned**: buy-and-hold fell −43.50% aggregate, so beating it is a **bear-dodge**. **2 of the 3 token beats are negative-absolute** (BTC −7.53%, ETH −11.90% — both lost money, just less than B&H); only BNB (+18.48%) is positive; **the aggregate is a −0.32% loss.** Source: `backtest/report-momentum.json` → `aggregate.outOfSample` + `perToken[].outOfSample`; pinned byte-for-byte by `test/momentum.test.ts`.
 
 | Held-out OOS (trailing 30%, 10+10 bps) | Strategy total return | Buy-and-hold | Strategy max-DD | B&H max-DD |
 |---|---:|---:|---:|---:|

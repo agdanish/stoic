@@ -317,7 +317,7 @@ export function buildCmcCompareReport(snapshot: CmcSnapshot, oosFraction: number
       rsi: snapshot.rsi.value,
       source: snapshot.source,
       note:
-        "Extreme greed (F&G 82 >= GREED_EXTREME 75) + overbought RSI (74). fearGreedAdvisory leans " +
+        "Extreme greed (F&G 88 >= GREED_EXTREME 75) + RSI (66). fearGreedAdvisory leans " +
         "contrarian-bearish in greed; rsiAdvisory leans (bounded) bullish above 50 — a realistic mixed read. " +
         "Injected exogenous constant (look-ahead-safe). With a key, buildCmcSnapshot supplies the live values.",
     },

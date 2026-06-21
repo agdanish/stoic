@@ -672,7 +672,7 @@ footer{border-top:1px solid var(--border); background:var(--surface); margin-top
 
     <!-- 2 · F&G GAUGE -->
     <section class="card flat c-gauge" aria-labelledby="gauge-h" data-screen-label="Fear & Greed gauge">
-      <h3 id="gauge-h"><span data-tip="The contrarian gate: extreme fear (≤25) favours going long; extreme greed (≥75) trims longs.">F&amp;G gate</span> — live regime</h3>
+      <h3 id="gauge-h"><span data-tip="The contrarian gate: extreme fear (≤25) favours going long; extreme greed (≥75) trims longs.">F&amp;G gate</span> — <span id="gauge-h-mode">live regime</span></h3>
       <div style="text-align:center;margin-top:6px">
         <div class="gauge-val" id="gauge-val" aria-hidden="true">0</div>
         <div class="gauge-label" id="gauge-label">EXTREME FEAR → favour long</div>
@@ -1259,6 +1259,12 @@ function renderGauge(useSample){
   $("#gauge-label").setAttribute("data-provenance", useSample ? "sample" : "cached");
   $("#gauge-label").style.color = useSample ? "var(--green)" : "var(--amber)";
   $("#gauge-svg-val").textContent = "F&G "+v;
+  // header provenance: never let the heading read "live" while the synthetic SAMPLE regime is shown
+  const hMode=$("#gauge-h-mode");
+  if(hMode){
+    hMode.textContent = useSample ? "SAMPLE regime (not live)" : "live regime";
+    hMode.style.color = useSample ? "var(--amber)" : "";
+  }
   setNeedle(v, true);
   // supporting reads (always from the live capture, not the sample)
   $("#r-rsi").textContent = num(M.cmc.rsi14,2);

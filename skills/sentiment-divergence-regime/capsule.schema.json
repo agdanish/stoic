@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://stoic/skills/sentiment-divergence-regime/capsule.schema.json",
   "title": "Stoic — Strategy Capsule",
-  "description": "Machine-readable, backtestable strategy SPEC emitted by the sentiment-divergence-regime CMC Skill. A regime-gated, rolling-window z-scored positioning/attention-vs-flow divergence strategy. All numeric rules reference the engine's EXPORTED constants (src/signal/divergence.ts, src/signal/core.ts) by name — the engine is the single source of truth; constantValues below are a snapshot only.",
+  "description": "Machine-readable, backtestable strategy SPEC emitted by the sentiment-divergence-regime CMC Skill. The engineConstants below snapshot the look-ahead-safe conviction/divergence engine (src/signal/divergence.ts, src/signal/core.ts); the full shipped strategy composes a directional trend/momentum core (src/signal/momentum.ts) and a Fear & Greed contrarian regime gate on top, with the positioning/flow divergence overlay demoted to a numerically near-inert OOS risk filter — see SKILL.md and backtest/report-momentum.json. All numeric rules reference the engine's EXPORTED constants by name — the engine is the single source of truth; constantValues below are a snapshot only.",
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -20,7 +20,7 @@
     "fearGreed": 88,
     "rsi": 66,
     "source": "injected",
-    "note": "Extreme greed (F&G 82 >= GREED_EXTREME 75) + overbought RSI (74). fearGreedAdvisory leans contrarian-bearish in greed; rsiAdvisory leans (bounded) bullish above 50 — a realistic mixed read. Injected exogenous constant (look-ahead-safe). With a key, buildCmcSnapshot supplies the live values."
+    "note": "Extreme greed (F&G 88 >= GREED_EXTREME 75) + RSI (66). fearGreedAdvisory leans contrarian-bearish in greed; rsiAdvisory leans (bounded) bullish above 50 — a realistic mixed read. Injected exogenous constant (look-ahead-safe). With a key, buildCmcSnapshot supplies the live values."
   },
   "costModelNote": "Transaction cost + slippage are a CONFIGURABLE ASSUMPTION (10 bps each), charged on |Δ signed notional| per position change.",
   "perToken": [
