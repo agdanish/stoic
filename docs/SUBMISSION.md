@@ -135,7 +135,7 @@ This is the original purely-contrarian rolling-window z-scored *divergence* back
 ## Compliance
 
 - **Public code repo** — https://github.com/agdanish/stoic .
-- **Reproducible** — `npm install` → `npm run fetch-data` → `npx ts-node backtest/momentum.ts` (headline) / `npx ts-node backtest/ablation.ts` (layer attribution) / `npm run backtest` (frozen anchor) → `npm test` (460 passing); setup in `README.md`; 2:30–3:00 video.
+- **Reproducible** — `npm install` → `npm run fetch-data` → `npx ts-node backtest/momentum.ts` (headline) / `npx ts-node backtest/ablation.ts` (layer attribution) / `npm run backtest` (frozen anchor) → `npm test` (483 passing); setup in `README.md`; 2:30–3:00 video.
 - **Uses a sponsor capability (CMC mandatory for T2)** — the Skill is built on the CMC Agent Hub MCP (`cmc-mcp`): **7 tools wired** (each backed by a real adapter in `src/data/cmc.ts`, pinned by `test/honesty.test.ts`) **+ 5 documented** for optional context. CMC's **live Fear & Greed** is the contrarian regime gate (keyed round-trip committed under `fixtures/cmc/live/`, F&G = 23).
 - **Track-2 deliverable is a backtestable strategy spec as a Skill** — `skills/sentiment-divergence-regime/SKILL.md` emits the Strategy Capsule; `backtest/momentum.ts` backtests the directional pivot (headline) and `backtest/run.ts` the original contrarian anchor.
 - **SKILL.md structure** — frontmatter (name == dir, description with triggers, license, compatibility, user-invocable, allowed-tools) + markdown body, per CMC's `cmc-mcp` format.

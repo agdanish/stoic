@@ -251,7 +251,7 @@ export function x402DryRunRoute(): string {
  *   │ signal / proposed order      │ -> WalletConnect PROPOSE-AND-APPROVE, NOT  │
  *   │                              │    autonomous signing. The agent drafts;   │
  *   │                              │    the human key holder approves each tx.  │
- *   │ cmcKeyPresent=false / {0,0}  │ -> fail-closed. Missing data = no tilt =    │
+ *   │ cmcKeyPresent false ⇒ {0,0}  │ -> fail-closed. Missing data = no tilt =    │
  *   │   no-op                      │    no proposal; never a fabricated order.  │
  *   └──────────────────────────────┴──────────────────────────────────────────┘
  */
@@ -291,7 +291,7 @@ export function twakPolicyMapping(): PolicyRow[] {
       policy: "WALLETCONNECT PROPOSE-AND-APPROVE, NOT autonomous signing — the agent drafts the tx; the human key holder approves each one.",
     },
     {
-      source: "capsule.dataSources.cmcKeyPresent == false / {0,0} no-op",
+      source: "capsule.dataSources.cmcKeyPresent (false ⇒ {0,0} no-op; this capsule: true)",
       policy: "FAIL-CLOSED — missing data means no tilt and no proposal; never a fabricated order.",
     },
   ];
